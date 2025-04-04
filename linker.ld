@@ -1,14 +1,14 @@
+OUTPUT(sImage)
 OUTPUT_FORMAT(binary)
-OUTPUT(OpenSaturn)
 
 SECTIONS {
   . = 0x1000000; 
 
-  INIT_BIN = .;
+  SF = .;
 
   .opensaturn.atlas : {
     *(.opensaturn.atlas.entry)
-    ATLASSIZE = ( END_BIN - INIT_BIN) - 0x1000000;
+    AtlasImgSize = ( EF - SF) - 0x1000000;
   }
 
   .opensaturn.text : {
@@ -21,5 +21,6 @@ SECTIONS {
     *(.note*)
     *(.gnu*)
   }
-  END_BIN = .;
+  
+  EF = .;
 }
