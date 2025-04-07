@@ -9,11 +9,11 @@
 .equ AtlasMagic, 0xAB00
 .equ AtlasLoadDest, 0x1000000
 .equ AtlasVMode, 0x1000
-.equ AtlasFlags, 0b00000000
+.equ AtlasFlags, 0b00000001
 
 .equ STACK, 0x3000000
 
-#.extern Smain
+.extern smain
 
 .section .opensaturn.text.entry, "ax", @progbits
 .code32
@@ -22,7 +22,8 @@
 Sentry:
   cli
   movl $STACK, %esp
-  #call Smain
+  pushl %eax # NOTE: Passando o ponteiro da struct VBE Mode para Smain
+  call smain
   hlt
 
 .section .opensaturn.atlas.entry, "a", @progbits

@@ -1,4 +1,3 @@
-OUTPUT(sImage)
 OUTPUT_FORMAT(binary)
 
 SECTIONS {
@@ -7,13 +6,13 @@ SECTIONS {
   SF = .;
 
   .opensaturn.atlas : {
-    *(.opensaturn.atlas.entry)
+    KEEP(*(.opensaturn.atlas.entry))
     AtlasImgSize = ( EF - SF) - 0x1000000;
   }
 
   .opensaturn.text : {
-    *(.opensaturn.text.entry)
-    *(.opensaturn.text.*)
+    KEEP(*(.opensaturn.text.entry))
+    KEEP(*(*.text*))
   }
 
   /DISCARD/ : {
