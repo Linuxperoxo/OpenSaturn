@@ -1,3 +1,8 @@
+// ┌──────────────────────────────────────────────┐
+// │  (c) 2025 Linuxperoxo  •  FILE: vesa.zig     │
+// │            Author: Linuxperoxo               │
+// └──────────────────────────────────────────────┘
+
 pub const VBEModeInfo: type = packed struct {
     ModeAttributes: u16,
     WinAAttributes: u8,

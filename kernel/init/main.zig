@@ -1,6 +1,7 @@
-comptime {
-    @export(&smain, .{.name = "smain" });
-}
+// ┌──────────────────────────────────────────────┐
+// │  (c) 2025 Linuxperoxo  •  FILE: main.zig     │
+// │            Author: Linuxperoxo               │
+// └──────────────────────────────────────────────┘
 
 const drivers: type = @import("drivers");
 
@@ -12,4 +13,14 @@ fn smain(_: ?*drivers.video.vesa.VBEModeInfo) callconv(.c) u8 {
 
     vga.write('H');
     return 0;
+} 
+
+comptime {
+    @export(&smain, 
+        .{
+            .name = "smain",
+            .linkage = .strong,
+            .visibility = .default,
+        }
+    );
 }
