@@ -1,10 +1,7 @@
-#    /--------------------------------------------O
-#    |                                            |
-#    |  COPYRIGHT : (c) 2025 per Linuxperoxo.     |
-#    |  AUTHOR    : Linuxperoxo                   |
-#    |  FILE      : entry.s                       |
-#    |                                            |
-#    O--------------------------------------------/
+# ┌──────────────────────────────────────────────┐
+# │  (c) 2025 Linuxperoxo  •  FILE: entry.s      │
+# │            Author: Linuxperoxo               │
+# └──────────────────────────────────────────────┘
 
 .equ AtlasMagic, 0xAB00
 .equ AtlasLoadDest, 0x1000000

@@ -3,14 +3,20 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const saturn: type = @import("saturn").ports;
+const libsat: type = @import("saturn/lib");
 
-const VgaCtrPort: u16 = 0x3D4;
-const VgaDataPort: u16 = 0x3D5;
-const VgaYLen: u8 = 25;
-const VgaXLen: u8 = 80;
+const CtrPort: u16 = 0x3D4;
+const DataPort: u16 = 0x3D5;
+const YLen: u8 = 25;
+const XLen: u8 = 80;
+const Framebuffer: []u16 = undefined;
 
-pub const VgaCharColor: type = enum(u8) {
+comptime {
+    Framebuffer.ptr = @ptrFromInt(0xB8000);
+    Framebuffer.len = 80 * 25;
+}
+
+pub const CharColor: type = enum(u4) {
     Black,
     Blue,
     Green,
@@ -24,7 +30,7 @@ pub const VgaCharColor: type = enum(u8) {
     White = 0x0F,
 };
 
-pub const VgaBackColor: type = enum(u8) {
+pub const BackColor: type = enum(u4) {
     Black,
     Blue,
     Green,
@@ -35,20 +41,20 @@ pub const VgaBackColor: type = enum(u8) {
     Gray,
 };
 
-pub const VgaState: type = struct {
+pub const State: type = struct {
     Framebuffer: []u16 = undefined,
     XPos: u16 = 0,
     YPos: u16 = 0,
-    CharColor: VgaCharColor = .White,
-    BackColor: VgaBackColor = .Black,
+    CharColor: CharColor = .White,
+    BackColor: BackColor = .Black,
 
-    pub fn write(this: *VgaState, char: u8) void {
-        this.Framebuffer[VgaXLen * this.YPos + this.XPos] = @as(u16, (((@intFromEnum(this.BackColor) << 4) & 0x70) | @intFromEnum(this.CharColor))) << 8 | char;
-        
+    pub fn write(this: *State, char: u8) void {
+        this.Framebuffer[XLen * this.YPos + this.XPos] = @as(u16, (((@intFromEnum(this.BackColor) << 4) & 0x70) | @intFromEnum(this.CharColor))) << 8 | char;
+
         this.XPos = blockX: {
-            if(this.XPos >= VgaXLen) {
+            if(this.XPos >= XLen) {
                 this.YPos = blockY: {
-                    if(this.YPos >= VgaYLen) {
+                    if(this.YPos >= YLen) {
                         this.resize();
                     }
                     break :blockY this.YPos;
@@ -60,35 +66,35 @@ pub const VgaState: type = struct {
         this.patt();
     }
 
-    pub fn resize(this: *const VgaState) void {
-        for(0..comptime VgaYLen - 1) |y| {
-            for(0..comptime VgaXLen - 1) |x| {
-                this.Framebuffer[y * VgaXLen + x] = this.Framebuffer[(y + 1) * VgaXLen + x];
+    pub fn resize(this: *const State) void {
+        for(0..comptime YLen - 1) |y| {
+            for(0..comptime XLen - 1) |x| {
+                this.Framebuffer[y * XLen + x] = this.Framebuffer[(y + 1) * XLen + x];
             }
         }
 
-        for(0..comptime VgaXLen - 1) |i| {
-            this.Framebuffer[VgaYLen * VgaXLen + i] = @as(u16, (((this.BackColor << 4) & 0b01110000) | this.CharColor) << 8 | 0);
+        for(0..comptime XLen - 1) |i| {
+            this.Framebuffer[YLen * XLen + i] = @as(u16, (((this.BackColor << 4) & 0b01110000) | this.CharColor) << 8 | 0);
         }
 
         this.XPos = 0;
-        this.YPos = VgaYLen - 1;
+        this.YPos = YLen - 1;
 
-        patt(this);
+        this.patt();
     }
 
-    pub fn patt(this: *const VgaState) void {
-        const offset: u16 = VgaXLen * this.YPos + this.XPos;
+    pub fn patt(this: *const State) void {
+        const offset: u16 = XLen * this.YPos + this.XPos;
 
-        saturn.outb(VgaCtrPort, 0x0F); // NOTE: Selecionando o registrador 0x0F (Parte menos significativa da posição do cursor)
-        saturn.outb(VgaDataPort, @intCast(offset));
+        libsat.io.ports.outb(CtrPort, 0x0F); // NOTE: Selecionando o registrador 0x0F (Parte menos significativa da posição do cursor)
+        libsat.io.ports.outb(DataPort, @intCast(offset));
 
-        saturn.outb(VgaCtrPort, 0x0E); // NOTE: Selecionando o registrador 0x0E (Parte mais significativa da posição do cursor)
-        saturn.outb(VgaDataPort, @intCast((offset >> 8) & 0xFF));
+        libsat.io.ports.outb(CtrPort, 0x0E); // NOTE: Selecionando o registrador 0x0E (Parte mais significativa da posição do cursor)
+        libsat.io.ports.outb(DataPort, @intCast((offset >> 8) & 0xFF));
     }
 
-    pub fn clear(this: *const VgaState) void {
-        for(0..comptime VgaYLen * VgaXLen) |i| {
+    pub fn clear(this: *const State) void {
+        for(0..comptime YLen * XLen) |i| {
             this.Framebuffer[i] = (((this.BackColor << 4) & 0b01110000) | this.CharColor) << 8 | 0;
         }
     }

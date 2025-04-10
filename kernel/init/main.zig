@@ -4,23 +4,25 @@
 // └──────────────────────────────────────────────┘
 
 const drivers: type = @import("drivers");
-
-fn smain(_: ?*drivers.video.vesa.VBEModeInfo) callconv(.c) u8 {
-    var vga: drivers.video.vga.VgaState = .{};
-
-    vga.Framebuffer.ptr = @ptrFromInt(0xb8000);
-    vga.Framebuffer.len = comptime 80 * 25;
-
-    vga.write('H');
-    return 0;
-} 
+const cpu: type = @import("saturn/cpu");
 
 comptime {
-    @export(&smain, 
-        .{
-            .name = "smain",
-            .linkage = .strong,
-            .visibility = .default,
-        }
-    );
+    @export(&smain, .{
+        .name = "smain",
+        .linkage = .strong,
+        .visibility = .default,
+    });
 }
+
+fn smain(_: ?*drivers.video.vesa.VBEModeInfo) callconv(.c) u8 {
+    // Inicializando GDT
+    @call(.always_inline, &cpu.gdt.load, .{
+        cpu.gdt.Pointer { // Struct resolvida em tempo de compilação
+            .First = @intFromPtr(&cpu.gdt.Entries[0]),
+            .Size = (cpu.gdt.Entries.len * @sizeOf(cpu.gdt.Entry)) - 1,
+        }
+    });
+    // TODO: Configurar PIC
+    return 0;
+}
+

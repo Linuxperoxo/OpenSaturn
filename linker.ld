@@ -15,6 +15,13 @@ SECTIONS {
     KEEP(*(*.text*))
   }
 
+  .opensaturn.data : {
+    . = ALIGN(4);
+    KEEP(*(*.data*))
+    . = ALIGN(4);
+    KEEP(*(*.bss*))
+  }
+
   /DISCARD/ : {
     *(.commet*)
     *(.note*)
