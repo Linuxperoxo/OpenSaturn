@@ -23,36 +23,36 @@ pub fn build(b: *std.Build) void {
     });
 
     const SaturnCpuMod = b.addModule("saturn/cpu", .{
-        .root_source_file = b.path("kernel/cpu/mod.zig"),
+        .root_source_file = b.path("kernel/cpu/cpu.zig"),
         .optimize = .ReleaseSmall,
         .stack_protector = false,
         .target = TargetConf,
     });
 
     const SaturnLibMod = b.addModule("saturn/lib", .{
-        .root_source_file = b.path("lib/saturn/mod.zig"),
+        .root_source_file = b.path("lib/saturn/libsat.zig"),
         .optimize = .ReleaseSmall,
         .stack_protector = false,
         .target = TargetConf,
     });
 
-    const DriversMod = b.addModule("drivers", .{
-        .root_source_file = b.path("drivers/mod.zig"),
+    const DriversMod = b.addModule("saturn/drivers", .{
+        .root_source_file = b.path("drivers/driver.zig"),
         .optimize = .ReleaseSmall,
         .stack_protector = false,
         .target = TargetConf,
     });
 
-    const VideoDriverMod = b.addModule("drivers/video", .{
-        .root_source_file = b.path("drivers/video/console/mod.zig"),
+    const SaturnDevicesMod = b.addModule("saturn/devices", .{
+        .root_source_file = b.path("kernel/devices/devices.zig"),
         .optimize = .ReleaseSmall,
         .stack_protector = false,
         .target = TargetConf,
     });
     
+    Finalbinary.root_module.addImport("saturn/devices", SaturnDevicesMod);
     Finalbinary.root_module.addImport("saturn/cpu", SaturnCpuMod);
-    Finalbinary.root_module.addImport("drivers", DriversMod);
-    Finalbinary.root_module.addImport("drivers/video", VideoDriverMod);
+    Finalbinary.root_module.addImport("saturn/drivers", DriversMod);
     Finalbinary.root_module.addImport("saturn/lib", SaturnLibMod);
     //Finalbinary.root_module.addAssemblyFile(b.path("entry/entry.s")); // NOTE: Como o main.zig não usa extern fn extern const ... nos simbolos desse
                                                                         //       assembly, não precisamos linkar ele com o modulo root(main.zig), ou seja, todos os simbolos

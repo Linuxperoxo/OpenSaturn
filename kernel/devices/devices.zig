@@ -1,7 +1,6 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: mod.zig      │
+// │  (c) 2025 Linuxperoxo  •  FILE: devices.zig  │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const vga: type = @import("vga.zig");
-pub const vesa: type = @import("vesa.zig");
+pub const video: type = @import("video/video.zig");

@@ -1,6 +1,6 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: mod.zig      │
+// │  (c) 2025 Linuxperoxo  •  FILE: cpu.zig      │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const ports: type = @import("ports.zig");
+pub const gdt: type = @import("gdt.zig");

@@ -1,7 +1,6 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: mod.zig      │
+// │  (c) 2025 Linuxperoxo  •  FILE: oi.zig       │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const io: type = @import("io/mod.zig");
-
+pub const ports: type = @import("ports.zig");
