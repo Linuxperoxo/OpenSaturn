@@ -14,19 +14,14 @@ const VideoDriver: type = union(enum(u1)) {
     vesa: @import("root").drivers.DriverInterface,
 };
 
+// TODO: Talvez dividir em 2 enum, um para comando de read
+//       e outro para write
+
 pub const VideoCommand: type = enum(u4) {
     @"write",
     @"down",
-    @"setPtr",
     @"clear",
-    @"setColor",
-};
-
-pub const VideoQuery: type = enum(u4) {
-    @"currentX",
-    @"currentY",
-    @"currentCColor",
-    @"currentBColor",
+    @"attribute",
 };
 
 pub const activeDriver: VideoDriver = VideoDriver {

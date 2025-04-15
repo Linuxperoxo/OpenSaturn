@@ -27,12 +27,21 @@ fn smain() callconv(.c) u8 {
         }
     });
 
-    _ = devices.video.videoDevice.deviceDriver.IOctrl.send(drivers.DriverCommand { 
+    _ = devices.video.videoDevice.deviceDriver.IOctrl.write(drivers.DriverCommand { 
         .command = @as(u8, @intFromEnum(video.VideoCommand.@"write")),
-        .args = @constCast(&[_:0]u8{'H', 'e', 'l', 'l', 'o'}),
+        .args = @constCast(&[_:0]u8{'H', 'e', 'l', 'l', 'o',',', ' ', 'W', 'o', 'r', 'l', 'd', '!'}),
     });
 
+    // FIXME: Por algum motivo isso não está funcionando, alguma interrupção de
+    //        software está ocorrendo, acredito que o bootloader não está carregando
+    //        o binário totalmente
+
+    //_ = devices.video.videoDevice.deviceDriver.IOctrl.write(drivers.DriverCommand {
+    //    .command = @as(u8, @intFromEnum(video.VideoCommand.@"clear")),
+    //});
+
     // TODO: Configurar PIC
+    //
     return 0;
 }
 

@@ -37,7 +37,7 @@ pub fn build(b: *std.Build) void {
     });
 
     const DriversMod = b.addModule("saturn/drivers", .{
-        .root_source_file = b.path("drivers/driver.zig"),
+        .root_source_file = b.path("drivers/drivers.zig"),
         .optimize = .ReleaseSmall,
         .stack_protector = false,
         .target = TargetConf,

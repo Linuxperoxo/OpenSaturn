@@ -26,7 +26,7 @@ pub const ForegroundColor: type = enum(u4) {
     White,
 };
 
-pub const BackgroundColor: type = enum(u4) {
+pub const BackgroundColor: type = enum(u3) {
     Black,
     Blue,
     Green,
@@ -42,55 +42,62 @@ const VGAArgs: type = struct {
     @"1": u8 = 0,
 };
 
+const VGAAttributes: type = enum(u4) {
+    @"XPos",
+    @"YPos",
+    @"ForegroundColor",
+    @"BackgroundColor",
+};
+
 const VGA_CTR_PORT: u16 = 0x3D4;
 const VGA_DATA_PORT: u16 = 0x3D5;
 const VGA_ROW_LEN: u8 = 25;
 const VGA_COL_LEN: u8 = 80;
 
 const VGAContext: type = struct {
-    Framebuffer: [*]u16 = @as([*]u16, @ptrFromInt(0xB8000)),
-    XPos: u16 = 0,
-    YPos: u16 = 0,
-    CharColor: ForegroundColor = .White,
-    BackColor: BackgroundColor = .Black,
+    Framebuffer: []u16,
+    XPos: u8,
+    YPos: u8,
+    Foreground: ForegroundColor,
+    Background: BackgroundColor,
 
-    fn write(this: *@This(), args: VGAArgs) void {
-        this.Framebuffer[VGA_COL_LEN * this.YPos + this.XPos] = @as(u16, (((@as(u8, @intFromEnum(this.BackColor)) << 4) & 0b01110000) | @as(u16, @intFromEnum(this.CharColor))) << 8 | args.@"0");
+    fn write(This: *@This(), Data: u8) void {
+        This.Framebuffer[VGA_COL_LEN * This.YPos + This.XPos] = @as(u16, (((@as(u8, @intFromEnum(This.Background)) << 4) & 0b01110000) | @as(u16, @intFromEnum(This.Foreground))) << 8 | Data);
 
-        this.XPos = blockX: {
-            if(this.XPos >= VGA_COL_LEN) {
-                this.YPos = blockY: {
-                    if(this.YPos >= VGA_ROW_LEN) {
-                        this.down();
+        This.XPos = blockX: {
+            if(This.XPos >= VGA_COL_LEN) {
+                This.YPos = blockY: {
+                    if(This.YPos >= VGA_ROW_LEN) {
+                        This.down();
                     }
-                    break :blockY this.YPos;
+                    break :blockY This.YPos;
                 };
                 break :blockX 0;
             }
-            break :blockX this.XPos + 1;
+            break :blockX This.XPos + 1;
         };
-        this.patt(.{.@"0" = @intCast(this.YPos), .@"1" = @intCast(this.XPos)});
+        This.patt();
     }
 
-    fn down(this: *@This()) void {
+    fn down(This: *@This()) void {
         for(0..comptime VGA_ROW_LEN - 1) |y| {
             for(0..comptime VGA_COL_LEN - 1) |x| {
-                this.Framebuffer[y * VGA_COL_LEN + x] = this.Framebuffer[(y + 1) * VGA_COL_LEN + x];
+                This.Framebuffer[y * VGA_COL_LEN + x] = This.Framebuffer[(y + 1) * VGA_COL_LEN + x];
             }
         }
 
         for(0..comptime VGA_COL_LEN - 1) |i| {
-            this.Framebuffer[@as(u16, VGA_ROW_LEN) * @as(u16, VGA_COL_LEN) + i] = @as(u16, (((@as(u8, @intFromEnum(this.BackColor)) << 4) & 0b01110000) | @as(u16, @intFromEnum(this.CharColor))) << 8 | 0);
+            This.Framebuffer[@as(u16, VGA_ROW_LEN) * @as(u16, VGA_COL_LEN) + i] = @as(u16, (((@as(u8, @intFromEnum(This.Background)) << 4) & 0b01110000) | @as(u16, @intFromEnum(This.Foreground))) << 8 | 0);
         }
 
-        this.XPos = 0;
-        this.YPos = VGA_ROW_LEN - 1;
+        This.XPos = 0;
+        This.YPos = VGA_ROW_LEN - 1;
 
-        this.patt(.{.@"0" = @intCast(this.YPos), .@"1" = @intCast(this.XPos)});
+        This.patt();
     }
 
-    fn patt(_: *@This(), args: VGAArgs) void {
-        const offset: u16 = VGA_COL_LEN * args.@"0" + args.@"1";
+    fn patt(This: *@This()) void {
+        const offset: u16 = VGA_COL_LEN * This.YPos + This.XPos;
 
         libsat.io.ports.outb(VGA_CTR_PORT, 0x0F); // NOTE: Selecionando o registrador 0x0F (Parte menos significativa da posição do cursor)
         libsat.io.ports.outb(VGA_DATA_PORT, @intCast(offset));
@@ -99,59 +106,147 @@ const VGAContext: type = struct {
         libsat.io.ports.outb(VGA_DATA_PORT, @intCast((offset >> 8) & 0xFF));
     }
 
-    fn clear(this: *@This()) void {
+    fn clear(This: *@This()) void {
         for(0..comptime @as(u16, VGA_ROW_LEN) * @as(u16, VGA_COL_LEN) - 1) |i| {
-            this.Framebuffer[i] = @as(u16, ((@as(u8, @intFromEnum(this.BackColor)) << 4) & 0b01110000) | @as(u8, @intFromEnum(this.CharColor))) << 8 | 0;
+            This.Framebuffer[i] = @as(u16, ((@as(u8, @intFromEnum(This.Background)) << 4) & 0b01110000) | @as(u8, @intFromEnum(This.Foreground))) << 8 | 0;
         }
     }
 
-    fn color(this: *@This(), args: VGAArgs) void {
-        this.CharColor = args.@"0";
-        this.BackColor = args.@"1";
+    fn color(This: *@This(), Foreground: ForegroundColor, Background: BackgroundColor) void {
+        This.Foreground = Foreground;
+        This.Background = Background;
     }
 };
 
-var VGADevice: VGAContext = .{};
+var VGADevice: VGAContext = .{
+    .Framebuffer = @as([*]u16, @ptrFromInt(0xB8000))[0..@as(u16, VGA_ROW_LEN) * @as(u16, VGA_COL_LEN) - 1],
+    .XPos = 0,
+    .YPos = 0,
+    .Foreground = .White,
+    .Background = .Black,
+};
 
-fn send(Args: drivers.DriverCommand) drivers.DriverResponse {
-    switch(@as(video.VideoCommand, @enumFromInt(Args.command))) {
-        .@"write" => {
-            var i: u32 = 0;
-            while(Args.args[i] != 0) : (i += 1){
-                VGADevice.write(.{.@"0" = Args.args[i]});
-            }
-        },
+fn write(Args: drivers.DriverCommand) drivers.DriverResponse {
+    // OPTIMIZE: Fazer argumentos genericos para cada função
+    //           para chmar elas usando array de ponteiros para
+    //           funções do tipo (This: *VGAContext, Args: VGAArgs)
 
-        .@"clear" => VGADevice.clear(),
-        .@"down" => VGADevice.down(),
-        .@"setPtr" => VGADevice.patt(.{.@"0" = Args.args[0], .@"1" = Args.args[1]}),
-        .@"setColor" => {
-            VGADevice.CharColor = @enumFromInt(Args.args[0]);
-            VGADevice.BackColor = @enumFromInt(Args.args[1]);
+    return block0: {
+        switch(@as(video.VideoCommand, @enumFromInt(Args.command))) {
+            .@"write" => {
+                var i: u32 = 0;
+                while(Args.args[i] != 0) : (i += 1){
+                    @call(.always_inline, &VGAContext.write, .{
+                        &VGADevice, 
+                        Args.args[i]}
+                    );
+                }
+            },
+        
+            .@"down" => {
+                @call(.never_inline, &VGAContext.down, .{
+                    &VGADevice
+                });
+            },
+
+            .@"clear" => {
+                @call(.always_inline, &VGAContext.clear, .{
+                    &VGADevice
+                });
+            },
+
+            .@"attribute" => {
+                // OPTIMIZE: Fazer array de ponteiros para funções aqui também,
+                //           de preferencia usar funções inlines para ajudar no
+                //           runtime
+
+                switch(@as(VGAAttributes, @enumFromInt(Args.args[0]))) {
+                    // OPTIMIZE: Também da para otimizar XPos e YPos usando ponteiros 
+                    //           EXEMPLO:
+                    //           var ptr: ?*u8 = switch(Args.args[0]) {
+                    //              1 => &VGADevice.XPos,
+                    //              2 => &VGADevice.YPos,
+                    //              else => null,
+                    //           }
+                    //           ptr.* = Args.args[1];
+
+                    .@"XPos" => {
+                        if(Args.args[1] >= VGA_COL_LEN) {
+                            break :block0 drivers.DriverResponse {
+                                .err = .NotSupported,
+                            };
+                        }
+                        VGADevice.XPos = Args.args[1];
+                    },
+
+                    .@"YPos" => {
+                        if(Args.args[1] >= VGA_ROW_LEN) {
+                            break :block0 drivers.DriverResponse {
+                                .err = .NotSupported,
+                            };
+                        }
+                    },
+
+                    .@"ForegroundColor" => {
+                        VGADevice.Foreground = @enumFromInt(Args.args[1] & 0x04);
+                    },
+
+                    .@"BackgroundColor" => {
+                        VGADevice.Foreground = @enumFromInt(Args.args[1] & 0x03);
+                    },
+                }
+            },
         }
-    }
 
-    return drivers.DriverResponse {
-        .err = drivers.DriverError.Noerror,
+        break :block0 drivers.DriverResponse {
+            .err = .Noerror,
+        };
     };
 }
 
-fn receive(Args: drivers.DriverCommand) drivers.DriverResponse {
-    return drivers.DriverResponse {
-        .ret = switch(@as(video.VideoQuery, @enumFromInt(Args.command))) { 
-            .@"currentX" => @as(u32, VGADevice.XPos),
-            .@"currentY" => @as(u32, VGADevice.YPos),
-            .@"currentCColor" => @as(u32, @intFromEnum(VGADevice.CharColor)),
-            .@"currentBColor" => @as(u32, @intFromEnum(VGADevice.BackColor)),
-        },
+fn read(Args: drivers.DriverCommand) drivers.DriverResponse {
+    // OPTIMIZE: Fazer argumentos genericos para cada função
+    //           para chamar elas usando array de ponteiros para
+    //           funções do tipo (This: *VGAContext)
+
+    return block0: {
+        switch(@as(VGAAttributes, @enumFromInt(Args.args[0]))) {
+            // OPTIMIZE: Aqui o XPos e o YPos também podem ser otimizados
+            //           usando ponteiros, igual o write()
+
+            .@"XPos" => {
+                break :block0 drivers.DriverResponse {
+                   .ret = @as(u32, VGADevice.XPos),
+                };
+            },
+
+            .@"YPos" => {
+                break :block0 drivers.DriverResponse {
+                    .ret = @as(u32, VGADevice.YPos),
+                };
+            },
+
+            .@"ForegroundColor" => {
+                break :block0 drivers.DriverResponse {
+                    .ret = @as(u32, @intFromEnum(VGADevice.Foreground)),
+                };
+            },
+
+            .@"BackgroundColor" => {
+                break :block0 drivers.DriverResponse {
+                    .ret = @as(u32, @intFromEnum(VGADevice.Background)),
+                };
+            },
+        }
     };
 }
 
 pub fn loadDriver() drivers.DriverInterface {
     return drivers.DriverInterface {
         .IOctrl = .{
-            .send = &send,
-            .receive = &receive,
+            .write = &write,
+            .read = &read,
+            .err = null,
         }
     };
 }
