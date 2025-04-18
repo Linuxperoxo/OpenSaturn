@@ -13,7 +13,6 @@ pub const DriverCommand: type = struct {
 pub const DriverResponse: type = union(enum(u2)) {
     ret: u32,
     err: DriverError,
-    non: void,
 };
 
 pub const DriverError:type = enum(u4) {
@@ -26,9 +25,8 @@ pub const DriverError:type = enum(u4) {
 
 pub const DriverInterface: type = struct {
     IOctrl: struct {
-        write: *const fn(DriverCommand) DriverResponse,
-        read: *const fn(DriverCommand) DriverResponse,
-        err: ?*const fn(DriverCommand) DriverResponse,
+        send: *const fn(DriverCommand) DriverResponse,
+        receive: *const fn(DriverCommand) DriverResponse,
     },
 };
 

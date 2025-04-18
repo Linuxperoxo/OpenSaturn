@@ -49,8 +49,15 @@ const VGAAttributes: type = enum(u4) {
     @"BackgroundColor",
 };
 
-const VGA_CTR_PORT: u16 = 0x3D4;
+const VGA_CTRL_PORT: u16 = 0x3D4;
 const VGA_DATA_PORT: u16 = 0x3D5;
+
+const VGA_PIXELS_X_RESOLUTION: u16 = 640;
+const VGA_PIXELS_Y_RESOLUTION: u16 = 400;
+
+const VGA_FONT_8x16_X_LEN: u8 = VGA_FONT_8x16_X_LEN / 8;
+const VGA_FONT_8x16_Y_LEN: u8 = VGA_FONT_8x16_Y_LEN / 16;
+
 const VGA_ROW_LEN: u8 = 25;
 const VGA_COL_LEN: u8 = 80;
 
@@ -63,19 +70,18 @@ const VGAContext: type = struct {
 
     fn write(This: *@This(), Data: u8) void {
         This.Framebuffer[VGA_COL_LEN * This.YPos + This.XPos] = @as(u16, (((@as(u8, @intFromEnum(This.Background)) << 4) & 0b01110000) | @as(u16, @intFromEnum(This.Foreground))) << 8 | Data);
+        This.XPos = This.XPos + 1;
 
-        This.XPos = blockX: {
-            if(This.XPos >= VGA_COL_LEN) {
-                This.YPos = blockY: {
-                    if(This.YPos >= VGA_ROW_LEN) {
-                        This.down();
-                    }
-                    break :blockY This.YPos;
-                };
-                break :blockX 0;
-            }
-            break :blockX This.XPos + 1;
-        };
+        // TODO: Verificação de índice deve ser feita pelo tty
+        //if(This.XPos >= VGA_COL_LEN) {
+        //    This.XPos = 0;
+        //    This.YPos = This.YPos + 1;
+        //
+        //    if(This.YPos >= VGA_ROW_LEN) {
+        //        This.down();
+        //        This.YPos = VGA_ROW_LEN - 1;
+        //    }
+        //}
         This.patt();
     }
 
@@ -99,10 +105,10 @@ const VGAContext: type = struct {
     fn patt(This: *@This()) void {
         const offset: u16 = VGA_COL_LEN * This.YPos + This.XPos;
 
-        libsat.io.ports.outb(VGA_CTR_PORT, 0x0F); // NOTE: Selecionando o registrador 0x0F (Parte menos significativa da posição do cursor)
+        libsat.io.ports.outb(VGA_CTRL_PORT, 0x0F); // NOTE: Selecionando o registrador 0x0F (Parte menos significativa da posição do cursor)
         libsat.io.ports.outb(VGA_DATA_PORT, @intCast(offset));
 
-        libsat.io.ports.outb(VGA_CTR_PORT, 0x0E); // NOTE: Selecionando o registrador 0x0E (Parte mais significativa da posição do cursor)
+        libsat.io.ports.outb(VGA_CTRL_PORT, 0x0E); // NOTE: Selecionando o registrador 0x0E (Parte mais significativa da posição do cursor)
         libsat.io.ports.outb(VGA_DATA_PORT, @intCast((offset >> 8) & 0xFF));
     }
 
@@ -126,7 +132,7 @@ var VGADevice: VGAContext = .{
     .Background = .Black,
 };
 
-fn write(Args: drivers.DriverCommand) drivers.DriverResponse {
+fn send(Args: drivers.DriverCommand) drivers.DriverResponse {
     // OPTIMIZE: Fazer argumentos genericos para cada função
     //           para chmar elas usando array de ponteiros para
     //           funções do tipo (This: *VGAContext, Args: VGAArgs)
@@ -204,7 +210,7 @@ fn write(Args: drivers.DriverCommand) drivers.DriverResponse {
     };
 }
 
-fn read(Args: drivers.DriverCommand) drivers.DriverResponse {
+fn receive(Args: drivers.DriverCommand) drivers.DriverResponse {
     // OPTIMIZE: Fazer argumentos genericos para cada função
     //           para chamar elas usando array de ponteiros para
     //           funções do tipo (This: *VGAContext)
@@ -244,9 +250,8 @@ fn read(Args: drivers.DriverCommand) drivers.DriverResponse {
 pub fn loadDriver() drivers.DriverInterface {
     return drivers.DriverInterface {
         .IOctrl = .{
-            .write = &write,
-            .read = &read,
-            .err = null,
+            .send = &send,
+            .receive = &receive,
         }
     };
 }

@@ -54,13 +54,8 @@ pub fn build(b: *std.Build) void {
     Finalbinary.root_module.addImport("saturn/cpu", SaturnCpuMod);
     Finalbinary.root_module.addImport("saturn/drivers", DriversMod);
     Finalbinary.root_module.addImport("saturn/lib", SaturnLibMod);
-    //Finalbinary.root_module.addAssemblyFile(b.path("entry/entry.s")); // NOTE: Como o main.zig não usa extern fn extern const ... nos simbolos desse
-                                                                        //       assembly, não precisamos linkar ele com o modulo root(main.zig), ou seja, todos os simbolos
-                                                                        //       do assembly não serão visíveis para o main.zig
-    Finalbinary.addAssemblyFile(b.path("entry/entry.s"));               // <= é isso que acontece aqui, já com root_module, o assembly é linkado ao modulo_root, assim todos os
-                                                                        // símbolos são visíveis, podemos fazer extern fn _start() void;
+    Finalbinary.addAssemblyFile(b.path("entry/entry.s"));
     Finalbinary.setLinkerScript(b.path("linker.ld"));
-
     b.installArtifact(Finalbinary);
 }
 

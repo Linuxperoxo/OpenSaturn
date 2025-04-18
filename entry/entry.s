@@ -3,28 +3,12 @@
 # │            Author: Linuxperoxo               │
 # └──────────────────────────────────────────────┘
 
-.equ AtlasMagic, 0xAB00
-.equ AtlasLoadDest, 0x1000000
-.equ AtlasVMode, 0x1000
-.equ AtlasFlags, 0b00000001
-
-.equ STACK, 0x3000000
-
-.extern smain
-
-.section .opensaturn.text.entry, "ax", @progbits
-.code32
-.align 4
-.type Sentry, @function
-Sentry:
-  cli
-  movl $STACK, %esp
-  pushl %eax # NOTE: Passando o ponteiro da struct VBE Mode para Smain
-  call smain
-  hlt
-
-.section .opensaturn.atlas.entry, "a", @progbits
-.type .AtlasFlags, @object
+  .equ AtlasMagic, 0xAB00
+  .equ AtlasLoadDest, 0x1000000
+  .equ AtlasVMode, 0x1000
+  .equ AtlasFlags, 0b00000001
+.section .opensaturn.data.atlas.header, "a", @progbits
+  .type .AtlasFlags,@object
 .AtlasFlags:                   # NOTE: Esse headers deve ser colocado no início do binário
   .word AtlasMagic             # NOTE: Flag mágica para dizer para o Atlas que é uma imagem válida para boot
   .long AtlasLoadDest          # NOTE: Endereço de memória físico de onde a imagem deve ser carregado 

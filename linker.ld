@@ -6,7 +6,7 @@ SECTIONS {
   SF = .;
 
   .opensaturn.atlas : {
-    KEEP(*(.opensaturn.atlas.entry))
+    KEEP(*(.opensaturn.data.atlas.header))
     AtlasImgSize = ( EF - SF) - 0x1000000;
   }
 
