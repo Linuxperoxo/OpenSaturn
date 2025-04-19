@@ -7,6 +7,7 @@
   .equ AtlasLoadDest, 0x1000000
   .equ AtlasVMode, 0x1000
   .equ AtlasFlags, 0b00000001
+
 .section .opensaturn.data.atlas.header, "a", @progbits
   .type .AtlasFlags,@object
 .AtlasFlags:                   # NOTE: Esse headers deve ser colocado no início do binário

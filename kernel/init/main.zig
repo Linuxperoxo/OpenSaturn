@@ -10,6 +10,43 @@ pub const devices: type = @import("saturn/devices");
 
 pub const video: type = drivers.video;
 
+const GDT: cpu.gdt.GDT = cpu.gdt.GDT {
+    .Entries = @constCast(&[_]cpu.gdt.GDTEntry {
+        @call(
+            .compile_time, 
+            &cpu.gdt.GDT.newEntry,
+            .{
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+            }
+        ),
+
+        @call(
+            .compile_time, 
+            &cpu.gdt.GDT.newEntry,
+            .{
+                0x00,
+                0xFFFFF,
+                0x0C,
+                0x9A,
+            }
+        ),
+        
+        @call(
+            .compile_time, 
+            &cpu.gdt.GDT.newEntry,
+            .{
+                0x00,
+                0xFFFFF,
+                0x0C,
+                0x92,
+            }
+        ),
+    }),
+};
+
 // callconv(.naked) não tem prólogo e epílogo automáticos é simplesmente fazer uma função do 0,
 // o compilador não adiciona o código de prólogo/epílogo para salvar/restaurar registradores ou
 // manipular a pilha, como alocações e desalocação. 
@@ -19,7 +56,8 @@ pub const video: type = drivers.video;
 //
 // export serve para deixar o símbolo vísivel no assembly, ou seja, poderiamos usar o asm volatile(\\call Sentry);
 // em qualquer arquivo, já que o símbolo está vísivel em todo o assembly.
-export fn Sentry(_: u32) linksection(".text.saturn.entry") callconv(.Naked) noreturn { 
+export fn Sentry(AtlasVModeStruct: u32) linksection(".text.saturn.entry") callconv(.Naked) noreturn { 
+    _ = AtlasVModeStruct;
     // Este trecho de assembly habilita a FPU e o conjunto de instruções SSE:
     //
     // * Limpa o bit EM (bit 2) do CR0 para permitir instruções de ponto flutuante reais, quanto 1 o processador gera uma interrupção
@@ -47,6 +85,7 @@ export fn Sentry(_: u32) linksection(".text.saturn.entry") callconv(.Naked) nore
 
     // NOTE: Configurar o SSE/FPU é importante aqui já que o compilador zig pode
     //       usar essas instruções mesmo em um ambiente bare-metal
+
     asm volatile(
         \\ cli
         \\ movl $0xF00000, %esp
@@ -58,23 +97,25 @@ export fn Sentry(_: u32) linksection(".text.saturn.entry") callconv(.Naked) nore
         \\ movl %cr4,     %eax
         \\ orl  $1 << 9,  %eax
         \\ orl  $1 << 10, %eax
-        \\ mov %eax, %cr4
+        \\ movl %eax, %cr4
 
-        \\ pushl $'R'
         \\ call Smain
         \\ jmp  .
 
+        :
+        :
+        :
     );
 }
 
-export fn Smain(_: u8) void {
-    // Inicializando GDT
-    @call(.always_inline, &cpu.gdt.load, .{
-        cpu.gdt.Pointer { // NOTE: Struct resolvida em tempo de compilação
-            .Limit = (cpu.gdt.Entries.len * @sizeOf(cpu.gdt.Entry)) - 1,
-            .First = @intFromPtr(&cpu.gdt.Entries[0]),
+export fn Smain() void {
+    @call(
+        .always_inline,
+        &cpu.gdt.GDT.load,
+        .{
+            @constCast(&GDT),
         }
-    });
+    );
 
     _ = @call(.never_inline, devices.video.videoDevice.deviceDriver.IOctrl.send, .{
             drivers.DriverCommand {
