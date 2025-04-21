@@ -11,7 +11,6 @@ SECTIONS {
   }
 
   .opensaturn.text : {
-    KEEP(*(.opensaturn.text.entry))
     KEEP(*(*.text*))
   }
 
@@ -27,6 +26,6 @@ SECTIONS {
     *(.note*)
     *(.gnu*)
   }
-  
+
   EF = .;
 }

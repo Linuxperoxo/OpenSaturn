@@ -1,10 +1,7 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: cpu.zig      │
+// │  (c) 2025 Linuxperoxo  •  FILE: apic.zig     │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const gdt: type = @import("gdt.zig");
-pub const apic: type = @import("apic.zig");
-//pub const pic: type = @import("pic.zig");
-pub const msr: type = @import("msr.zig");
-
+pub const lapic: type = @import("lapic.zig");
+pub const iopic: type = @import("ioapic.zig");

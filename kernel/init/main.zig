@@ -56,7 +56,7 @@ const GDT: cpu.gdt.GDT = cpu.gdt.GDT {
 //
 // export serve para deixar o símbolo vísivel no assembly, ou seja, poderiamos usar o asm volatile(\\call Sentry);
 // em qualquer arquivo, já que o símbolo está vísivel em todo o assembly.
-export fn Sentry(AtlasVModeStruct: u32) linksection(".text.saturn.entry") callconv(.Naked) noreturn { 
+export fn Sentry(AtlasVModeStruct: u32) linksection(".text.entry") callconv(.Naked) noreturn { 
     _ = AtlasVModeStruct;
     // Este trecho de assembly habilita a FPU e o conjunto de instruções SSE:
     //
@@ -99,8 +99,17 @@ export fn Sentry(AtlasVModeStruct: u32) linksection(".text.saturn.entry") callco
         \\ orl  $1 << 10, %eax
         \\ movl %eax, %cr4
 
-        \\ call Smain
-        \\ jmp  .
+        \\ call Sinit
+        \\ testl %eax, %eax
+        \\ jnz 1f
+        \\ jmp 2f
+        \\
+        \\ 1:
+        \\  # Fazer manipulação de erro caso problema na inicialização
+        \\
+        \\ 2:
+        \\  call Smain
+        \\  jmp  .
 
         :
         :
@@ -108,7 +117,7 @@ export fn Sentry(AtlasVModeStruct: u32) linksection(".text.saturn.entry") callco
     );
 }
 
-export fn Smain() void {
+export fn Sinit() u8 {
     @call(
         .always_inline,
         &cpu.gdt.GDT.load,
@@ -117,6 +126,61 @@ export fn Smain() void {
         }
     );
 
+    @call(
+        .always_inline, 
+        &cpu.apic.lapic.enableLAPIC,
+        .{}
+    );
+
+    // Usamos primeiro o assert para entrar no reset junto do LevelTriggered. Depois usamos o Deassert para
+    // o core sair do reset e ficar pronto para receber um SIPI
+
+    // NOTE: Imagine sendo um botão, quando apertamos(assert), o processador entra em reset. Quando você
+    //       solta, o processador sai do reset, como eles são cores secundários, eles não executar o código de cara
+    //       como o BSP que executa a BIOS logo de cara, ele apenas fica esperando um SIPI. O Level só é relevante no comando
+    //      .Init, todos os outros não usa esse bit. Segundo a intel usar o TriggerMode como Edge, o bit Level é completamente
+    //       ignorado, e o comando simplesmente não vai funcionar
+    @call(
+        .always_inline, 
+        &cpu.apic.lapic.sendIPI,
+        .{
+            cpu.apic.lapic.ICRLow {
+                .IDTEntry = 0,
+                .DeliveryMode = .Init,
+                .DestMode = .Physical,
+                .Level = .Assert,
+                .TriggerMode = .LevelTriggered,
+                .DestinationShorthand = .ALLExceptCurrent,
+            },
+
+            cpu.apic.lapic.ICRHigh {
+                .LAPICid = 1,
+            }
+        }
+    );
+
+    @call(
+        .always_inline,
+        &cpu.apic.lapic.sendIPI,
+        .{
+            cpu.apic.lapic.ICRLow {
+                .IDTEntry = 0,
+                .DeliveryMode = .Init,
+                .DestMode = .Physical,
+                .Level = .Deassert,
+                .TriggerMode = .LevelTriggered,
+                .DestinationShorthand = .ALLExceptCurrent,
+            },
+
+            cpu.apic.lapic.ICRHigh {
+                .LAPICid = 1,
+            }
+        }
+    );
+    return 0;
+}
+
+export fn Smain() void {
     _ = @call(.never_inline, devices.video.videoDevice.deviceDriver.IOctrl.send, .{
             drivers.DriverCommand {
             .command = @as(u8, @intFromEnum(video.VideoCommand.@"clear")),
