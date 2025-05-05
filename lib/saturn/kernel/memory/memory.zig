@@ -1,6 +1,6 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: devices.zig  │
+// │  (c) 2025 Linuxperoxo  •  FILE: memory.zig   │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const video: type = @import("video/video.zig");
+pub const kmem: type = @import("kmem.zig");
