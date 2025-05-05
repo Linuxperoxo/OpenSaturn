@@ -1,8 +1,7 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: video.zig    │
+// │  (c) 2025 Linuxperoxo  •  FILE: io.zig       │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const vga: type = @import("vga.zig");
-pub const vesa: type = @import("vesa.zig");
-
+pub const ports: type = @import("ports.zig");
+pub const pci: type = @import("pci.zig");

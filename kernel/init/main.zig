@@ -6,15 +6,25 @@
 pub const drivers: type = @import("saturn/drivers");
 pub const cpu: type = @import("saturn/cpu");
 pub const libsat: type = @import("saturn/lib");
-pub const devices: type = @import("saturn/devices");
+
+pub const apic: type = cpu.apic;
+pub const gdt: type = cpu.gdt;
+pub const msr: type = cpu.msr;
+
+pub const ports: type = libsat.kernel.io.ports;
+pub const pci: type = libsat.kernel.io.pci;
+
+pub const devices: type = libsat.kernel.devices;
+pub const module: type = libsat.kernel.module;
+pub const memory: type = libsat.kernel.memory;
 
 pub const video: type = drivers.video;
 
 const GDT: cpu.gdt.GDT = cpu.gdt.GDT {
-    .Entries = @constCast(&[_]cpu.gdt.GDTEntry {
+    .Entries = @constCast(&[_]gdt.GDTEntry {
         @call(
             .compile_time, 
-            &cpu.gdt.GDT.newEntry,
+            &gdt.GDT.newEntry,
             .{
                 0x00,
                 0x00,
@@ -25,7 +35,7 @@ const GDT: cpu.gdt.GDT = cpu.gdt.GDT {
 
         @call(
             .compile_time, 
-            &cpu.gdt.GDT.newEntry,
+            &gdt.GDT.newEntry,
             .{
                 0x00,
                 0xFFFFF,
@@ -33,10 +43,10 @@ const GDT: cpu.gdt.GDT = cpu.gdt.GDT {
                 0x9A,
             }
         ),
-        
+
         @call(
             .compile_time, 
-            &cpu.gdt.GDT.newEntry,
+            &gdt.GDT.newEntry,
             .{
                 0x00,
                 0xFFFFF,
@@ -56,7 +66,9 @@ const GDT: cpu.gdt.GDT = cpu.gdt.GDT {
 //
 // export serve para deixar o símbolo vísivel no assembly, ou seja, poderiamos usar o asm volatile(\\call Sentry);
 // em qualquer arquivo, já que o símbolo está vísivel em todo o assembly.
-export fn Sentry(AtlasVModeStruct: u32) linksection(".text.entry") callconv(.Naked) noreturn { 
+export fn Sentry(
+    AtlasVModeStruct: u32
+) linksection(".text.entry") callconv(.Naked) noreturn { 
     _ = AtlasVModeStruct;
     // Este trecho de assembly habilita a FPU e o conjunto de instruções SSE:
     //
@@ -84,32 +96,21 @@ export fn Sentry(AtlasVModeStruct: u32) linksection(".text.entry") callconv(.Nak
     //   e OSXMMEXCPT (bit 10) do CR4 para habilitar SSE e exceções SSE.OTE:
 
     // NOTE: Configurar o SSE/FPU é importante aqui já que o compilador zig pode
-    //       usar essas instruções mesmo em um ambiente bare-metal
+    //  usar essas instruções mesmo em um ambiente bare-metal
 
     asm volatile(
         \\ cli
         \\ movl $0xF00000, %esp
-
-        \\ movl %cr0,     %eax
-        \\ andl $0xFFFB,  %eax
-        \\ orl  $0x02,    %eax
-        \\ movl %eax,     %cr0
-        \\ movl %cr4,     %eax
-        \\ orl  $1 << 9,  %eax
-        \\ orl  $1 << 10, %eax
-        \\ movl %eax, %cr4
-
+        \\ movl %cr0,      %eax
+        \\ andl $0xFFFB,   %eax
+        \\ orl  $0x02,     %eax
+        \\ movl %eax,      %cr0
+        \\ movl %cr4,      %eax
+        \\ orl  $1 << 9,   %eax
+        \\ orl  $1 << 10,  %eax
+        \\ movl %eax,      %cr4
         \\ call Sinit
-        \\ testl %eax, %eax
-        \\ jnz 1f
-        \\ jmp 2f
-        \\
-        \\ 1:
-        \\  # Fazer manipulação de erro caso problema na inicialização
-        \\
-        \\ 2:
-        \\  call Smain
-        \\  jmp  .
+        \\ call Smain
 
         :
         :
@@ -117,18 +118,17 @@ export fn Sentry(AtlasVModeStruct: u32) linksection(".text.entry") callconv(.Nak
     );
 }
 
-export fn Sinit() u8 {
+export fn Sinit() void {
     @call(
         .always_inline,
-        &cpu.gdt.GDT.load,
+        &gdt.GDT.load,
         .{
             @constCast(&GDT),
         }
     );
-
     @call(
         .always_inline, 
-        &cpu.apic.lapic.enableLAPIC,
+        &apic.lapic.enableLAPIC,
         .{}
     );
 
@@ -141,10 +141,10 @@ export fn Sinit() u8 {
     //      .Init, todos os outros não usa esse bit. Segundo a intel usar o TriggerMode como Edge, o bit Level é completamente
     //       ignorado, e o comando simplesmente não vai funcionar
     @call(
-        .always_inline, 
-        &cpu.apic.lapic.sendIPI,
+        .always_inline,
+        &apic.lapic.sendIPI,
         .{
-            cpu.apic.lapic.ICRLow {
+            apic.lapic.ICRLow {
                 .IDTEntry = 0,
                 .DeliveryMode = .Init,
                 .DestMode = .Physical,
@@ -153,17 +153,16 @@ export fn Sinit() u8 {
                 .DestinationShorthand = .ALLExceptCurrent,
             },
 
-            cpu.apic.lapic.ICRHigh {
+            apic.lapic.ICRHigh {
                 .LAPICid = 1,
             }
         }
     );
-
     @call(
         .always_inline,
-        &cpu.apic.lapic.sendIPI,
+        &apic.lapic.sendIPI,
         .{
-            cpu.apic.lapic.ICRLow {
+            apic.lapic.ICRLow {
                 .IDTEntry = 0,
                 .DeliveryMode = .Init,
                 .DestMode = .Physical,
@@ -172,25 +171,17 @@ export fn Sinit() u8 {
                 .DestinationShorthand = .ALLExceptCurrent,
             },
 
-            cpu.apic.lapic.ICRHigh {
+            apic.lapic.ICRHigh {
                 .LAPICid = 1,
             }
         }
     );
-    return 0;
 }
 
 export fn Smain() void {
-    _ = @call(.never_inline, devices.video.videoDevice.deviceDriver.IOctrl.send, .{
-            drivers.DriverCommand {
-            .command = @as(u8, @intFromEnum(video.VideoCommand.@"clear")),
-        }
-    });
-
-    _ = @call(.never_inline, devices.video.videoDevice.deviceDriver.IOctrl.send, .{
-        drivers.DriverCommand { 
-            .command = @as(u8, @intFromEnum(video.VideoCommand.@"write")),
-            .args = @constCast(&[_:0]u8{'H', 'e', 'l', 'l', 'o',',', ' ', 'W', 'o', 'r', 'l', 'd', '!'}),
-        }
-    });
+    @call(
+        .always_inline, 
+        &Sinit, 
+        .{}
+    );
 }

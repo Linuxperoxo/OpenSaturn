@@ -3,5 +3,4 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const io: type = @import("io/io.zig");
-pub const kernel: type = @import("kernel/devices.zig");
+pub const kernel: type = @import("kernel/kernel.zig");

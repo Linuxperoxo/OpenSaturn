@@ -5,7 +5,8 @@
 
 const libsat: type = @import("root").libsat;
 const drivers: type = @import("root").drivers;
-const video: type = @import("root").video;
+const video: type = @import("root").drivers.video;
+const fs: type = @import("root").fs;
 
 pub const ForegroundColor: type = enum(u4) {
     Black,
@@ -247,11 +248,32 @@ fn receive(Args: drivers.DriverCommand) drivers.DriverResponse {
     };
 }
 
-pub fn loadDriver() drivers.DriverInterface {
-    return drivers.DriverInterface {
-        .IOctrl = .{
-            .send = &send,
-            .receive = &receive,
+pub fn init() u32 {
+    @call(.never_inline,
+        &fs.mkdev,
+        .{
+            "/dev/fb0",
+            fs.devfs.DeviceFilesystem {
+                .type = .char,
+                .device = .{ 
+                    .driver = &drivers.DriverInterface {
+                        .IOctrl = .{
+                            .receive = &receive,
+                            .send = &send,
+                        }
+                    }
+                },
+            }
         }
-    };
+    );
+}
+
+pub fn exit() u32 {
+    @call(
+        .never_inline, 
+        &fs.rmdev, 
+        .{
+            "/dev/fb0"
+        }
+    );
 }

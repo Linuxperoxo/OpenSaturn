@@ -1,8 +1,10 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: video.zig    │
+// │  (c) 2025 Linuxperoxo  •  FILE: kernel.zig   │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const vga: type = @import("vga.zig");
-pub const vesa: type = @import("vesa.zig");
+pub const module: type = @import("module.zig");
+pub const devices: type = @import("devices.zig");
+pub const io: type = @import("io/io.zig");
+pub const memory: type = @import("memory/memory.zig");
 
