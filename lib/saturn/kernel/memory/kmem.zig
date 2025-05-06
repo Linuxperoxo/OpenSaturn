@@ -24,16 +24,6 @@ var pageDirectories = init: {
     break :init directories;
 };
 
-// TODO: Otimização de busca por páginas livres (no momento não 
-//       está sendo utilizada)
-var pageFreeIndex: struct {
-    directory:  u16,
-    page: u16,
-} = .{
-    .directory = 0,
-    .page = 0,
-};
-
 const pageAllocFlags: type = enum(u1) {
     free,
     busy,
@@ -44,20 +34,14 @@ const pageTypeFlags: type = enum(u1) {
     slave,
 };
 
-const pageDirectory: type = struct {
-    pages: [PagePerPageDir]pageFlags = undefined,
+const pageDirectory: type = packed struct {
+    pages: [PagePerPageDir]pageStruct, 
+    free: u5, // Aponta para a página livre mais baixa do diretório
 };
 
-// Flags:
-//
-// Bit 0: Diz se a página foi alocada 
-// Bit 1: Diz se é uma página master ou slave. Por enquanto não está sendo usado,
-//        mas vai ser importante para alocar e desalocar paginas em sequência
-// Bit 2: Reservado
-// Bit 3: Reservado
-const pageFlags: type = packed struct {
-    alloc: pageAllocFlags,
-    type: pageTypeFlags,
+const pageStruct: type = packed struct {
+    alloc: pageAllocFlags, // Diz se a página está alocada 1 bit
+    type: pageTypeFlags, // Diz o tipo da página, master ou slave 1 bit
 };
 
 const allocatorError: type = error {
@@ -104,7 +88,10 @@ pub fn kfree(
     const pageIndex: u16 = @intCast((@intFromPtr(P) & 0x0000F00) >> 8);
 
     pageDirectories[dirIndex].pages[pageIndex].alloc = .free;
-    
+    pageDirectories[dirIndex].free = if(pageDirectories[dirIndex].free > pageIndex) pageIndex 
+        else
+            pageDirectories[dirIndex].free;
+
     var directory: u16 = dirIndex;
     var page: u16 = pageIndex + 1;
     while(directory < comptime TotalOfPageDir) : 
