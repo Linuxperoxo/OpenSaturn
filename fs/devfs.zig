@@ -6,6 +6,7 @@
 const fs: type = @import("root").fs;
 
 const devfs: fs.filesystem = .{
+    .name = "devfs",
     .flags = .{
         .creatable = 1,
         .purgeable = 1,

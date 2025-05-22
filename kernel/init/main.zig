@@ -3,12 +3,12 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-//pub const drivers: type = @import("saturn/drivers");
+pub const drivers: type = @import("saturn/drivers");
 pub const cpu: type = @import("saturn/cpu");
 pub const libsat: type = @import("saturn/lib");
-//pub const fs: type = @import("saturn/fs");
+pub const fs: type = @import("saturn/fs");
 
-//pub const video: type = drivers.video;
+pub const video: type = drivers.video;
 
 pub const apic: type = cpu.apic;
 pub const gdt: type = cpu.gdt;
@@ -20,9 +20,9 @@ pub const devices: type = libsat.kernel.devices;
 pub const module: type = libsat.kernel.module;
 pub const memory: type = libsat.kernel.memory;
 
-//pub const rootfs: type = fs.rootfs;
-//pub const devfs: type = fs.devfs;
-//pub const vfs: type = fs.vfs;
+pub const rootfs: type = fs.rootfs;
+pub const devfs: type = fs.devfs;
+pub const vfs: type = fs.vfs;
 
 const GDT: cpu.gdt.GDT = cpu.gdt.GDT {
     .Entries = @constCast(&[_]gdt.GDTEntry {

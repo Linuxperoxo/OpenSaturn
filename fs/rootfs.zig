@@ -112,10 +112,70 @@ const vir: *vfs.vfsInternal = &vfs.vfsInternal {
     .parent = vfs.rootDirectory,
 };
 
+fn TheseFileNamesIsEqual(
+    n0: []const u8,
+    n1: []const u8
+) bool {
+    if(n0.len != n1.len) return false;
+    var i: usize = 0;
+    while(i < n0.len) :
+        (i += 1) {
+        if(n0[i] != n1[i]) return false;
+    }
+    return true;
+}
 
-
-fn resolvePath(path: []const u8) error{NonFound}!*vfs.vfsInternal {
+fn findBrotherRecursion(
+    name: []const u8, 
+    brother: ?*vfs.vfsInternal
+) error{NonFound}!*vfs.vfsInternal {
+    if(brother) |_| {
+        var current: ?*vfs.vfsInternal = brother;
+        while(current) |_| : 
+            (current = current.?.brother) {
+            if(@call(
+                .always_inline, 
+                &TheseFileNamesIsEqual,
+                .{
+                    current.?.name,
+                    name
+                })) {
+                return current.?;
+            }
+        }
+    }
     return error.NonFound;
+}
+
+fn resolvePath(
+    path: []const u8
+) error{NonFound}!*vfs.vfsInternal {
+    var current: ?*vfs.vfsInternal = usr;
+    var i: u32 = 0;
+    while(i < path.len) : (i += 1) {
+        if(path[i] == '/') {
+            i += 1;
+            if(i >= path.len) {
+                return error.NonFound;
+            }
+        }
+        const savedI: u32 = i;
+        while(i < path.len and path[i] != '/') : (i += 1) {}
+        current = @call(
+            .always_inline,
+            &findBrotherRecursion,
+            .{
+                path[savedI..i],
+                current
+            }
+        ) catch {
+            return error.NonFound;
+        };
+        if(i < path.len - 1 and path[i] == '/') {
+            current = current.?.child;
+        }
+    }
+    return current.?;
 }
 
 fn create(
@@ -125,7 +185,9 @@ fn create(
     
 }
 
-fn expurg(file: []const u8) u8 {
+fn expurg(
+    file: []const u8
+) u8 {
 
 }
 
@@ -148,5 +210,3 @@ fn exit() u32 {
         }
     );
 }
-
-

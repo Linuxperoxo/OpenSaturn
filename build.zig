@@ -31,22 +31,22 @@ pub fn build(b: *std.Build) void {
         .stack_protector = false,
         .target = TargetConf,
     });
-    //const DriversMod = b.addModule("saturn/drivers", .{
-    //    .root_source_file = b.path("drivers/drivers.zig"),
-    //    .optimize = .ReleaseSmall,
-    //    .stack_protector = false,
-    //    .target = TargetConf,
-    //});
-    //const SaturnFsMod = b.addModule("saturn/fs", .{
-    //    .root_source_file = b.path("fs/fs.zig"),
-    //    .optimize = .ReleaseSmall,
-    //    .stack_protector = false,
-    //    .target = TargetConf,
-    //});
+    const DriversMod = b.addModule("saturn/drivers", .{
+        .root_source_file = b.path("drivers/drivers.zig"),
+        .optimize = .ReleaseSmall,
+        .stack_protector = false,
+        .target = TargetConf,
+    });
+    const SaturnFsMod = b.addModule("saturn/fs", .{
+        .root_source_file = b.path("fs/fs.zig"),
+        .optimize = .ReleaseSmall,
+        .stack_protector = false,
+        .target = TargetConf,
+    });
     
-    //Finalbinary.root_module.addImport("saturn/fs", SaturnFsMod);
+    Finalbinary.root_module.addImport("saturn/fs", SaturnFsMod);
     Finalbinary.root_module.addImport("saturn/cpu", SaturnCpuMod);
-    //Finalbinary.root_module.addImport("saturn/drivers", DriversMod);
+    Finalbinary.root_module.addImport("saturn/drivers", DriversMod);
     Finalbinary.root_module.addImport("saturn/lib", SaturnLibMod);
     Finalbinary.addAssemblyFile(b.path("entry/entry.s"));
     Finalbinary.setLinkerScript(b.path("linker.ld"));

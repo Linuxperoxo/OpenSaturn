@@ -52,7 +52,12 @@ pub fn stallmod() void {
 }
 
 pub fn inmod(module: ModuleInterface) void {
-    var currentModule: *ModuleQueue = moduleRoot;
+    var currentModule: *ModuleQueue = block0: {
+        currentModule = moduleRoot;
+        while(currentModule.next) |_| : (currentModule = currentModule.next) {}
+        break :block0;
+    };
+    
     while(currentModule.next) |_| : (currentModule = currentModule.next) {
 
     }
