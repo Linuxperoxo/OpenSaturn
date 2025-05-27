@@ -10,10 +10,11 @@ pub const rootfs: type = @import("rootfs.zig");
 const module: type = @import("root").module;
 
 pub const filesystemOP: type = struct {
-    create: ?*fn([]const u8, u32) u8,
-    expurg: ?*fn([]const u8) u8,
-    mount: ?*fn([]const u8) u8,
-    umount: ?*fn([]const u8) u8,
+    iterator: ?*fn(*const vfs.vfsEntry) u8,
+    create: ?*fn(*const vfs.vfsEntry, []const u8, u8, u8,) u8,
+    expurg: ?*fn(*const vfs.vfsEntry, []const u8) u8,
+    mount: ?*fn(u8) u8,
+    umount: ?*fn() u8,
 };
 
 // Flags que seram usadas pelo vfs para controlar

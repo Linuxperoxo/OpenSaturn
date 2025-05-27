@@ -11,7 +11,7 @@ const rootfs: fs.filesystem = .{
     .flags = .{
         .creatable = 1,
         .purgeable = 1,
-        .mountable = 0,
+        .mountable = 1,
     },
     .module = .{
         .name = "rootfs",
@@ -30,86 +30,103 @@ const rootfs: fs.filesystem = .{
     },
 };
 
-// NOTE: A estrutura do saturn e bem parecida com o unix em geral
-//       uma diferença de arquitetura escolhida por mim e que o root(/)
-//       na verdade nao e a montagem do disco realmente, e sim toda a estrutura
-//       do kernel, o / do linux vai fica em /usr e todo o root fica carregado na 
-//       ram, somente o /usr fica em disco, mas tambem pretendo fazer o /usr ser um
-//       sistema de arquivos carregado em ram com programas basico do sistema carregados
+// Hierarquia de arquivos de rootfs
+// /
+// ├── usr
+// ├── dev
+// ├── sys
+// │   └── proc
+// └── vrt
 
-// NOTE: root do sistema
-const usr: *vfs.vfsInternal = &vfs.vfsInternal {
+// A estrutura do saturn e bem parecida com o unix em geral
+// uma diferença de arquitetura escolhida por mim e que o root(/)
+// na verdade nao e a montagem do disco realmente, e sim toda a estrutura
+// do kernel, o / do linux vai fica em /usr e todo o root fica carregado na 
+// ram, somente o /usr fica em disco, mas tambem pretendo fazer o /usr ser um
+// sistema de arquivos carregado em ram com programas basico do sistema carregados
+
+const usr: *vfs.vfsEntry = &vfs.vfsEntry {
     .name = "usr",
-    .type = .directory,
-    .uid = @intCast(vfs.rootID),
-    .gid = @intCast(vfs.rootGID),
-    .mode = @intCast(vfs.rootMode),
+    .inode = .{
+        .type = .directory,
+        .uid = @intCast(vfs.rootID),
+        .gid = @intCast(vfs.rootGID),
+        .mode = @intCast(vfs.rootMode),
+        .hlink = 0,
+    },
     .link = null,
     .mounted = null,
     .child = null,
-    .older_brother = usr,
-    .younger_brother = dev,
+    .brother = dev,
     .parent = vfs.rootDirectory,
 };
 
-// NOTE: dispositivos detectados
-const dev: *vfs.vfsInternal = &vfs.vfsInternal {
+// Dispositivos detectados e com drivers linkados
+const dev: *vfs.vfsEntry = &vfs.vfsEntry {
     .name = "dev",
-    .type = .directory,
-    .uid = @intCast(vfs.rootID),
-    .gid = @intCast(vfs.rootGID),
-    .mode = @intCast(vfs.rootMode),
+    .inode = .{
+        .type = .directory,
+        .uid = @intCast(vfs.rootID),
+        .gid = @intCast(vfs.rootGID),
+        .mode = @intCast(vfs.rootMode),
+        .hlink = 0,
+    },
     .link = null,
     .mounted = null,
     .child = null,
-    .older_brother = usr,
-    .younger_brother = proc,
+    .brother = proc,
     .parent = vfs.rootDirectory,
 };
 
-// NOTE: processos rodando
-const proc: *vfs.vfsInternal = &vfs.vfsInternal {
-    .name = "proc",
-    .type = .directory,
-    .uid = @intCast(vfs.rootID),
-    .gid = @intCast(vfs.rootGID),
-    .mode = @intCast(vfs.rootMode),
-    .link = null,
-    .mounted = null,
-    .child = null,
-    .older_brother = dev,
-    .younger_brother = sys,
-    .parent = vfs.rootDirectory,
-};
-
-// NOTE: informaçoes do sistema
-const sys: *vfs.vfsInternal = &vfs.vfsInternal {
+// Diretorio para montagem dos recursos do kernel
+const sys: *vfs.vfsEntry = &vfs.vfsEntry {
     .name = "sys",
-    .type = .directory,
-    .uid = @intCast(vfs.rootID),
-    .gid = @intCast(vfs.rootGID),
-    .mode = @intCast(vfs.rootMode),
+    .inode = .{
+        .type = .directory,
+        .uid = @intCast(vfs.rootID),
+        .gid = @intCast(vfs.rootGID),
+        .mode = @intCast(vfs.rootMode),
+        .hlink = 0,
+    },
     .link = null,
     .mounted = null,
-    .child = null,
-    .older_brother = proc,
-    .younger_brother = vir,
+    .child = proc,
+    .brother = vrt,
     .parent = vfs.rootDirectory,
 };
 
-// NOTE: um sistema de arquivos carregado em ram, em outras palavras, /tmp do linux
-const vir: *vfs.vfsInternal = &vfs.vfsInternal {
-    .name = "vir",
-    .type = .directory,
-    .uid = @intCast(vfs.rootID),
-    .gid = @intCast(vfs.rootGID),
-    .mode = @intCast(vfs.rootMode),
+// Processos rodando
+const proc: *vfs.vfsEntry = &vfs.vfsEntry {
+    .name = "proc",
+    .inode = .{
+        .type = .directory,
+        .uid = @intCast(vfs.rootID),
+        .gid = @intCast(vfs.rootGID),
+        .mode = @intCast(vfs.rootMode),
+        .hlink = 0,
+    },
     .link = null,
     .mounted = null,
     .child = null,
-    .older_brother = sys,
-    .younger_brother = null,
+    .brother = sys,
     .parent = vfs.rootDirectory,
+};
+
+// Um diretorio de arquivos carregado em ram, em outras palavras, /tmp do linux
+const vrt: *vfs.vfsEntry = &vfs.vfsEntry {
+    .name = "virt",
+    .inode = .{
+        .type = .directory,
+        .uid = @intCast(vfs.rootID),
+        .gid = @intCast(vfs.rootGID),
+        .mode = @intCast(vfs.rootMode),
+        .hlink = 0,
+    },
+    .link = null,
+    .mounted = null,
+    .child = null,
+    .brother = null,
+    .parent = vfs.rootEntry,
 };
 
 fn TheseFileNamesIsEqual(
@@ -127,10 +144,10 @@ fn TheseFileNamesIsEqual(
 
 fn findBrotherRecursion(
     name: []const u8, 
-    brother: ?*vfs.vfsInternal
-) error{NonFound}!*vfs.vfsInternal {
+    brother: ?*vfs.vfsEntry
+) error{NonFound}!*vfs.vfsEntry {
     if(brother) |_| {
-        var current: ?*vfs.vfsInternal = brother;
+        var current: ?*vfs.vfsEntry = brother;
         while(current) |_| : 
             (current = current.?.brother) {
             if(@call(
@@ -149,8 +166,8 @@ fn findBrotherRecursion(
 
 fn resolvePath(
     path: []const u8
-) error{NonFound}!*vfs.vfsInternal {
-    var current: ?*vfs.vfsInternal = usr;
+) error{NonFound}!*vfs.vfsEntry {
+    var current: ?*vfs.vfsEntry = usr;
     var i: u32 = 0;
     while(i < path.len) : (i += 1) {
         if(path[i] == '/') {
@@ -179,14 +196,17 @@ fn resolvePath(
 }
 
 fn create(
-    file: []const u8,
-    flags: u32
+    dentry: *const vfs.vfsEntry,
+    name: []const u8,
+    uid: u8,
+    gid: u8,
+    mode: u8,
 ) u8 {
     
 }
 
 fn expurg(
-    file: []const u8
+    entry: *const vfs.vfsEntry,
 ) u8 {
 
 }

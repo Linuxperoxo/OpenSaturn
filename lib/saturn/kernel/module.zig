@@ -10,6 +10,7 @@ const fs: type = @import("root").fs;
 pub const ModuleType: type = enum(u1) {
     driver,
     filesystem,
+    syscall,
 };
 
 pub const ModuleStatus: type = enum(u2) {
