@@ -5,11 +5,6 @@
 
 const module: type = @import("root").module;
 
-pub const filesystemFileTypes: type = enum(u1) {
-    Directory,
-    File,
-};
-
 pub const filesystemOP: type = struct {
     create: *fn([]const u8, u32) u8,
     expurg: *fn([]const u8) u8,
@@ -28,6 +23,18 @@ pub const filesystem: type = struct {
     flags: filesystemFlags,
     module: module.ModuleInterface,
     operation: filesystemOP,
+};
+
+pub const filesystemSuperBlock: type = struct {
+    magic: u32,              // Identificador unico
+    version: u32,            // Versão do FS
+    block_size: u32,         // Tamanho de bloco
+    total_blocks: u32,       // Total de blocos no FS
+    total_inodes: u32,       // Total de inodes
+    inode_table_start: u32,  // Bloco inicial da tabela de inodes
+    data_block_start: u32,   // Bloco inicial de dados
+    free_inode_bitmap: u32,  // Bloco com bitmap de inodes livres
+    free_block_bitmap: u32,  // Bloco com bitmap de blocos livres
 };
 
 pub const filesystemError: type = error {
