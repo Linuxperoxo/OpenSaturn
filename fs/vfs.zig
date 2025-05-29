@@ -67,7 +67,7 @@ pub const Superblock: type = struct {
     total_inodes: u32, // Numero total de inodes disponiveis
     inode_table_start: u32, // Offset(em blocos) de onde começa a tabela de inodes
     data_block_start: u32, // Offset no disco onde começa a area de dados dos arquivos
-    root_inode: *Inode, // Ponteiro para o inode raiz do sistema de arquivos
+    root_inode: u32, // Ponteiro para o inode raiz do sistema de arquivos
     private_data: ?*anyopaque, // Dados internos do FS (cast dinamico)
 };
 
