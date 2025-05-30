@@ -3,17 +3,15 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const fs: type = @import("root").fs;
-const vfs: type = @import("root").fs.vfs;
+const fs: type = @import("root").interfaces.fs;
+const vfs: type = @import("root").core.vfs;
 
 const rootfs: fs.filesystem = .{
     .name = "rootfs",
     .flags = .{
-        .creatable = 1,
-        .purgeable = 1,
-        .mountable = 1,
+        .write = 0,
     },
-    .module = .{
+    .mod = .{
         .name = "rootfs",
         .desc = "Core Kernel Root Filesystem",
         .author = "Linuxperoxo",
@@ -22,11 +20,11 @@ const rootfs: fs.filesystem = .{
         .init = &init,
         .exit = &exit,
     },
-    .operation = .{
-        .create = &create,
-        .expurg = &expurg,
-        .mount = null,
-        .umount = null,
+    .ops = .{
+        .mount = .{ 
+            .nodev = &rootfs_mount,
+        },
+        .umount = &rootfs_umount,
     },
 };
 
@@ -45,105 +43,115 @@ const rootfs: fs.filesystem = .{
 // ram, somente o /usr fica em disco, mas tambem pretendo fazer o /usr ser um
 // sistema de arquivos carregado em ram com programas basico do sistema carregados
 
-const usr: *vfs.vfsEntry = &vfs.vfsEntry {
-    .name = "usr",
-    .inode = .{
-        .type = .directory,
-        .uid = @intCast(vfs.rootID),
-        .gid = @intCast(vfs.rootGID),
-        .mode = @intCast(vfs.rootMode),
-        .hlink = 0,
-    },
-    .link = null,
-    .mounted = null,
-    .child = null,
-    .brother = dev,
-    .parent = vfs.rootDirectory,
+const rootfs_branch: type = struct {
+    dentry: ?*vfs.Dentry,
+    next: ?*rootfs_branch,
 };
 
-// Dispositivos detectados e com drivers linkados
-const dev: *vfs.vfsEntry = &vfs.vfsEntry {
-    .name = "dev",
-    .inode = .{
-        .type = .directory,
-        .uid = @intCast(vfs.rootID),
-        .gid = @intCast(vfs.rootGID),
-        .mode = @intCast(vfs.rootMode),
-        .hlink = 0,
-    },
-    .link = null,
-    .mounted = null,
-    .child = null,
-    .brother = proc,
-    .parent = vfs.rootDirectory,
-};
-
-// Diretorio para montagem dos recursos do kernel
-const sys: *vfs.vfsEntry = &vfs.vfsEntry {
-    .name = "sys",
-    .inode = .{
-        .type = .directory,
-        .uid = @intCast(vfs.rootID),
-        .gid = @intCast(vfs.rootGID),
-        .mode = @intCast(vfs.rootMode),
-        .hlink = 0,
-    },
-    .link = null,
-    .mounted = null,
-    .child = proc,
-    .brother = vrt,
-    .parent = vfs.rootDirectory,
-};
-
-// Processos rodando
-const proc: *vfs.vfsEntry = &vfs.vfsEntry {
-    .name = "proc",
-    .inode = .{
-        .type = .directory,
-        .uid = @intCast(vfs.rootID),
-        .gid = @intCast(vfs.rootGID),
-        .mode = @intCast(vfs.rootMode),
-        .hlink = 0,
-    },
-    .link = null,
-    .mounted = null,
-    .child = null,
-    .brother = sys,
-    .parent = vfs.rootDirectory,
-};
-
-// Um diretorio de arquivos carregado em ram, em outras palavras, /tmp do linux
-const vrt: *vfs.vfsEntry = &vfs.vfsEntry {
-    .name = "virt",
-    .inode = .{
-        .type = .directory,
-        .uid = @intCast(vfs.rootID),
-        .gid = @intCast(vfs.rootGID),
-        .mode = @intCast(vfs.rootMode),
-        .hlink = 0,
-    },
-    .link = null,
-    .mounted = null,
-    .child = null,
-    .brother = null,
-    .parent = vfs.rootEntry,
-};
-
-fn create(
-    dentry: *const vfs.vfsEntry,
+fn makeDefaultsDirectories(
     name: []const u8,
-    uid: u8,
-    gid: u8,
-    mode: u8,
-) u8 {
+    ino: u32,
+    next: ?*rootfs_branch
+) *rootfs_branch {
+    return &rootfs_branch {
+        .dentry = &vfs.Dentry {
+            .name = name,
+            .inode = &vfs.Inode {
+                .ino = ino,
+                .type = .directory,
+                .uid = 0,
+                .gid = 0,
+                .mode = 0b111101101,
+                .nlinks = 0,
+                .data_block = 0,
+                .ops = &vfs.InodeOP {
+                    .lookup = &rootfs_lookup,
+                    .mkdir = &rootfs_mkdir,
+                    .create = &rootfs_create,
+                    .unlink = &rootfs_unlink,
+                },
+            },
+        },
+        .next = next,
+    };
+}
+
+const @"usr": *rootfs_branch = @call(.compile_time, &makeDefaultsDirectories, .{"usr", 1, @"sys"});
+const @"sys": *rootfs_branch = @call(.compile_time, &makeDefaultsDirectories, .{"sys", 2, @"dev"});
+const @"dev": *rootfs_branch = @call(.compile_time, &makeDefaultsDirectories, .{"dev", 2, @"volatile"});
+const @"volatile": *rootfs_branch = @call(.compile_time, &makeDefaultsDirectories, .{"volatile", 2, null});
+
+const rootfs_superblock: *vfs.Superblock = &vfs.Superblock {
+    .magic = 0x703,
+    .block_size = 0,
+    .total_blocks = 0,
+    .total_inodes = 0,
+    .inode_table_start = 0,
+    .data_block_start = 0,
+    .root_inode = &vfs.Inode {
+        .ino = 0,
+        .type = .directory,
+        .uid = 0,
+        .gid = 0,
+        .mode = 0b111101101,
+        .nlinks = 0,
+        .data_block = 0,
+        .ops = &vfs.InodeOP {
+            .lookup = &rootfs_lookup,
+            .mkdir = &rootfs_mkdir,
+            .create = &rootfs_create,
+            .unlink = &rootfs_unlink,
+        },
+    },
+    .private_data = @"usr",
+};
+
+fn rootfs_mount() rootfsErr!*vfs.Superblock {
+    return rootfs_superblock;
+}
+
+fn rootfs_umount() void {
+    // Como e um sistema de arquivos em ram, devemos
+    // liberar qualquer memoria aqui
+}
+
+fn rootfs_lookup(
+    parent: *vfs.Dentry,
+    name: []const u8
+) rootfsErr!*vfs.Dentry {
     
 }
 
-fn expurg(
-    entry: *const vfs.vfsEntry,
-) u8 {
+fn rootfs_mkdir(
+    parent: *vfs.Dentry,
+    name: []const u8,
+    uid: u16,
+    gid: u32,
+    mode: u16,
+) rootfsErr!*vfs.Dentry {
 
 }
+
+fn rootfs_create(
+    parent: *vfs.Dentry,
+    name: []const u8,
+    uid: u16,
+    gid: u32,
+    mode: u16,
+) rootfsErr!*vfs.Dentry {
+    
+}
+
+fn rootfs_unlink(
+    parent: *vfs.Dentry,
+    name: []const u8,
+) rootfsErr!void {
+    
+}
+
+const rootfsErr: type = error {
+
+};
 
 fn init() u32 {
     @call(

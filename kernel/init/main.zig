@@ -3,26 +3,13 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const drivers: type = @import("saturn/drivers");
 pub const cpu: type = @import("saturn/cpu");
-pub const libsat: type = @import("saturn/lib");
-pub const fs: type = @import("saturn/fs");
+pub const core: type = @import("saturn/lib").core;
+pub const interfaces: type = @import("saturn/lib").interfaces;
+pub const io: type = @import("saturn/lib").io;
 
-pub const video: type = drivers.video;
-
-pub const apic: type = cpu.apic;
-pub const gdt: type = cpu.gdt;
-pub const msr: type = cpu.msr;
-
-pub const ports: type = libsat.kernel.io.ports;
-pub const pci: type = libsat.kernel.io.pci;
-pub const devices: type = libsat.kernel.devices;
-pub const module: type = libsat.kernel.module;
-pub const memory: type = libsat.kernel.memory;
-
-pub const rootfs: type = fs.rootfs;
-pub const devfs: type = fs.devfs;
-pub const vfs: type = fs.vfs;
+const gdt: type = cpu.gdt;
+const apic: type = cpu.apic;
 
 const GDT: cpu.gdt.GDT = cpu.gdt.GDT {
     .Entries = @constCast(&[_]gdt.GDTEntry {
@@ -184,8 +171,8 @@ export fn Sinit() void {
 
 export fn Smain() void {
     @call(
-        .always_inline, 
-        &Sinit, 
+        .always_inline,
+        &Sinit,
         .{}
     );
 }
