@@ -4,3 +4,4 @@
 // └──────────────────────────────────────────────┘
 
 pub const ports: type = @import("ports.zig");
+pub const pci: type = @import("pci.zig");

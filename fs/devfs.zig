@@ -3,16 +3,54 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const drivers: type = @import("root").drivers;
-const module: type = @import("root").module;
-const device: type = @import("root").devices;
+const fs: type = @import("root").fs;
 
-pub const DeviceFileType: type = enum(u1) {
-    char,
-    block,
+const devfs: fs.filesystem = .{
+    .name = "devfs",
+    .flags = .{
+        .creatable = 1,
+        .purgeable = 1,
+        .mountable = 1,
+    },
+    .module = .{
+        .name = "devfs",
+        .desc = "Core Kernel Virtual Filesystem",
+        .author = "Linuxperoxo",
+        .version = "1.0-1",
+        .type = .filesystem,
+        .init = &init,
+        .exit = &exit,
+    },
+    .operation = .{
+        .create = &create,
+        .expurg = &expurg,
+    },
 };
 
-pub const DeviceFilesystem: type = struct {
-    device: device.DeviceInterface,
-    type: DeviceFileType,
-};
+fn create() u8 {
+
+}
+
+fn expurg() u8 {
+
+}
+
+fn init() u32 {
+    @call(
+        .never_inline,
+        &fs.registerFilesystem,
+        .{
+            devfs
+        }
+    );
+}
+
+fn exit() u32 {
+    @call(
+        .never_inline,
+        &fs.unregisterFilesystem,
+        .{
+            devfs.name
+        }
+    );
+}

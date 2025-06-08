@@ -5,51 +5,54 @@
 
 const std: type = @import("std");
 
-pub fn build(b: *std.Build) void {
-    const TargetConf = b.resolveTargetQuery(.{
-        .os_tag = .freestanding,
-        .cpu_arch = .x86,
+fn makemod(b: *std.Build, name: []const u8, root_source_file: []const u8) *std.Build.Module {
+    return b.addModule(name, .{
+        .root_source_file = b.path(root_source_file),
+        .optimize = .ReleaseSmall,
+        .stack_protector = false,
+        .target = b.resolveTargetQuery(.{
+            .os_tag = .freestanding,
+            .cpu_arch = .x86,
+        }),
     });
-    const Finalbinary = b.addExecutable(.{
+}
+
+pub fn build(b: *std.Build) void {
+    // Kernel Supported arch
+    const x86 = makemod(b, "saturn/kernel/arch/x86", "kernel/arch/x86/x86.zig");
+    //const x86_64 = makemod(b, "saturn/kernel/arch/x86_64", "kernel/arch/x86_64/x86_64.zig");
+    //const arm = makemod(b, "saturn/kernel/arch/arm", "kernel/arch/arm/arm.zig");
+
+    // Kernel
+    //const core = makemod(b, "saturn/kernel/core", "kernel/core/core.zig");
+    //const interfaces = makemod(b, "saturn/lib/interfaces", "lib/saturn/interfaces/interfaces.zig");
+    //const io = makemod(b, "saturn/lib/io", "lib/saturn/io/io.zig");
+
+    // Final binary
+    const binary = b.addExecutable(.{
         .name = "sImage",
-        .root_module = b.addModule("main", .{
-            .root_source_file = b.path("kernel/init/main.zig"),
-            .target = TargetConf,
+        .root_module = b.addModule("kernel", .{
+            .root_source_file = b.path("kernel/kernel.zig"),
+            .target = b.resolveTargetQuery(.{
+                .os_tag = .freestanding,
+                .cpu_arch = .x86,
+            }),
             .optimize = .ReleaseSmall,
             .stack_protector = false,
         }),
     });
-    const SaturnCpuMod = b.addModule("saturn/cpu", .{
-        .root_source_file = b.path("kernel/cpu/cpu.zig"),
-        .optimize = .ReleaseSmall,
-        .stack_protector = false,
-        .target = TargetConf,
-    });
-    const SaturnLibMod = b.addModule("saturn/lib", .{
-        .root_source_file = b.path("lib/saturn/libsat.zig"),
-        .optimize = .ReleaseSmall,
-        .stack_protector = false,
-        .target = TargetConf,
-    });
-    const DriversMod = b.addModule("saturn/drivers", .{
-        .root_source_file = b.path("drivers/drivers.zig"),
-        .optimize = .ReleaseSmall,
-        .stack_protector = false,
-        .target = TargetConf,
-    });
-    const SaturnFsMod = b.addModule("saturn/fs", .{
-        .root_source_file = b.path("fs/fs.zig"),
-        .optimize = .ReleaseSmall,
-        .stack_protector = false,
-        .target = TargetConf,
-    });
-    
-    Finalbinary.root_module.addImport("saturn/fs", SaturnFsMod);
-    Finalbinary.root_module.addImport("saturn/cpu", SaturnCpuMod);
-    Finalbinary.root_module.addImport("saturn/drivers", DriversMod);
-    Finalbinary.root_module.addImport("saturn/lib", SaturnLibMod);
-    Finalbinary.addAssemblyFile(b.path("entry/entry.s"));
-    Finalbinary.setLinkerScript(b.path("linker.ld"));
-    b.installArtifact(Finalbinary);
+
+    binary.root_module.addImport("saturn/kernel/arch/x86", x86);
+    //binary.root_module.addImport("saturn/kernel/arch/x86_64", x86_64);
+    //binary.root_module.addImport("saturn/kernel/arch/arm", arm);
+
+    //binary.root_module.addImport("saturn/kernel/core", core);
+    //binary.root_module.addImport("saturn/lib/interfaces", interfaces);
+    //binary.root_module.addImport("saturn/lib/io", io);
+
+    binary.addAssemblyFile(b.path("entry/entry.s"));
+    binary.setLinkerScript(b.path("linker.ld"));
+
+    b.installArtifact(binary);
 }
 
