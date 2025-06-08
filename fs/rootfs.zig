@@ -44,14 +44,23 @@ const rootfs: fs.filesystem = .{
 // sistema de arquivos carregado em ram com programas basico do sistema carregados
 
 const rootfs_branch: type = struct {
-    dentry: ?*vfs.Dentry,
-    next: ?*rootfs_branch,
+    dentry: *vfs.Dentry,
+    brother: ?*rootfs_branch,
+    child: ?*rootfs_branch,
+    parent: ?*rootfs_branch
+};
+
+const rootfsErr: type = error {
+    NonFound,
 };
 
 fn makeDefaultsDirectories(
     name: []const u8,
     ino: u32,
-    next: ?*rootfs_branch
+    brother: ?*rootfs_branch,
+    child: ?*rootfs_branch,
+    parent: ?*rootfs_branch,
+    private: *rootfs_branch
 ) *rootfs_branch {
     return &rootfs_branch {
         .dentry = &vfs.Dentry {
@@ -64,6 +73,7 @@ fn makeDefaultsDirectories(
                 .mode = 0b111101101,
                 .nlinks = 0,
                 .data_block = 0,
+                .private = private,
                 .ops = &vfs.InodeOP {
                     .lookup = &rootfs_lookup,
                     .mkdir = &rootfs_mkdir,
@@ -72,14 +82,52 @@ fn makeDefaultsDirectories(
                 },
             },
         },
-        .next = next,
+        .brother = brother,
+        .child = child,
+        .parent = parent,
     };
 }
 
-const @"usr": *rootfs_branch = @call(.compile_time, &makeDefaultsDirectories, .{"usr", 1, @"sys"});
-const @"sys": *rootfs_branch = @call(.compile_time, &makeDefaultsDirectories, .{"sys", 2, @"dev"});
-const @"dev": *rootfs_branch = @call(.compile_time, &makeDefaultsDirectories, .{"dev", 2, @"volatile"});
-const @"volatile": *rootfs_branch = @call(.compile_time, &makeDefaultsDirectories, .{"volatile", 2, null});
+const @"/": *rootfs_branch        = @call(.compile_time, &makeDefaultsDirectories, .{
+    "/",    // Inode Name
+    0,      // Inode number
+    null,   // Brother
+    @"usr", // Child
+    @"/",   // Parent
+    @"/"    // Private
+});
+const @"usr": *rootfs_branch      = @call(.compile_time, &makeDefaultsDirectories, .{
+    "usr",
+    1,
+    @"sys",
+    null,
+    @"/",
+    @"usr"
+});
+const @"sys": *rootfs_branch      = @call(.compile_time, &makeDefaultsDirectories, .{
+    "sys",
+    2,
+    @"dev",
+    null,
+    @"/",
+    @"sys"
+});
+const @"dev": *rootfs_branch      = @call(.compile_time, &makeDefaultsDirectories, .{
+    "dev",
+    3,
+    @"volatile",
+    null,
+    @"/",
+    @"dev"
+});
+const @"volatile": *rootfs_branch = @call(.compile_time, &makeDefaultsDirectories, .{
+    "volatile",
+    4,
+    null,
+    null,
+    @"/",
+    @"volatile"
+});
 
 const rootfs_superblock: *vfs.Superblock = &vfs.Superblock {
     .magic = 0x703,
@@ -88,22 +136,8 @@ const rootfs_superblock: *vfs.Superblock = &vfs.Superblock {
     .total_inodes = 0,
     .inode_table_start = 0,
     .data_block_start = 0,
-    .root_inode = &vfs.Inode {
-        .ino = 0,
-        .type = .directory,
-        .uid = 0,
-        .gid = 0,
-        .mode = 0b111101101,
-        .nlinks = 0,
-        .data_block = 0,
-        .ops = &vfs.InodeOP {
-            .lookup = &rootfs_lookup,
-            .mkdir = &rootfs_mkdir,
-            .create = &rootfs_create,
-            .unlink = &rootfs_unlink,
-        },
-    },
-    .private_data = @"usr",
+    .root_inode = @"/".dentry.inode,
+    .private_data = @"/",
 };
 
 fn rootfs_mount() rootfsErr!*vfs.Superblock {
@@ -115,11 +149,41 @@ fn rootfs_umount() void {
     // liberar qualquer memoria aqui
 }
 
+fn cmp_name(
+    noalias s0: []const u8,
+    noalias s1: []const u8
+) bool {
+    if(s0.len != s1.len) {
+        return false;
+    }
+    for(0..s0.len) |i| {
+        if(s0[i] != s1[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
 fn rootfs_lookup(
     parent: *vfs.Dentry,
     name: []const u8
 ) rootfsErr!*vfs.Dentry {
-    
+    var current: ?*rootfs_branch = block0: {
+        if(parent.inode) |NoNNullInode| {
+            break :block0 NoNNullInode.private;
+        }
+        break :block0 null;
+    };
+    while(current) |NoNNullCurrent| {
+        if(@call(.always_inline, &cmp_name, .{
+            NoNNullCurrent.dentry.name,
+            name
+        })) {
+            return NoNNullCurrent.dentry;
+        }
+        current = NoNNullCurrent.brother;
+    }
+    return rootfsErr.NonFound;
 }
 
 fn rootfs_mkdir(
@@ -129,7 +193,7 @@ fn rootfs_mkdir(
     gid: u32,
     mode: u16,
 ) rootfsErr!*vfs.Dentry {
-
+    
 }
 
 fn rootfs_create(
@@ -148,10 +212,6 @@ fn rootfs_unlink(
 ) rootfsErr!void {
     
 }
-
-const rootfsErr: type = error {
-
-};
 
 fn init() u32 {
     @call(
