@@ -10,8 +10,21 @@ pub const arm: type = @import("saturn/kernel/arch/arm");
 pub const core: type = @import("saturn/kernel/core");
 pub const interfaces: type = @import("saturn/lib/interfaces");
 pub const io: type = @import("saturn/lib/io");
+pub const vfs: type = @import("saturn/kernel/vfs");
 
-pub const arch: type = x86;
+pub const arch: type = init: {
+    const cpu_arch: type = switch(@import("builtin").cpu.arch) {
+        .x86 => x86,
+        .x86_64 => x86_64,
+        .arm => arm,
+        else => {
+            @compileError(
+                "the selected target architecture is not supported"
+            );
+        },
+    };
+    break :init cpu_arch;
+};
 
 // callconv(.naked) não tem prólogo e epílogo automáticos é simplesmente fazer uma função do 0,
 // o compilador não adiciona o código de prólogo/epílogo para salvar/restaurar registradores ou

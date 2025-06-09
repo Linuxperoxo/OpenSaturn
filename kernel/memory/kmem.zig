@@ -3,6 +3,9 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
+// NOTE: Esse alocador e temporario, so sera usado temporariamente
+//       ate o paging esta totamente completo
+
 // Como esse esses allocs vão ser usado para o próprio kernel,
 // ele não será muito robusto, será apenas para pequenas alocações
 // de memória para coisas como o modulos, arquivos virtuais(dev,proc,sys), etc
