@@ -4,7 +4,7 @@
 // └──────────────────────────────────────────────┘
 
 const fs: type = @import("root").interfaces.fs;
-const vfs: type = @import("root").core.vfs;
+const vfs: type = @import("root").vfs;
 
 const rootfs: fs.filesystem = .{
     .name = "rootfs",
