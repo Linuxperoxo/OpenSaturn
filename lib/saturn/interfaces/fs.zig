@@ -3,10 +3,10 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const vfs: type = @import("root").core.vfs;
+const vfs: type = @import("root").vfs;
 const module: type = @import("root").interfaces.module;
 
-pub const filesystemOP = struct {
+pub const fsmnt_T = struct {
     mount: union(u1) {
         dev: *fn(dev: []const u8) anyerror!*vfs.Superblock,
         nodev: *fn() anyerror!*vfs.Superblock,
@@ -14,22 +14,18 @@ pub const filesystemOP = struct {
     umount: *fn() void,
 };
 
-pub const filesystemFlags: type = struct {
-    write: u1,
-};
-
-pub const filesystem: type = struct {
+pub const fs_T: type = struct {
     name: []const u8,
-    flags: filesystemFlags,
-    mod: module.ModuleInterface,
-    ops: filesystemOP,
+    flags: struct {write: u1},
+    mod: module.Module_T,
+    mount: fsmnt_T,
 };
 
-pub const filesystemError: type = error {
+pub const fserr_T: type = error {
     NoNRegistered,
 };
 
-const fsRegisted: struct { fs: ?*filesystem, next: ?*filesystem } = .{
+const fsRegisted: struct { fs: ?*fs_T, next: ?*fs_T } = .{
     .fs = null,
     .next = null,
 };
@@ -43,9 +39,9 @@ fn cmpName(n0: []const u8, n1: []const u8) bool {
     return true;
 }
 
-pub fn searchFilesystem(
+pub fn searchfs(
     fs: []const u8
-) filesystemError!*filesystem {
+) fserr_T!*fs_T {
     var next: ?*@TypeOf(fsRegisted) = fsRegisted;
     while(next) |nextNoNNull| {
         if(nextNoNNull.fs) |nextFsNoNNull| { 
@@ -60,16 +56,16 @@ pub fn searchFilesystem(
         }
         next = nextNoNNull.next;
     }
-    return filesystemError.NoNRegistered;
+    return fserr_T.NoNRegistered;
 }
 
-pub fn registerFilesystem(
-    fs: filesystem
+pub fn registerfs(
+    fs: fs_T
 ) void {
     
 }
 
-pub fn unregisterFilesystem(
+pub fn unregisterfs(
     fs: []const u8
 ) void {
     

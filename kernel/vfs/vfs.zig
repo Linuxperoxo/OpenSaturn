@@ -5,7 +5,8 @@
 
 const fs: type = @import("root").interfaces.fs;
 const module: type = @import("root").interfaces.module;
-// TODO: Criaçao de interfaces para incluir novos syscalls em tempo
+
+// TODO: Criaçao de interfa para incluir novos syscalls em tempo
 //       de execuçao
 // const syscalls: type = @import("root").syscalls;
 
@@ -61,14 +62,20 @@ pub const InodeOP: type = struct {
 
     // Responsavel por criar um novo link simbolico
     // TODO: link: *fn()
+
     // Responsavel por resolver links simbolicos
-    // TODO: readlink: ?*fn(node: *Dentry) anyerror!*Dentry,
+    // TODO: readlink: *fn(node: *Dentry) anyerror!*Dentry,
 
     // Responsavel por remover um arquivo
     unlink: *fn(
         parent: *Dentry, 
         name: []const u8
     ) anyerror!void,
+
+    // Responsavel por listar os arquivos de um diretorio
+    interator: *fn(
+            parent: *Dentry,
+    ) []const *Dentry,
 };
 
 const TreeBranch: type = struct {

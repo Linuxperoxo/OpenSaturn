@@ -3,43 +3,38 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const drivers: type = @import("root").drivers;
-const memory: type = @import("root").memory;
-const fs: type = @import("root").fs;
-
-pub const ModuleType: type = enum(u1) {
+pub const ModuleFunc_T: type = enum(u2) {
     driver,
     filesystem,
     syscall,
 };
 
-pub const ModuleStatus: type = enum(u2) {
-    Uninitialized,
-    Running,
-    Deleted,
-};
-
-pub const ModuleInterface: type = struct {
+pub const Module_T: type = struct {
     name: []const u8,
     desc: []const u8,
     version: []const u8,
     author: []const u8,
-    type: ModuleType = undefined,
-    status: ModuleStatus = .Uninitialized,
+    type: ModuleFunc_T,
     init: fn() u32,
     exit: fn() u32,
 };
 
-const ModuleQueue: type = struct {
-    next: ?*ModuleQueue,
-    prev: ?*ModuleQueue,
-    this: ?*ModuleInterface,
+const ModuleStatus: type = enum(u2) {
+    uninitialized,
+    running,
+    undefined,
 };
 
-const moduleRoot: struct { next: ?*ModuleQueue, prev: ?*ModuleQueue, this: ?*ModuleInterface} = .{
+const moduleRoot: struct {
+    next: ?*@This(),
+    prev: ?*@This(),
+    this: ?*Module_T,
+    status: ModuleStatus,
+} = .{
     .next = null,
     .prev = null,
     .module = null,
+    .status = .undefined,
 };
 
 pub fn stallmod() void {
@@ -52,32 +47,11 @@ pub fn stallmod() void {
     }
 }
 
-pub fn inmod(module: ModuleInterface) void {
-    var currentModule: *ModuleQueue = block0: {
-        currentModule = moduleRoot;
-        while(currentModule.next) |_| : (currentModule = currentModule.next) {}
-        break :block0;
-    };
-    
-    while(currentModule.next) |_| : (currentModule = currentModule.next) {
+pub fn inmod(module: Module_T) void {
 
-    }
-    const newModule = memory.kmem.alloc(1, ModuleQueue);
-
-    currentModule.next = newModule.ptr;
-    currentModule.next.?.prev = currentModule;
-    currentModule.next.?.module.?.name = module.name;
-    currentModule.next.?.module.?.version = module.version;
-    currentModule.next.?.module.?.type = module.type;
-    currentModule.next.?.module.?.status = module.status;
-    currentModule.next.?.module.?.init = module.init;
-    currentModule.next.?.module.?.exit = module.exit;
 }
 
 pub fn rmmod(name: [:0]const u8) void {
-    _ = name;
+
 }
 
-pub fn scmod(name: [:0]const u8) ?*ModuleQueue {
-    _ = name;
-}

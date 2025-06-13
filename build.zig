@@ -35,7 +35,8 @@ pub fn build(b: *std.Build) void {
     const core = makemod(b, "saturn/kernel/core", "kernel/core/core.zig");
     const interfaces = makemod(b, "saturn/lib/interfaces", "lib/saturn/interfaces/interfaces.zig");
     const io = makemod(b, "saturn/lib/io", "lib/saturn/io/io.zig");
-    const fs = makemod(b, "saturn/kernel/fs", "kerne'l/vfs/vfs.zig");
+    const vfs = makemod(b, "saturn/kernel/vfs", "kernel/vfs/vfs.zig");
+    const memory = makemod(b, "saturn/kernel/memory", "kernel/memory/kmem.zig");
 
     // Final binary
     const binary = b.addExecutable(.{
@@ -58,7 +59,8 @@ pub fn build(b: *std.Build) void {
     binary.root_module.addImport("saturn/kernel/core", core);
     binary.root_module.addImport("saturn/lib/interfaces", interfaces);
     binary.root_module.addImport("saturn/lib/io", io);
-    binary.root_module.addImport("saturn/kernel/vfs", fs);
+    binary.root_module.addImport("saturn/kernel/vfs", vfs);
+    binary.root_module.addImport("saturn/kernel/memory", memory);
 
     binary.addAssemblyFile(b.path("entry/entry.s"));
     binary.setLinkerScript(b.path("linker.ld"));
