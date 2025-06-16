@@ -1,13 +1,14 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: module.zig   │
+// │  (c) 2025 Linuxperoxo  •  FILE: syscalls.zig │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const module: type = @import("root").core.module;
-const interfaces: type = module.interfaces;
+const module: type = @import("root").interfaces.module;
 
-pub const ModType_T: type = interfaces.ModType_T;
-pub const Mod_T: type = interfaces.Mod_T;
+pub fn inmod(mod: *module.Module_T) void {
 
-pub const inmod: fn(Mod_T) usize = interfaces.inmod;
-pub const rmmod: fn([]const u8) usize = interfaces.rmmod;
+}
+
+pub fn rmmod(name: [:0]const u8) void {
+
+}

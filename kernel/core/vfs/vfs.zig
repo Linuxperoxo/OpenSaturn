@@ -5,7 +5,8 @@
 
 const fs: type = @import("root").interfaces.fs;
 const module: type = @import("root").interfaces.module;
-// TODO: Criaçao de interfaces para incluir novos syscalls em tempo
+
+// TODO: Criaçao de interfa para incluir novos syscalls em tempo
 //       de execuçao
 // const syscalls: type = @import("root").syscalls;
 
@@ -14,7 +15,7 @@ const module: type = @import("root").interfaces.module;
 // a parte bruta vai ser o modulo de systema de arquivos chamado rootfs,
 // ele e o pai de todos os sistemas de arquivos carregador no kernel
 
-const vfsmod: module.ModuleInterface = .{
+const vfsmod: module.Module_T = .{
     .name = "vfs",
     .desc = "Kernel Core Virtual Filesystem",
     .author = "Linuxperoxo",
@@ -25,10 +26,10 @@ const vfsmod: module.ModuleInterface = .{
 };
 
 pub const fileType: type = enum {
-    directory,
-    regular,
     char,
     block,
+    directory,
+    regular,
     link,
 };
 
@@ -61,14 +62,20 @@ pub const InodeOP: type = struct {
 
     // Responsavel por criar um novo link simbolico
     // TODO: link: *fn()
+
     // Responsavel por resolver links simbolicos
-    // TODO: readlink: ?*fn(node: *Dentry) anyerror!*Dentry,
+    // TODO: readlink: *fn(node: *Dentry) anyerror!*Dentry,
 
     // Responsavel por remover um arquivo
     unlink: *fn(
         parent: *Dentry, 
         name: []const u8
     ) anyerror!void,
+
+    // Responsavel por listar os arquivos de um diretorio
+    interator: *fn(
+            parent: *Dentry,
+    ) []const *Dentry,
 };
 
 const TreeBranch: type = struct {

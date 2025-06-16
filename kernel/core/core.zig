@@ -3,5 +3,10 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const kmem: type = @import("kmem.zig");
-pub const vfs: type = @import("vfs.zig");
+pub const module: type = @import("module/module.zig");
+pub const paging: type = @import("paging/paging.zig");
+pub const vfs: type = @import("vfs/vfs.zig");
+pub const devices: type =@import("devices/devices.zig");
+pub const fs: type = @import("fs/fs.zig");
+pub const panic: type = @import("panic.zig");
+

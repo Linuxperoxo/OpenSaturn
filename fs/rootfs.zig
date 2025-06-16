@@ -4,9 +4,10 @@
 // └──────────────────────────────────────────────┘
 
 const fs: type = @import("root").interfaces.fs;
-const vfs: type = @import("root").vfs;
+const vfs: type = @import("root").core.vfs;
+const mem: type = @import("root").memory;
 
-const rootfs: fs.filesystem = .{
+const rootfs: fs.fs_T = .{
     .name = "rootfs",
     .flags = .{
         .write = 0,
@@ -79,6 +80,7 @@ fn makeDefaultsDirectories(
                     .mkdir = &rootfs_mkdir,
                     .create = &rootfs_create,
                     .unlink = &rootfs_unlink,
+                    .interator = &rootfs_interator,
                 },
             },
         },
@@ -210,6 +212,12 @@ fn rootfs_unlink(
     parent: *vfs.Dentry,
     name: []const u8,
 ) rootfsErr!void {
+    
+}
+
+fn rootfs_interator(
+    parent: *vfs.Dentry
+) []const *vfs.Dentry {
     
 }
 
