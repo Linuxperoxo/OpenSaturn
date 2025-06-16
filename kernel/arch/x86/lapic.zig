@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const msr: type = @import("root").cpu.msr;
+const msr: type = @import("msr.zig");
 
 const LAPIC_BASE_PHYS: u32 = 0xFEE00000;
 const LAPIC_ENABLE_BIT: u16 = 1 << 11;
