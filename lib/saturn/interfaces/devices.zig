@@ -3,19 +3,14 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const Device: type = struct {
-    name: []const u8,
-    type: enum {char, block},
-    write: *fn([]const u8) u32,
-    read: *fn(u32, u32) []const u8,
-    ioctrl: *fn(u32, []const u8) anyerror!u32,
-};
+const devices: type = @import("root").core.devices;
+const interfaces: type = devices.interfaces;
 
-pub fn register_dev(dev: Device) enum {ok, err} {
-    return .ok;
-}
+pub const Dev_T: type = interfaces.Dev_T;
+pub const DevType_T: type = interfaces.DevType_T;
+pub const DevErr_T: type = interfaces.DevErr_T;
 
-pub fn unregister_dev(name: []const u8) void {
+pub const register_dev: fn(Dev_T, DevType_T) DevErr_T!usize = interfaces.register_dev;
+pub const unregister_dev: fn([]const u8) DevErr_T!usize = interfaces.unregister_dev;
 
-}
 

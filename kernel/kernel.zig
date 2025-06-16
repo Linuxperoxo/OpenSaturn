@@ -10,7 +10,6 @@ pub const arm: type = @import("saturn/kernel/arch/arm");
 pub const core: type = @import("saturn/kernel/core");
 pub const interfaces: type = @import("saturn/lib/interfaces");
 pub const io: type = @import("saturn/lib/io");
-pub const vfs: type = @import("saturn/kernel/vfs");
 pub const memory: type = @import("saturn/kernel/memory");
 
 pub const arch: type = init: {

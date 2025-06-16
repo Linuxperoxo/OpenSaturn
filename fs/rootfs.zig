@@ -4,10 +4,10 @@
 // └──────────────────────────────────────────────┘
 
 const fs: type = @import("root").interfaces.fs;
-const vfs: type = @import("root").vfs;
+const vfs: type = @import("root").core.vfs;
 const mem: type = @import("root").memory;
 
-const rootfs: fs.filesystem = .{
+const rootfs: fs.fs_T = .{
     .name = "rootfs",
     .flags = .{
         .write = 0,

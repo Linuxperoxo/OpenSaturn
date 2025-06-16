@@ -15,7 +15,7 @@ const module: type = @import("root").interfaces.module;
 // a parte bruta vai ser o modulo de systema de arquivos chamado rootfs,
 // ele e o pai de todos os sistemas de arquivos carregador no kernel
 
-const vfsmod: module.ModuleInterface = .{
+const vfsmod: module.Module_T = .{
     .name = "vfs",
     .desc = "Kernel Core Virtual Filesystem",
     .author = "Linuxperoxo",
@@ -26,10 +26,10 @@ const vfsmod: module.ModuleInterface = .{
 };
 
 pub const fileType: type = enum {
-    directory,
-    regular,
     char,
     block,
+    directory,
+    regular,
     link,
 };
 
