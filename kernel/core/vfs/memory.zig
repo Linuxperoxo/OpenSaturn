@@ -1,7 +1,4 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: vfs.zig      │
+// │  (c) 2025 Linuxperoxo  •  FILE: memory.zig   │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
-
-pub const interfaces: type = @import("interfaces.zig");
-pub const memory: type = @import("memory.zig");

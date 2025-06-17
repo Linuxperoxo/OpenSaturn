@@ -4,3 +4,4 @@
 // └──────────────────────────────────────────────┘
 
 pub const interfaces: type = @import("interfaces.zig");
+pub const management: type = @import("management.zig");

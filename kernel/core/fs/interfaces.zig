@@ -6,10 +6,13 @@
 const vfs: type = @import("root").core.vfs;
 const module: type = @import("root").interfaces.module;
 
+const Mod_T: type = @import("root").core.module.interfaces.Mod_T;
+const Superblock: type = @import("root").core.vfs.interfaces.Superblock_T;
+
 pub const FsMnt_T = struct {
     mount: union(u1) {
-        dev: *fn(dev: []const u8) anyerror!*vfs.Superblock,
-        nodev: *fn() anyerror!*vfs.Superblock,
+        dev: *fn(dev: []const u8) anyerror!*Superblock,
+        nodev: *fn() anyerror!*Superblock,
     },
     umount: *fn() void,
 };
@@ -17,7 +20,7 @@ pub const FsMnt_T = struct {
 pub const Fs_T: type = struct {
     name: []const u8,
     flags: struct {write: u1},
-    mod: module.Module_T,
+    mod: Mod_T,
     mount: FsMnt_T,
 };
 
@@ -26,26 +29,3 @@ pub const FsErr_T: type = error {
     DoubleFree, // tentar usar unregisterfs em um fs nao registrado
     Rewritten, // tentativa de registrar um fs ja registrado
 };
-
-const loadedfs: struct {fs: ?*Fs_T, next: ?*Fs_T} = .{
-    .fs = null,
-    .next = null,
-};
-
-pub fn searchfs(
-    name: []const u8
-) FsErr_T!Fs_T {
-
-}
-
-pub fn registerfs(
-    fs: Fs_T
-) FsErr_T!usize {
-    
-}
-
-pub fn unregisterfs(
-    name: []const u8
-) FsErr_T!usize {
-    
-}

@@ -3,34 +3,19 @@
 // │            Author: Linuxperoxo                 │
 // └────────────────────────────────────────────────┘
 
-const Mod_T: type = @import("root").interfaces.module.Mod_T;
+const Dev_T: type = @import("root").core.devices.interfaces.Dev_T;
+const DevType_T: type = @import("root").core.devices.interfaces.DevType_T;
+const DevErr_T: type = @import("root").core.devices.interfaces.DevErr_T;
 
-const ModS_T: type = enum(u2) {
-    uninitialized,
-    running,
-    undefined,
-};
-
-const moduleRoot: struct {
-    next: ?*@This(),
-    prev: ?*@This(),
-    this: ?*Mod_T,
-    status: ModS_T,
-} = .{
-    .next = null,
-    .prev = null,
-    .module = null,
-    .status = .undefined,
-};
-
-pub fn inmod(
-    mod: Mod_T,
-) usize {
+pub fn register_dev(
+    dev: Dev_T,
+    devT: DevType_T
+) DevErr_T!usize {
 
 }
 
-pub fn rmmod(
+pub fn unregister_dev(
     name: []const u8
-) usize {
-
+) DevErr_T!usize {
+    
 }
