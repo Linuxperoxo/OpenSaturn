@@ -21,7 +21,7 @@ const DefaultDirs = [_]*RootfsBranch_T {
     @import("rootfs.zig").@"dev",
     @import("rootfs.zig").@"volatile",
 };
-const rootfsSuperblock = @import("rootfs.zig").rootfsSuperblock;
+const rootfsSuperblock: *Superblock_T = @import("rootfs.zig").rootfsSuperblock;
 
 comptime {
     for(DefaultDirs) |e| {
@@ -50,11 +50,11 @@ fn cmp_name(
     return true;
 }
 
-fn rootfs_mount() RootfsErr_T!*Superblock_T {
+pub fn rootfs_mount() RootfsErr_T!*Superblock_T {
     return rootfsSuperblock;
 }
 
-fn rootfs_umount() void {
+pub fn rootfs_umount() void {
     // Como e um sistema de arquivos em ram, devemos
     // liberar qualquer memoria aqui
 }

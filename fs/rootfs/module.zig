@@ -5,6 +5,10 @@
 
 const Fs_T: type = @import("root").interfaces.fs.Fs_T;
 
+const __linkable__: @import("root").interfaces.module.LinkModInKernel = .{
+    .init = init,
+};
+
 const rootfs: Fs_T = .{
     .name = "rootfs",
     .flags = .{
@@ -21,13 +25,13 @@ const rootfs: Fs_T = .{
     },
     .ops = .{
         .mount = .{ 
-            .nodev = &rootfs_mount,
+            .nodev = &@import("management.zig").rootfs_mount,
         },
-        .umount = &rootfs_umount,
+        .umount = &@import("management.zig").rootfs_umount,
     },
 };
 
-fn init() u32 {
+fn init() usize {
     @call(
         .never_inline,
         &@import("root").interfaces.fs.registerfs,
@@ -37,7 +41,7 @@ fn init() u32 {
     );
 }
 
-fn exit() u32 {
+fn exit() usize {
     @call(
         .never_inline,
         &@import("root").interfaces.fs.unregisterfs,

@@ -12,6 +12,8 @@ pub const interfaces: type = @import("saturn/lib/interfaces");
 pub const io: type = @import("saturn/lib/io");
 pub const memory: type = @import("saturn/kernel/memory");
 
+pub const modules: type = @import("saturn/modules");
+
 pub const arch: type = init: {
     const cpu_arch: type = switch(@import("builtin").cpu.arch) {
         .x86 => x86,
@@ -94,4 +96,5 @@ export fn init() void {
 
 export fn main() void {
     @call(.always_inline, &init, .{});
+    @call(.always_inline, &modules.callLinkableMods, .{});
 }

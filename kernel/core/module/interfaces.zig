@@ -18,3 +18,7 @@ pub const Mod_T: type = struct {
     init: *fn() usize,
     exit: *fn() usize,
 };
+
+pub const LinkModInKernel: type = struct {
+    init: fn() anyerror!usize,
+};

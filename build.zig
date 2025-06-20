@@ -37,6 +37,9 @@ pub fn build(b: *std.Build) void {
     const io = makemod(b, "saturn/lib/io", "lib/saturn/io/io.zig");
     const memory = makemod(b, "saturn/kernel/memory", "kernel/memory/kmem.zig");
 
+    // Linked Mods
+    const modules = makemod(b, "saturn/modules", "modules.zig");
+
     // Final binary
     const binary = b.addExecutable(.{
         .name = "sImage",
@@ -59,6 +62,7 @@ pub fn build(b: *std.Build) void {
     binary.root_module.addImport("saturn/lib/interfaces", interfaces);
     binary.root_module.addImport("saturn/lib/io", io);
     binary.root_module.addImport("saturn/kernel/memory", memory);
+    binary.root_module.addImport("saturn/modules", modules);
 
     binary.addAssemblyFile(b.path("entry/entry.s"));
     binary.setLinkerScript(b.path("linker.ld"));
