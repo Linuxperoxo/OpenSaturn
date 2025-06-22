@@ -38,7 +38,10 @@ pub fn callLinkableMods() void {
     inline for(modules) |module| {
         if(@hasDecl(module, "__linkable__")) {
             if(@TypeOf(module.__linkable__) == LinkInKernel) {
-                @call(.never_inline, &module.__linkable__.init, .{});
+                errdefer {
+                    while(true) {}
+                }
+                try @call(.never_inline, &module.__linkable__.init, .{});
             }
         }
     }

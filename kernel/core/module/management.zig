@@ -26,11 +26,11 @@ const moduleRoot: struct {
 pub fn inmod(
     mod: Mod_T,
 ) usize {
-
+    _ = mod;
 }
 
 pub fn rmmod(
     name: []const u8
 ) usize {
-
+    _ = name;
 }

@@ -13,5 +13,6 @@ pub const LinkModInKernel: type = interfaces.LinkModInKernel;
 
 pub const inmod: fn(Mod_T) usize = management.inmod;
 pub const rmmod: fn([]const u8) usize = management.rmmod;
-//pub const alloc: fn() void;
-//pub const free: fn() void;
+pub const alloc = interfaces.alloc;
+pub const free = interfaces.free;
+

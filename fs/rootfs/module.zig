@@ -5,7 +5,7 @@
 
 const Fs_T: type = @import("root").interfaces.fs.Fs_T;
 
-const __linkable__: @import("root").interfaces.module.LinkModInKernel = .{
+pub const __linkable__: @import("root").interfaces.module.LinkModInKernel = .{
     .init = init,
 };
 
@@ -31,7 +31,14 @@ const rootfs: Fs_T = .{
     },
 };
 
-fn init() usize {
+fn init() anyerror!void {
+    asm volatile(
+        \\ movl $0xB8000, %eax
+        \\ movl (%eax), $'H'
+        :
+        :
+        :"eax"
+    );
     @call(
         .never_inline,
         &@import("root").interfaces.fs.registerfs,
@@ -41,7 +48,7 @@ fn init() usize {
     );
 }
 
-fn exit() usize {
+fn exit() anyerror!void {
     @call(
         .never_inline,
         &@import("root").interfaces.fs.unregisterfs,

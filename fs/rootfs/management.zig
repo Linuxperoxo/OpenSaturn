@@ -88,7 +88,11 @@ fn rootfs_mkdir(
     gid: u32,
     mode: u16,
 ) RootfsErr_T!*Dentry_T {
-    
+    _ = parent;
+    _ = name;
+    _ = uid;
+    _ = gid;
+    _ = mode;
 }
 
 fn rootfs_create(
@@ -98,19 +102,24 @@ fn rootfs_create(
     gid: u32,
     mode: u16,
 ) RootfsErr_T!*Dentry_T {
-    
+    _ = parent;
+    _ = name;
+    _ = uid;
+    _ = gid;
+    _ = mode;
 }
 
 fn rootfs_unlink(
     parent: *Dentry_T,
     name: []const u8,
 ) RootfsErr_T!void {
-    
+    _ = parent;
+    _ = name;
 }
 
 fn rootfs_interator(
     parent: *Dentry_T
 ) []const *Dentry_T {
-    
+    _ = parent;
 }
 

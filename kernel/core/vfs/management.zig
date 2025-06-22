@@ -100,6 +100,8 @@ fn resolvePath(
     //            do arquivo que queremos em um certo diretorio, ela deve receber o nome do arquivo
     //            como um []const u8, e o dentry pai dessa arquivo, digamos que queremos achar o proc
     //            o dentry pai dele e o sys
+
+    _ = path;
 }
 
 fn init() usize {

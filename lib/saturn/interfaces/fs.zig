@@ -14,5 +14,5 @@ pub const FsErr_T: type = interfaces.FsErr_T;
 pub const registerfs: fn(Fs_T) FsErr_T!usize = interfaces.registerfs;
 pub const unregisterfs: fn([]const u8) FsErr_T!usize = interfaces.unregisterfs;
 pub const searchfs: fn([]const u8) FsErr_T!Fs_T = interfaces.searchfs;
-//pub const alloc: fn() void;
-//pub const free: fn() void;
+pub const alloc = interfaces.alloc;
+pub const free = interfaces.free;

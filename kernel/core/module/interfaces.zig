@@ -15,10 +15,14 @@ pub const Mod_T: type = struct {
     version: []const u8,
     author: []const u8,
     type: ModType_T,
-    init: *fn() usize,
-    exit: *fn() usize,
+    init: *fn() anyerror!void,
+    exit: *fn() anyerror!void,
 };
 
 pub const LinkModInKernel: type = struct {
-    init: fn() anyerror!usize,
+    init: fn() anyerror!void,
 };
+
+// NOTE: TMP
+pub const alloc = @import("root").memory.kmalloc;
+pub const free = @import("root").memory.kfree;

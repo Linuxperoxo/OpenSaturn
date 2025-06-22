@@ -5,8 +5,10 @@
 
 const Fs_T: type = @import("root").interfaces.fs.Fs_T;
 const FsErr_T: type = @import("root").interfaces.fs.FsErr_T;
+const alloc = @import("interfaces.zig").alloc;
+const free = @import("interfaces.zig").free;
 
-const fsRegisted: struct { fs: ?*Fs_T, next: ?*Fs_T } = .{
+const fsRegisted: struct { fs: ?Fs_T, next: ?*@This() } = .{
     .fs = null,
     .next = null,
 };
@@ -23,34 +25,47 @@ fn cmpName(
     return true;
 }
 
-pub fn searchfs(
-    name: []const u8
-) FsErr_T!*Fs_T {
-    var next: ?*@TypeOf(fsRegisted) = fsRegisted;
-    while(next) |nextNoNNull| {
-        if(nextNoNNull.fs) |nextFsNoNNull| { 
-            if(@call(
-                    .always_inline, 
-                    &cmpName, 
-                    .{
-                        name,
-                        nextFsNoNNull.name
-                    }
-                )) return nextFsNoNNull;
-        }
-        next = nextNoNNull.next;
-    }
-    return fs.fserr_T.NoNRegistered;
-}
-
 pub fn registerfs(
     fs: Fs_T
 ) FsErr_T!usize {
-    
+    var current: ?*@TypeOf(fsRegisted) = &fsRegisted;
+    var prev: ?*@TypeOf(fsRegisted) = &fsRegisted;
+    while(current) |_| {
+        if(current.?.fs) |_| {
+            if(@call(.always_inline, &cmpName, .{
+                fs.name,
+                current.?.fs.?.name
+            })) {
+                return FsErr_T.Rewritten;
+            }
+        }
+        prev = current;
+        current = current.?.next;
+    }
+    prev.?.next = alloc(@TypeOf(fsRegisted), 1) catch {
+        return FsErr_T.AllocInternal;
+    };
+    prev.?.next.?.fs = fs;
 }
 
 pub fn unregisterfs(
     name: []const u8
-) FsErr_T!usize {
-    
+) FsErr_T!void {
+    var current: ?*@TypeOf(fsRegisted) = &fsRegisted;
+    var prev: ?*@TypeOf(fsRegisted) = &fsRegisted;
+    while(current) |_| {
+        if(current.?.fs) |_| {
+            if(@call(.always_inline, &cmpName, .{
+                name,
+                current.?.fs.?.name
+            })) {
+                prev.?.next = current.?.next;
+                free(current);
+                return 0;
+            }
+        }
+        prev = current;
+        current = current.?.next;
+    }
+    return FsErr_T.NoNRegistered;
 }

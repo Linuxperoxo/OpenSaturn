@@ -1,0 +1,2 @@
+0
+1431 5392790 1747693775129588204 7f3571fee5c1066b256df45838901051 0 /home/tux/CurrentProjects/opensaturn_dev/boot/include/asm/video/mode.s

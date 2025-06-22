@@ -8,24 +8,23 @@ const std: type = @import("std");
 // NOTE: Para modificar a arquitetura alvo do kernel,
 //       modifique '.cpu_arch' por uma arquitetura
 //       suportada pelo opensaturn
-const targetArch: std.Target.Query = .{
-    .cpu_arch = .x86,
-};
+const targetArch: std.Target.Cpu.Arch = .x86;
+const optimize: std.builtin.OptimizeMode = .ReleaseSmall;
 
 fn makemod(b: *std.Build, name: []const u8, root_source_file: []const u8) *std.Build.Module {
     return b.addModule(name, .{
         .root_source_file = b.path(root_source_file),
-        .optimize = .ReleaseSmall,
+        .optimize = optimize,
         .stack_protector = false,
         .target = b.resolveTargetQuery(.{
-            .cpu_arch = targetArch.cpu_arch,
+            .cpu_arch = targetArch,
             .os_tag = .freestanding,
         }),
+        .code_model = .kernel,
     });
 }
 
 pub fn build(b: *std.Build) void {
-
     // Kernel Supported arch
     const x86 = makemod(b, "saturn/kernel/arch/x86", "kernel/arch/x86/x86.zig");
     const x86_64 = makemod(b, "saturn/kernel/arch/x86_64", "kernel/arch/x86_64/x86_64.zig");
@@ -46,11 +45,12 @@ pub fn build(b: *std.Build) void {
         .root_module = b.addModule("kernel", .{
             .root_source_file = b.path("kernel/kernel.zig"),
             .target = b.resolveTargetQuery(.{
-                .cpu_arch = targetArch.cpu_arch,
+                .cpu_arch = targetArch,
                 .os_tag = .freestanding,
             }),
-            .optimize = .ReleaseSmall,
+            .optimize = optimize,
             .stack_protector = false,
+            .code_model = .kernel,
         }),
     });
 
