@@ -1,2 +1,0 @@
-0
-831 5392786 1747693775129478147 8b86823023c44c10908b2f8e7e4e3e83 0 /home/tux/CurrentProjects/opensaturn_dev/boot/include/asm/cpu/gdt.s

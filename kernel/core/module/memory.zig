@@ -3,4 +3,5 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
+pub const Allocator: type = @import("root").memory;
 

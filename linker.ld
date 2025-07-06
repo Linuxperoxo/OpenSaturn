@@ -28,6 +28,5 @@ SECTIONS {
     *(.note*)
     *(.gnu*)
   }
-
   EF = .;
 }

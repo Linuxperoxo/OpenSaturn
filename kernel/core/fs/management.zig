@@ -8,7 +8,7 @@ const FsErr_T: type = @import("root").interfaces.fs.FsErr_T;
 const alloc = @import("interfaces.zig").alloc;
 const free = @import("interfaces.zig").free;
 
-const fsRegisted: struct { fs: ?Fs_T, next: ?*@This() } = .{
+var fsRegisted: struct { fs: ?Fs_T, next: ?*@This() } = .{
     .fs = null,
     .next = null,
 };
@@ -26,26 +26,10 @@ fn cmpName(
 }
 
 pub fn registerfs(
-    fs: Fs_T
-) FsErr_T!usize {
-    var current: ?*@TypeOf(fsRegisted) = &fsRegisted;
-    var prev: ?*@TypeOf(fsRegisted) = &fsRegisted;
-    while(current) |_| {
-        if(current.?.fs) |_| {
-            if(@call(.always_inline, &cmpName, .{
-                fs.name,
-                current.?.fs.?.name
-            })) {
-                return FsErr_T.Rewritten;
-            }
-        }
-        prev = current;
-        current = current.?.next;
-    }
-    prev.?.next = alloc(@TypeOf(fsRegisted), 1) catch {
-        return FsErr_T.AllocInternal;
-    };
-    prev.?.next.?.fs = fs;
+    _: *Fs_T
+) FsErr_T!void {
+    // TODO:
+    asm volatile("movl $0xB8000, %eax\n movb $'H', (%eax)\n jmp ."); // NOTE: Apenas para debug
 }
 
 pub fn unregisterfs(
@@ -60,8 +44,8 @@ pub fn unregisterfs(
                 current.?.fs.?.name
             })) {
                 prev.?.next = current.?.next;
-                free(current);
-                return 0;
+                free(current.?);
+                return;
             }
         }
         prev = current;

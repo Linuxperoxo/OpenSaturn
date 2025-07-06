@@ -3,25 +3,23 @@
 // │            Author: Linuxperoxo                 │
 // └────────────────────────────────────────────────┘
 
-const vfs: type = @import("root").core.vfs;
-const module: type = @import("root").interfaces.module;
+const Vfs: type = @import("root").core.vfs;
+const Module: type = @import("root").interfaces.module;
 
 const Mod_T: type = @import("root").core.module.interfaces.Mod_T;
 const Superblock: type = @import("root").core.vfs.interfaces.Superblock_T;
 
-pub const FsMnt_T = struct {
-    mount: union(u1) {
-        dev: *fn(dev: []const u8) anyerror!*Superblock,
-        nodev: *fn() anyerror!*Superblock,
-    },
-    umount: *fn() void,
+pub const FsFlags_T: type = enum(u2) {
+    W,
+    R,
+    RW,
 };
 
 pub const Fs_T: type = struct {
     name: []const u8,
-    flags: struct {write: u1},
-    mod: Mod_T,
-    mount: FsMnt_T,
+    flags: FsFlags_T,
+    mount: *fn() FsErr_T!Vfs.interfaces.Superblock_T,
+    unmount: *fn() FsErr_T!void,
 };
 
 pub const FsErr_T: type = error {
@@ -30,6 +28,9 @@ pub const FsErr_T: type = error {
     Rewritten, // tentativa de registrar um fs ja registrado
     AllocInternal, // erro na alocaçao de memoria
 };
+
+pub const registerfs = @import("management.zig").registerfs;
+pub const unregisterfs = @import("management.zig").unregisterfs;
 
 // NOTE: Alocador temporario
 pub const alloc = @import("root").memory.kmalloc;

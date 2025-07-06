@@ -3,11 +3,7 @@
 // │            Author: Linuxperoxo                 │
 // └────────────────────────────────────────────────┘
 
-pub const ModType_T: type = enum(u2) {
-    driver,
-    filesystem,
-    syscall,
-};
+pub const Allocator: type = @import("module.zig").memory.Allocator;
 
 pub const Mod_T: type = struct {
     name: []const u8,
@@ -15,14 +11,23 @@ pub const Mod_T: type = struct {
     version: []const u8,
     author: []const u8,
     type: ModType_T,
-    init: *fn() anyerror!void,
-    exit: *fn() anyerror!void,
+    init: *const fn() ModErr_T!void,
+    exit: *const fn() ModErr_T!void,
+    private: ?*anyopaque,
+};
+
+pub const ModType_T: type = enum(u2) {
+    driver,
+    filesystem,
+    syscall,
+};
+
+pub const ModErr_T: type = error {
+    IsInitialized,
+    NoNInitialized,
+    InternalError,
 };
 
 pub const LinkModInKernel: type = struct {
-    init: fn() anyerror!void,
+    init: *const fn() ModErr_T!void,
 };
-
-// NOTE: TMP
-pub const alloc = @import("root").memory.kmalloc;
-pub const free = @import("root").memory.kfree;
