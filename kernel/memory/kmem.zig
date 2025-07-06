@@ -37,12 +37,12 @@ const pageTypeFlags: type = enum(u1) {
     slave,
 };
 
-const pageDirectory: type = packed struct {
+const pageDirectory: type = struct {
     pages: [PagePerPageDir]pageStruct, 
     free: u5, // Aponta para a página livre mais baixa do diretório
 };
 
-const pageStruct: type = packed struct {
+const pageStruct: type = struct {
     alloc: pageAllocFlags, // Diz se a página está alocada 1 bit
     type: pageTypeFlags, // Diz o tipo da página, master ou slave 1 bit
 };

@@ -8,34 +8,36 @@ const std: type = @import("std");
 // NOTE: Para modificar a arquitetura alvo do kernel,
 //       modifique '.cpu_arch' por uma arquitetura
 //       suportada pelo opensaturn
-const targetArch: std.Target.Query = .{
-    .cpu_arch = .x86,
-};
+const targetArch: std.Target.Cpu.Arch = .x86;
+const optimize: std.builtin.OptimizeMode = .ReleaseSmall;
 
 fn makemod(b: *std.Build, name: []const u8, root_source_file: []const u8) *std.Build.Module {
     return b.addModule(name, .{
         .root_source_file = b.path(root_source_file),
-        .optimize = .ReleaseSmall,
+        .optimize = optimize,
         .stack_protector = false,
         .target = b.resolveTargetQuery(.{
-            .cpu_arch = targetArch.cpu_arch,
+            .cpu_arch = targetArch,
             .os_tag = .freestanding,
         }),
+        .code_model = .kernel,
     });
 }
 
 pub fn build(b: *std.Build) void {
-
     // Kernel Supported arch
     const x86 = makemod(b, "saturn/kernel/arch/x86", "kernel/arch/x86/x86.zig");
     const x86_64 = makemod(b, "saturn/kernel/arch/x86_64", "kernel/arch/x86_64/x86_64.zig");
     const arm = makemod(b, "saturn/kernel/arch/arm", "kernel/arch/arm/arm.zig");
 
     // Kernel
-    //const core = makemod(b, "saturn/kernel/core", "kernel/core/core.zig");
-    //const interfaces = makemod(b, "saturn/lib/interfaces", "lib/saturn/interfaces/interfaces.zig");
-    //const io = makemod(b, "saturn/lib/io", "lib/saturn/io/io.zig");
-    //const memory = makemod(b, "saturn/kernel/memory", "kernel/memory/kmem.zig");
+    const core = makemod(b, "saturn/kernel/core", "kernel/core/core.zig");
+    const interfaces = makemod(b, "saturn/lib/interfaces", "lib/saturn/interfaces/interfaces.zig");
+    const io = makemod(b, "saturn/lib/io", "lib/saturn/io/io.zig");
+    const memory = makemod(b, "saturn/kernel/memory", "kernel/memory/kmem.zig");
+
+    // Linked Mods
+    const modules = makemod(b, "saturn/modules", "modules.zig");
 
     // Final binary
     const binary = b.addExecutable(.{
@@ -43,11 +45,12 @@ pub fn build(b: *std.Build) void {
         .root_module = b.addModule("kernel", .{
             .root_source_file = b.path("kernel/kernel.zig"),
             .target = b.resolveTargetQuery(.{
-                .cpu_arch = targetArch.cpu_arch,
+                .cpu_arch = targetArch,
                 .os_tag = .freestanding,
             }),
-            .optimize = .ReleaseSmall,
+            .optimize = optimize,
             .stack_protector = false,
+            .code_model = .kernel,
         }),
     });
 
@@ -55,10 +58,11 @@ pub fn build(b: *std.Build) void {
     binary.root_module.addImport("saturn/kernel/arch/x86_64", x86_64);
     binary.root_module.addImport("saturn/kernel/arch/arm", arm);
 
-    //binary.root_module.addImport("saturn/kernel/core", core);
-    //binary.root_module.addImport("saturn/lib/interfaces", interfaces);
-    //binary.root_module.addImport("saturn/lib/io", io);
-    //binary.root_module.addImport("saturn/kernel/memory", memory);
+    binary.root_module.addImport("saturn/kernel/core", core);
+    binary.root_module.addImport("saturn/lib/interfaces", interfaces);
+    binary.root_module.addImport("saturn/lib/io", io);
+    binary.root_module.addImport("saturn/kernel/memory", memory);
+    binary.root_module.addImport("saturn/modules", modules);
 
     binary.addAssemblyFile(b.path("entry/entry.s"));
     binary.setLinkerScript(b.path("linker.ld"));

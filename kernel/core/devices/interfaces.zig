@@ -18,16 +18,3 @@ pub const DevType_T: type = enum {
 pub const DevErr_T: type = error {
     
 };
-
-pub fn register_dev(
-    dev: Dev_T,
-    devT: DevType_T
-) DevErr_T!usize {
-
-}
-
-pub fn unregister_dev(
-    name: []const u8
-) DevErr_T!usize {
-    
-}

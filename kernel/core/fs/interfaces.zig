@@ -3,49 +3,35 @@
 // │            Author: Linuxperoxo                 │
 // └────────────────────────────────────────────────┘
 
-const vfs: type = @import("root").core.vfs;
-const module: type = @import("root").interfaces.module;
+const Vfs: type = @import("root").core.vfs;
+const Module: type = @import("root").interfaces.module;
 
-pub const FsMnt_T = struct {
-    mount: union(u1) {
-        dev: *fn(dev: []const u8) anyerror!*vfs.Superblock,
-        nodev: *fn() anyerror!*vfs.Superblock,
-    },
-    umount: *fn() void,
+const Mod_T: type = @import("root").core.module.interfaces.Mod_T;
+const Superblock: type = @import("root").core.vfs.interfaces.Superblock_T;
+
+pub const FsFlags_T: type = enum(u2) {
+    W,
+    R,
+    RW,
 };
 
 pub const Fs_T: type = struct {
     name: []const u8,
-    flags: struct {write: u1},
-    mod: module.Module_T,
-    mount: FsMnt_T,
+    flags: FsFlags_T,
+    mount: *fn() FsErr_T!Vfs.interfaces.Superblock_T,
+    unmount: *fn() FsErr_T!void,
 };
 
 pub const FsErr_T: type = error {
     NoNRegistered, // searchfs pode retornar isso
     DoubleFree, // tentar usar unregisterfs em um fs nao registrado
     Rewritten, // tentativa de registrar um fs ja registrado
+    AllocInternal, // erro na alocaçao de memoria
 };
 
-const loadedfs: struct {fs: ?*Fs_T, next: ?*Fs_T} = .{
-    .fs = null,
-    .next = null,
-};
+pub const registerfs = @import("management.zig").registerfs;
+pub const unregisterfs = @import("management.zig").unregisterfs;
 
-pub fn searchfs(
-    name: []const u8
-) FsErr_T!Fs_T {
-
-}
-
-pub fn registerfs(
-    fs: Fs_T
-) FsErr_T!usize {
-    
-}
-
-pub fn unregisterfs(
-    name: []const u8
-) FsErr_T!usize {
-    
-}
+// NOTE: Alocador temporario
+pub const alloc = @import("root").memory.kmalloc;
+pub const free = @import("root").memory.kfree;
