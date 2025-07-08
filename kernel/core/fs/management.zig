@@ -5,51 +5,102 @@
 
 const Fs_T: type = @import("root").interfaces.fs.Fs_T;
 const FsErr_T: type = @import("root").interfaces.fs.FsErr_T;
-const alloc = @import("interfaces.zig").alloc;
-const free = @import("interfaces.zig").free;
 
-var fsRegisted: struct { fs: ?Fs_T, next: ?*@This() } = .{
-    .fs = null,
-    .next = null,
+const Allocator: type = @import("interfaces.zig").Allocator;
+
+const FsInfo_T: type = struct {
+    next: ?*@This(),
+    prev: ?*@This(),
+    this: ?*Fs_T,
 };
 
-fn cmpName(
-    n0: []const u8,
-    n1: []const u8
+var fsRegisted: FsInfo_T = .{
+    .next = null,
+    .prev = null,
+    .this = null,
+};
+
+pub fn cmp_name(
+    noalias s0: []const u8,
+    noalias s1: []const u8
 ) bool {
-    const max: usize = if(n0.len < n1.len) n0.len else n1.len;
-    var int: usize = 0;
-    while(int < max) : (int += 1) {
-        if(n0[int] != n1[int]) return false;
+    if(s0.len != s1.len) {
+        return false;
+    }
+    for(0..s0.len) |i| {
+        if(s0[i] != s1[i]) {
+            return false;
+        }
     }
     return true;
 }
 
+fn registerFirstFs(fs: *Fs_T) FsErr_T!void {
+    fsRegisted.this = alloc: {
+        const allocArea = @call(.never_inline, &Allocator.kmalloc, .{
+            Fs_T,
+            1
+        }) catch {
+            return FsErr_T.InternalError;
+        };
+        allocArea[0] = fs.*;
+        break :alloc &allocArea[0];
+    };
+    slcRegFn = 1;
+}
+
+fn registerOtherFs(fs: *Fs_T) FsErr_T!void {
+    var current: ?*FsInfo_T = fsRegisted.next;
+    var prev: *FsInfo_T = &fsRegisted;
+    while(current) |_| {
+        if(prev.this != null and
+            @call(.always_inline, &cmp_name, .{prev.this.?.name, fs.name})
+        ) return FsErr_T.Rewritten;
+        prev = current.?;
+        current = current.?.next;
+    }
+    prev.next = alloc: {
+        const allocArea = @call(.never_inline, &Allocator.kmalloc, .{
+            FsInfo_T,
+            1
+        }) catch {
+            return FsErr_T.InternalError;
+        };
+        allocArea[0].next = null;
+        allocArea[0].prev = prev;
+        break :alloc &allocArea[0];
+    };
+    prev.next.?.this = alloc: {
+        const allocArea = @call(.never_inline, &Allocator.kmalloc, .{
+            Fs_T,
+            1
+        }) catch {
+            return FsErr_T.InternalError;
+        };
+        allocArea[0] = fs.*;
+        break :alloc &allocArea[0];
+    };
+}
+
+// Flag apenas para controlar a primeira execuçao
+// ja que vamos executar registerFirstFs 1 vez fiz
+// isso ai mesmo
+var slcRegFn: u1 = 0;
 pub fn registerfs(
-    _: *Fs_T
+    fs: Fs_T
 ) FsErr_T!void {
-    // TODO:
-    asm volatile("movl $0xB8000, %eax\n movb $'H', (%eax)\n jmp ."); // NOTE: Apenas para debug
+    const fnRegister: [2]*const fn(*Fs_T) FsErr_T!void = comptime .{
+        &registerFirstFs,
+        &registerOtherFs,
+    };
+    @call(.never_inline, fnRegister[slcRegFn], .{@constCast(&fs)}) catch |err| {
+        return err;
+    };
+    @import("root").debug.breakpoint(&fsRegisted.this, .eax);
 }
 
 pub fn unregisterfs(
-    name: []const u8
+    _: []const u8
 ) FsErr_T!void {
-    var current: ?*@TypeOf(fsRegisted) = &fsRegisted;
-    var prev: ?*@TypeOf(fsRegisted) = &fsRegisted;
-    while(current) |_| {
-        if(current.?.fs) |_| {
-            if(@call(.always_inline, &cmpName, .{
-                name,
-                current.?.fs.?.name
-            })) {
-                prev.?.next = current.?.next;
-                free(current.?);
-                return;
-            }
-        }
-        prev = current;
-        current = current.?.next;
-    }
-    return FsErr_T.NoNRegistered;
+    
 }

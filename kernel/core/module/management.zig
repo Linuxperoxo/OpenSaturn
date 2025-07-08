@@ -51,7 +51,7 @@ fn resolveType(mod: *Mod_T) anyerror!void {
     switch(mod.type) {
         .filesystem => {
             @call(.never_inline, &registerfs, .{
-                @as(*Fs_T, @alignCast(@ptrCast(mod.private.?)))
+                (@as(*Fs_T, @alignCast(@ptrCast(mod.private.?)))).*
             }) catch |err| {
                 return err;
             };
@@ -75,18 +75,26 @@ pub fn inmod(
         current = current.?.next;
     }
     prev.next = alloc: {
-        const allocArea = Allocator.kmalloc(ModInfo_T, 1) catch {
+        const allocArea = @call(.never_inline, &Allocator.kmalloc, .{
+            ModInfo_T,
+            1
+        }) catch {
             return ModErr_T.InternalError;
         };
+        allocArea[0].next = null;
+        allocArea[0].prev = prev;
         break :alloc &allocArea[0];
     };
     prev.next.?.this = alloc: {
-        const allocArea = Allocator.kmalloc(Mod_T, 1) catch {
+        const allocArea = @call(.never_inline, &Allocator.kmalloc, .{
+            Mod_T,
+            1
+        }) catch {
             return ModErr_T.InternalError;
         };
+        allocArea[0] = mod;
         break :alloc &allocArea[0];
     };
-    prev.next.?.this.?.* = mod;
     @call(.always_inline, &resolveType, .{prev.next.?.this.?}) catch {
         return ModErr_T.InternalError;
     };

@@ -14,6 +14,13 @@ pub const memory: type = @import("saturn/kernel/memory");
 
 pub const modules: type = @import("saturn/modules");
 
+pub const debug: type = @import("saturn/debug");
+
+comptime {
+    if(@import("builtin").mode == .Debug)
+        @compileError("-O Debug is blocked, use -O Releasesmall or -O ReleaseFast");
+}
+
 pub const arch: type = init: {
     const cpu_arch: type = switch(@import("builtin").cpu.arch) {
         .x86 => x86,
