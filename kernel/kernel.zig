@@ -54,8 +54,8 @@ comptime {
 }
 
 export fn init() void {
-    // Todo esse codigo e rodado em comptime para fazer
-    // algumas verificaçoes para a arquitetura alvo do kernel
+    // NOTE: Todo esse codigo e rodado em comptime para fazer
+    //       algumas verificaçoes para a arquitetura alvo do kernel
     comptime {
         const typeInfo = init: {
             if(!@hasDecl(arch, "init")) {

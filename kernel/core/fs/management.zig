@@ -8,6 +8,8 @@ const FsErr_T: type = @import("root").interfaces.fs.FsErr_T;
 
 const Allocator: type = @import("interfaces.zig").Allocator;
 
+const debug: type = @import("root").debug;
+
 const FsInfo_T: type = struct {
     next: ?*@This(),
     prev: ?*@This(),
@@ -93,10 +95,7 @@ pub fn registerfs(
         &registerFirstFs,
         &registerOtherFs,
     };
-    @call(.never_inline, fnRegister[slcRegFn], .{@constCast(&fs)}) catch |err| {
-        return err;
-    };
-    @import("root").debug.breakpoint(&fsRegisted.this, .eax);
+    return @call(.never_inline, fnRegister[slcRegFn], .{@constCast(&fs)});
 }
 
 pub fn unregisterfs(
