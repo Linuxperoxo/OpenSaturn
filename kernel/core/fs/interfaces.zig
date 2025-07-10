@@ -27,11 +27,11 @@ pub const FsErr_T: type = error {
     DoubleFree, // tentar usar unregisterfs em um fs nao registrado
     Rewritten, // tentativa de registrar um fs ja registrado
     AllocInternal, // erro na alocaçao de memoria
+    InternalError, // erro interno no gerenciador de fs 
 };
 
 pub const registerfs = @import("management.zig").registerfs;
 pub const unregisterfs = @import("management.zig").unregisterfs;
 
 // NOTE: Alocador temporario
-pub const alloc = @import("root").memory.kmalloc;
-pub const free = @import("root").memory.kfree;
+pub const Allocator: type = @import("root").memory;

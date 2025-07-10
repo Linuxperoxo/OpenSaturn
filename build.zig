@@ -39,12 +39,15 @@ pub fn build(b: *std.Build) void {
     // Linked Mods
     const modules = makemod(b, "saturn/modules", "modules.zig");
 
+    // Debug
+    const debug = makemod(b, "saturn/debug", "debug.zig");
+
     // Final binary
     const binary = b.addExecutable(.{
         .name = "sImage",
         .root_module = b.addModule("kernel", .{
             .root_source_file = b.path("kernel/kernel.zig"),
-            .target = b.resolveTargetQuery(.{
+        .target = b.resolveTargetQuery(.{
                 .cpu_arch = targetArch,
                 .os_tag = .freestanding,
             }),
@@ -53,6 +56,9 @@ pub fn build(b: *std.Build) void {
             .code_model = .kernel,
         }),
     });
+
+    if(optimize == .ReleaseSmall)
+        std.debug.print("\x1b[33mWARNING:\x1b[0m Debug Mode Enable\n", .{});
 
     binary.root_module.addImport("saturn/kernel/arch/x86", x86);
     binary.root_module.addImport("saturn/kernel/arch/x86_64", x86_64);
@@ -63,6 +69,8 @@ pub fn build(b: *std.Build) void {
     binary.root_module.addImport("saturn/lib/io", io);
     binary.root_module.addImport("saturn/kernel/memory", memory);
     binary.root_module.addImport("saturn/modules", modules);
+
+    binary.root_module.addImport("saturn/debug", debug);
 
     binary.addAssemblyFile(b.path("entry/entry.s"));
     binary.setLinkerScript(b.path("linker.ld"));
