@@ -27,8 +27,3 @@ pub const ModErr_T: type = error {
     NoNInitialized,
     InternalError,
 };
-
-pub const LinkModInKernel: type = struct {
-    name: []const u8,
-    init: *const fn() ModErr_T!void,
-};

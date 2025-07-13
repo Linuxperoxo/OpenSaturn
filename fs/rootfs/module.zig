@@ -10,15 +10,8 @@ const ModErr_T: type = @import("root").interfaces.module.ModErr_T;
 // kernel fs types
 const Fs_T: type = @import("root").interfaces.fs.Fs_T;
 
-// NOTE:
-// Para ser um modulo visivel para selecionar como y ou n ele deve ter 
-// um __linkable_module_name__ do tipo []const u8 falando o nome do modulo
-// que deve ser o mesmo nome em __linkable__.name
 pub const __linkable_module_name__: []const u8 = "ke_m_rootfs";
-pub const __linkable__: @import("root").interfaces.module.LinkModInKernel = .{
-    .name = "ke_m_rootfs",
-    .init = &init,
-};
+pub const __linkable_module_init__: *const fn() anyerror!void = &init;
 
 const rootfsMod: Mod_T = .{
     .name = "rootfs",
