@@ -57,8 +57,32 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
-    if(optimize == .ReleaseSmall)
+    if(@import("modules.zig").__SaturnAllMods__.len > 0) {
+        const saturnmodules = b.addModule("saturn/modules", .{
+            .root_source_file = b.path("modules.zig"),
+        });
+
+        const modsysbinary = b.addExecutable(.{
+            .name = "modsys",
+            .root_source_file = b.path("menuconfig/modsys.zig"),
+            .target = b.standardTargetOptions(.{}),
+            .optimize = b.standardOptimizeOption(.{}),
+        });
+
+        modsysbinary.root_module.addImport("saturn/modules", saturnmodules);
+
+        const menuconfig = b.addRunArtifact(modsysbinary);
+        const menuconfig_step = b.step("menuconfig", "Saturn menuconfig");
+
+        std.debug.print("{s}\n", .{menuconfig.step.name});
+        std.debug.print("{s}\n", .{menuconfig_step.name});
+
+        menuconfig_step.dependOn(&menuconfig.step);
+    }
+
+    if(optimize == .ReleaseSmall) {
         std.debug.print("\x1b[33mWARNING:\x1b[0m Debug Mode Enable\n", .{});
+    }
 
     binary.root_module.addImport("saturn/kernel/arch/x86", x86);
     binary.root_module.addImport("saturn/kernel/arch/x86_64", x86_64);
@@ -75,6 +99,9 @@ pub fn build(b: *std.Build) void {
     binary.addAssemblyFile(b.path("entry/entry.s"));
     binary.setLinkerScript(b.path("linker.ld"));
 
-    b.installArtifact(binary);
+    const install = b.addInstallArtifact(binary, .{});
+    const install_step = b.step("inst", "Install");
+
+    install_step.dependOn(&install.step);
 }
 
