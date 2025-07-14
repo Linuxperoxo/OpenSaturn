@@ -10,9 +10,8 @@ const ModErr_T: type = @import("root").interfaces.module.ModErr_T;
 // kernel fs types
 const Fs_T: type = @import("root").interfaces.fs.Fs_T;
 
-pub const __linkable__: @import("root").interfaces.module.LinkModInKernel = .{
-    .init = &init,
-};
+pub const __linkable_module_name__: []const u8 = "ke_m_rootfs";
+pub const __linkable_module_init__: *const fn() anyerror!void = &init;
 
 const rootfsMod: Mod_T = .{
     .name = "rootfs",
