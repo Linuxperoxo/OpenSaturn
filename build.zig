@@ -36,8 +36,9 @@ pub fn build(b: *std.Build) void {
     const io = makemod(b, "saturn/lib/io", "lib/saturn/io/io.zig");
     const memory = makemod(b, "saturn/kernel/memory", "kernel/memory/kmem.zig");
 
-    // Linked Mods
+    // Kernel Modules
     const modules = makemod(b, "saturn/modules", "modules.zig");
+    const linker = makemod(b, "saturn/linker", "lib/saturn/interfaces/linker.zig");
 
     // Debug
     const debug = makemod(b, "saturn/debug", "debug.zig");
@@ -57,8 +58,28 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
-    if(optimize == .ReleaseSmall)
-        std.debug.print("\x1b[33mWARNING:\x1b[0m Debug Mode Enable\n", .{});
+    // Menuconfig
+    const saturnmodules = b.addModule("saturn/modules", .{
+        .root_source_file = b.path("modules.zig"),
+    });
+
+    const modsys = b.addExecutable(.{
+        .name = "modsys",
+        .root_source_file = b.path("menuconfig/modsys.zig"),
+        .target = b.standardTargetOptions(.{}),
+        .optimize = .ReleaseFast,
+    });
+
+    modsys.root_module.addImport("saturn/modules", saturnmodules);
+    saturnmodules.addImport("saturn/linker", linker);
+
+    const menuconfig = b.addRunArtifact(modsys);
+    const menuconfig_step = b.step("menuconfig", "Saturn menuconfig");
+
+    menuconfig_step.dependOn(&menuconfig.step);
+    // End Of Menuconfig
+
+    modules.addImport("saturn/linker", linker);
 
     binary.root_module.addImport("saturn/kernel/arch/x86", x86);
     binary.root_module.addImport("saturn/kernel/arch/x86_64", x86_64);
@@ -69,12 +90,21 @@ pub fn build(b: *std.Build) void {
     binary.root_module.addImport("saturn/lib/io", io);
     binary.root_module.addImport("saturn/kernel/memory", memory);
     binary.root_module.addImport("saturn/modules", modules);
+    binary.root_module.addImport("saturn/linker", linker);
 
     binary.root_module.addImport("saturn/debug", debug);
 
     binary.addAssemblyFile(b.path("entry/entry.s"));
     binary.setLinkerScript(b.path("linker.ld"));
 
-    b.installArtifact(binary);
+    if(optimize == .ReleaseSmall) {
+        std.debug.print("\x1b[33mWARNING:\x1b[0m Debug Mode Enable\n", .{});
+    }
+
+    const saturn = b.addInstallArtifact(binary, .{});
+    const saturn_step = b.step("saturn", "Install Saturn Binary");
+
+    saturn_step.dependOn(&binary.step);
+    saturn_step.dependOn(&saturn.step);
 }
 

@@ -10,7 +10,6 @@ const management: type = module.management;
 pub const ModType_T: type = interfaces.ModType_T;
 pub const Mod_T: type = interfaces.Mod_T;
 pub const ModErr_T: type = interfaces.ModErr_T;
-pub const LinkModInKernel: type = interfaces.LinkModInKernel;
 
 pub const inmod= management.inmod;
 pub const rmmod= management.rmmod;
