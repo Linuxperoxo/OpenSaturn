@@ -16,9 +16,9 @@ SECTIONS {
 
   .opensaturn.data : {
     . = ALIGN(4);
-    KEEP(*(*.data))
+    KEEP(*(*.data*))
     . = ALIGN(4);
-    KEEP(*(*.bss))
+    KEEP(*(*.bss*))
     . = ALIGN(4);
     KEEP(*(*.rodata))
   }

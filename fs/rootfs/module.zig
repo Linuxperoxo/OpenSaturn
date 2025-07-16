@@ -29,7 +29,7 @@ const rootfsMod: Mod_T = .{
     }),
 };
 
-pub fn init() ModErr_T!void {
+fn init() ModErr_T!void {
     @call(.never_inline, @import("root").interfaces.module.inmod, .{
         rootfsMod
     }) catch |err| {
