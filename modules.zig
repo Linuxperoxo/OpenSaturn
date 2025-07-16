@@ -24,6 +24,7 @@
 // --- SATURN MODULES ---
 pub const __SaturnAllMods__ = [_]type {
     @import("fs/rootfs/module.zig"),
+    //@import("fs/devfs/module.zig"),
 };
 
 const Module: type = struct {
