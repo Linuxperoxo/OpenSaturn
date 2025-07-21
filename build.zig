@@ -5,11 +5,30 @@
 
 const std: type = @import("std");
 
-// NOTE: Para modificar a arquitetura alvo do kernel,
-//       modifique '.cpu_arch' por uma arquitetura
-//       suportada pelo opensaturn
-const targetArch: std.Target.Cpu.Arch = .x86;
-const optimize: std.builtin.OptimizeMode = .ReleaseSmall;
+const targetArch: std.Target.Cpu.Arch = switch(@import("arch.zig").__SaturnTarget__) {
+    .x86 => .x86,
+    .x86_64 => .x86_64,
+    .arm => .arm,
+    .avr => .avr,
+};
+const optimize: std.builtin.OptimizeMode = switch(@import("arch.zig").__SaturnOptimize__) {
+    .Small => .ReleaseSmall,
+    .Fast => .ReleaseFast,
+};
+
+// Apenas para evitar um erro de linker
+comptime {
+    @export(&tmpM, .{
+        .name = "main",
+    });
+    @export(&tmpM, .{
+        .name = "init",
+    });
+}
+
+fn tmpM() callconv(.c) void {}
+fn tmpI() callconv(.c) void {}
+//
 
 fn makemod(b: *std.Build, name: []const u8, root_source_file: []const u8) *std.Build.Module {
     return b.addModule(name, .{
@@ -26,9 +45,7 @@ fn makemod(b: *std.Build, name: []const u8, root_source_file: []const u8) *std.B
 
 pub fn build(b: *std.Build) void {
     // Kernel Supported arch
-    const x86 = makemod(b, "saturn/kernel/arch/x86", "kernel/arch/x86/x86.zig");
-    const x86_64 = makemod(b, "saturn/kernel/arch/x86_64", "kernel/arch/x86_64/x86_64.zig");
-    const arm = makemod(b, "saturn/kernel/arch/arm", "kernel/arch/arm/arm.zig");
+    const archs = makemod(b, "saturn/arch", "arch.zig");
 
     // Kernel
     const core = makemod(b, "saturn/kernel/core", "kernel/core/core.zig");
@@ -38,7 +55,6 @@ pub fn build(b: *std.Build) void {
 
     // Kernel Modules
     const modules = makemod(b, "saturn/modules", "modules.zig");
-    const linker = makemod(b, "saturn/linker", "lib/saturn/interfaces/linker.zig");
 
     // Debug
     const debug = makemod(b, "saturn/debug", "debug.zig");
@@ -71,7 +87,6 @@ pub fn build(b: *std.Build) void {
     });
 
     modsys.root_module.addImport("saturn/modules", saturnmodules);
-    saturnmodules.addImport("saturn/linker", linker);
 
     const menuconfig = b.addRunArtifact(modsys);
     const menuconfig_step = b.step("menuconfig", "Saturn menuconfig");
@@ -79,23 +94,17 @@ pub fn build(b: *std.Build) void {
     menuconfig_step.dependOn(&menuconfig.step);
     // End Of Menuconfig
 
-    modules.addImport("saturn/linker", linker);
-
-    binary.root_module.addImport("saturn/kernel/arch/x86", x86);
-    binary.root_module.addImport("saturn/kernel/arch/x86_64", x86_64);
-    binary.root_module.addImport("saturn/kernel/arch/arm", arm);
+    binary.root_module.addImport("saturn/arch", archs);
 
     binary.root_module.addImport("saturn/kernel/core", core);
     binary.root_module.addImport("saturn/lib/interfaces", interfaces);
     binary.root_module.addImport("saturn/lib/io", io);
     binary.root_module.addImport("saturn/kernel/memory", memory);
     binary.root_module.addImport("saturn/modules", modules);
-    binary.root_module.addImport("saturn/linker", linker);
 
     binary.root_module.addImport("saturn/debug", debug);
 
-    binary.addAssemblyFile(b.path("entry/entry.s"));
-    binary.setLinkerScript(b.path("linker.ld"));
+    binary.setLinkerScript(b.path("linkers/" ++ @import("arch.zig").__SaturnEnabledArchLinker__));
 
     if(optimize == .ReleaseSmall) {
         std.debug.print("\x1b[33mWARNING:\x1b[0m Debug Mode Enable\n", .{});
