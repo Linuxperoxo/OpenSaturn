@@ -3,11 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-// NOTE: Esse arquivo serve apenas para ajudar no debug do kernel
-// NOTE: Atualmente apenas suporte para debug no x86
-// NOTE: Para usar o debug use -O ReleaseSmall
-
-pub const builtin: type = @import("builtin");
+pub const saturnArchInfos: type = @import("arch.zig");
 
 pub const RegDebug_x86_64: type = enum(u2) {
     rax,
@@ -102,9 +98,9 @@ const ArchBreakPoint: type = struct {
 };
 
 pub const breakpoint = init: {
-    if(builtin.mode != .ReleaseSmall)
+    if(saturnArchInfos.__SaturnCodeModel__ != .Debug)
         break :init notbreakpoint;
-    const archType = switch(builtin.cpu.arch) {
+    const archType = switch(saturnArchInfos.__SaturnTarget__) {
         .x86 => ArchBreakPoint.Spawn(.x86),
         .x86_64 => ArchBreakPoint.Spawn(.x86_64),
         .arm => ArchBreakPoint.Spawn(.arm),

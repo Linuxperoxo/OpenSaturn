@@ -3,6 +3,8 @@
 # │            Author: Linuxperoxo               │
 # └──────────────────────────────────────────────┘
 
+# FIX: Obsolete file
+
   .equ AtlasMagic, 0xAB00
   .equ AtlasLoadDest, 0x1000000
   .equ AtlasVMode, 0x1000
