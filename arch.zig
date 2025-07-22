@@ -81,19 +81,18 @@ comptime {
     verifyExistence("__arch_linker_build__", linker_T);
     verifyTypes("__arch_linker_build__", linker_T, @TypeOf(__SaturnEnabledArch__.__arch_linker_build__));
 
-    const usable: type = switch(@hasDecl(__SaturnEnabledArch__, "__arch_usable__")) {
-        true => @TypeOf(__SaturnEnabledArch__.__arch_usable__),
+    sw: switch(@hasDecl(__SaturnEnabledArch__, "__arch_usable__")) {
+        true => {
+            verifyTypes("__arch_usable__", usable_T, @TypeOf(__SaturnEnabledArch__.__arch_usable__));
+            if(!__SaturnEnabledArch__.__arch_usable__) {
+                continue :sw false; // Voltando para o inicio do switch so que passando false para o switch
+            }
+        },
         false => {
             @compileError(
                 \\ target kernel cpu architecture has no guarantee of functioning by the developer
             );
         },
-    };
-    verifyTypes("__arch_usable__", usable_T, usable);
-    if(!__SaturnEnabledArch__.__arch_usable__) {
-        @compileError(
-            \\ developer responsible for kernel cpu architecture defined her as unusable
-        );
     }
 }
 
