@@ -4,16 +4,24 @@
 // └──────────────────────────────────────────────┘
 
 const std: type = @import("std");
+const SaturnArchInfo: type = @import("arch.zig");
 
-const targetArch: std.Target.Cpu.Arch = switch(@import("arch.zig").__SaturnTarget__) {
+const targetArch: std.Target.Cpu.Arch = switch(SaturnArchInfo.__SaturnTarget__) {
     .x86 => .x86,
     .x86_64 => .x86_64,
     .arm => .arm,
     .avr => .avr,
 };
-const optimize: std.builtin.OptimizeMode = switch(@import("arch.zig").__SaturnOptimize__) {
+const optimize: std.builtin.OptimizeMode = switch(SaturnArchInfo.__SaturnOptimize__) {
     .Small => .ReleaseSmall,
     .Fast => .ReleaseFast,
+};
+const archFiles: ArchFiles_T =  ArchFiles_T {
+    .linker = "linkers/" ++ SaturnArchInfo.__SaturnEnabledArchLinker__,
+    .interrupt = if(SaturnArchInfo.__SaturnEnabledArchSupervisor__) 
+        "kernel/interrupts/" ++ @tagName(SaturnArchInfo.__SaturnTarget__) ++ "/supervisor/" ++ "interrupt.zig"
+    else
+        "kernel/interrupts/" ++ @tagName(SaturnArchInfo.__SaturnTarget__) ++ "/supervisor/" ++ "interrupt.zig"
 };
 
 // Apenas para evitar um erro de linker
@@ -43,9 +51,16 @@ fn makemod(b: *std.Build, name: []const u8, root_source_file: []const u8) *std.B
     });
 }
 
+const ArchFiles_T: type = struct {
+    linker: []const u8,
+    //module: []const u8,
+    //lib: []const u8,
+    interrupt: []const u8,
+};
+
 pub fn build(b: *std.Build) void {
     // Kernel Supported arch
-    const archs = makemod(b, "saturn/arch", "arch.zig");
+    const arch = makemod(b, "saturn/arch", "arch.zig");
 
     // Kernel
     const core = makemod(b, "saturn/kernel/core", "kernel/core/core.zig");
@@ -58,6 +73,12 @@ pub fn build(b: *std.Build) void {
 
     // Debug
     const debug = makemod(b, "saturn/debug", "debug.zig");
+
+    // Supervisor
+    const supervisor = makemod(b, "saturn/supervisor", "kernel/supervisor/supervisor.zig");
+
+    // Arch interrupts
+    const interrupt = makemod(b, "saturn/interrupt", archFiles.interrupt);
 
     // Final binary
     const binary = b.addExecutable(.{
@@ -94,17 +115,17 @@ pub fn build(b: *std.Build) void {
     menuconfig_step.dependOn(&menuconfig.step);
     // End Of Menuconfig
 
-    binary.root_module.addImport("saturn/arch", archs);
-
+    binary.root_module.addImport("saturn/arch", arch);
+    binary.root_module.addImport("saturn/interrupt", interrupt);
     binary.root_module.addImport("saturn/kernel/core", core);
     binary.root_module.addImport("saturn/lib/interfaces", interfaces);
     binary.root_module.addImport("saturn/lib/io", io);
     binary.root_module.addImport("saturn/kernel/memory", memory);
     binary.root_module.addImport("saturn/modules", modules);
-
     binary.root_module.addImport("saturn/debug", debug);
+    binary.root_module.addImport("saturn/supervisor", supervisor);
 
-    binary.setLinkerScript(b.path("linkers/" ++ @import("arch.zig").__SaturnEnabledArchLinker__));
+    binary.setLinkerScript(b.path(archFiles.linker));
 
     if(optimize == .ReleaseSmall) {
         std.debug.print("\x1b[33mWARNING:\x1b[0m Debug Mode Enable\n", .{});
