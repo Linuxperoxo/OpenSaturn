@@ -11,6 +11,7 @@ pub const msr: type = @import("msr.zig");
 pub const __arch_maintainer__: []const u8 = "Linuxperoxo";
 pub const __arch_linker_build__: []const u8 = "x86/linker.ld";
 pub const __arch_usable__: bool = true;
+pub const __arch_supervisor__: bool = true;
 
 comptime {
     @export(&entry, .{

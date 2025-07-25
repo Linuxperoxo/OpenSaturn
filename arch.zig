@@ -27,6 +27,7 @@ pub const __SaturnEnabledArch__: type = switch(__SaturnTarget__) {
 // --- SATURN ENABLED ARCH INFOS ---
 pub const __SaturnEnabledArchUsable__: usable_T = __SaturnEnabledArch__.__arch_usable__;
 pub const __SaturnEnabledArchLinker__: linker_T = __SaturnEnabledArch__.__arch_linker_build__;
+pub const __SaturnEnabledArchSupervisor__: supervisor_T = __SaturnEnabledArch__.__arch_supervisor__;
 pub const __SaturnEnabledArchMaintainer__: ?maintainer_T = verify: {
     if(@hasDecl(__SaturnEnabledArch__, "__arch_maintainer__")) {
         break :verify __SaturnEnabledArch__.__arch_maintainer__;
@@ -37,20 +38,22 @@ pub const __SaturnEnabledArchMaintainer__: ?maintainer_T = verify: {
 const name_T: type = []const u8;
 const maintainer_T: type = []const u8;
 const usable_T: type = bool;
+const supervisor_T: type = bool;
+const supervisorInit_T: type = fn() void;
 const entry_T: type = fn() callconv(.naked) noreturn;
 const init_T: type = fn() void;
 const linker_T: type = []const u8;
-const target_T: type = enum {
+pub const target_T: type = enum {
     x86,
     x86_64,
     arm,
     avr
 };
-const codeMode_T: type = enum {
+pub const codeMode_T: type = enum {
     Debug,
     Runtime,
 };
-const opt_T: type = enum {
+pub const opt_T: type = enum {
     Small,
     Fast,
 };
@@ -80,6 +83,9 @@ comptime {
 
     verifyExistence("__arch_linker_build__", linker_T);
     verifyTypes("__arch_linker_build__", linker_T, @TypeOf(__SaturnEnabledArch__.__arch_linker_build__));
+
+    verifyExistence("__arch_supervisor__", supervisor_T);
+    verifyTypes("__arch_supervisor__", supervisor_T, @TypeOf(__SaturnEnabledArch__.__arch_supervisor__));
 
     sw: switch(@hasDecl(__SaturnEnabledArch__, "__arch_usable__")) {
         true => {

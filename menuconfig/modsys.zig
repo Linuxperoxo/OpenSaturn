@@ -4,6 +4,7 @@
 // └────────────────────────────────────────────────┘
 
 // OPTIMIZE:
+// FIXME:
 
 const std: type = @import("std");
 const modules: type = @import("saturn/modules");
@@ -17,8 +18,12 @@ pub fn main() void {
             for(saturnMods) |module| {
                 if(@hasDecl(module, "__linkable_module_name__")) {
                     if((@TypeOf(module.__linkable_module_name__) != []const u8)) {
-                        @compileError("__linkable_module_name__ is defined in the file but does not follow the Saturn Standard Module Def, the definition must be 'pub const __linkable_module_name__: []const u8 = __linkable__.name'");
+                        @compileError(
+                            \\ __linkable_module_name__ is defined in the file but does not follow the Saturn Standard Module Def,
+                            \\ the definition must be 'pub const __linkable_module_name__: []const u8 = __linkable__.name'
+                        );
                     }
+                    if(@hasDecl(module, "__linkable_module_arch__")) {} else {} // TODO:
                     if(@hasDecl(module, "__linkable_module_opti__")) {
                         if(module.__linkable_module_opti__) {
                             count += 1;

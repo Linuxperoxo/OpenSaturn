@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const saturnArchInfos: type = @import("arch.zig");
+pub const saturnArchInfos: type = @import("root").arch;
 
 pub const RegDebug_x86_64: type = enum(u2) {
     rax,
