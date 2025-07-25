@@ -43,17 +43,17 @@ const supervisorInit_T: type = fn() void;
 const entry_T: type = fn() callconv(.naked) noreturn;
 const init_T: type = fn() void;
 const linker_T: type = []const u8;
-const target_T: type = enum {
+pub const target_T: type = enum {
     x86,
     x86_64,
     arm,
     avr
 };
-const codeMode_T: type = enum {
+pub const codeMode_T: type = enum {
     Debug,
     Runtime,
 };
-const opt_T: type = enum {
+pub const opt_T: type = enum {
     Small,
     Fast,
 };

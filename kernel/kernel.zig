@@ -6,15 +6,15 @@
 pub const arch: type = @import("saturn/arch");
 pub const core: type = @import("saturn/kernel/core");
 pub const interfaces: type = @import("saturn/lib/interfaces");
-pub const io: type = @import("saturn/lib/io");
+pub const kernel: type = @import("saturn/lib/kernel");
 pub const memory: type = @import("saturn/kernel/memory");
 pub const supervisor: type = @import("saturn/supervisor");
 pub const modules: type = @import("saturn/modules");
 pub const debug: type = @import("saturn/debug");
-pub const interrupt: type = @import("saturn/interrupt");
+pub const interrupts: type = @import("saturn/interrupts");
 
 comptime {
-    if(!@hasDecl(interrupt, "init")) {
+    if(!@hasDecl(interrupts, "init")) {
         @compileError(
             "interruption of the kernel target cpu architecture does not have a declared function for init"
         );
@@ -32,28 +32,40 @@ export fn init() void {
     // e desejavel ter maior controle sobre as interrupçoes
     switch(arch.__SaturnEnabledArchSupervisor__) {
         true => {
-            if(@TypeOf(interrupt.init) != supervisor.initSupervisor_T) {
-                @compileError(
-                    "supervisor init function should be of the type '" ++ @typeName(supervisor.initSupervisor_T) ++ "'"
-                );
-            }
-            if(!@hasDecl(interrupt, "__saturn_supervisor_table__")) {
+            const supervisor_T: type = supervisor.supervisor_T;
+            if(!@hasDecl(interrupts, "__saturn_supervisor_table__")) {
                 @compileError(
                     "__saturn_supervisor_table__ must be defined within the file"
                 );
             }
-            switch(@typeInfo(@TypeOf(interrupt.__saturn_supervisor_table__))) {
-                // TODO: 
+            switch(@typeInfo(@TypeOf(interrupts.__saturn_supervisor_table__))) {
+                .array => |A| {
+                    if(A.child != supervisor_T) {
+                        @compileError(
+                            "__saturn_supervisor_table__ must be an array of '" ++ @typeName(supervisor_T) ++ "'"
+                        );
+                    }
+                    if(@TypeOf(interrupts.init) != fn([A.len]?*const fn() void) void) {
+                        @compileError(
+                            "supervisor interrupt init function must be an '" ++ @typeName(fn([A.len]?*const fn() void) void) ++ "'"
+                        );
+                    }
+                },
+                else => {
+                    @compileError(
+                        "__saturn_supervisor_table__ must be an array of '" ++ @typeName(supervisor_T) ++ "'"
+                    );
+                },
             }
-            @call(.never_inline, &interrupt.init, .{
+            @call(.never_inline, &interrupts.init, .{
                 comptime supervisor.init(
-                    interrupt.__saturn_supervisor_table__,
-                    [interrupt.__saturn_supervisor_table__.len]?*const fn() void
+                    interrupts.__saturn_supervisor_table__,
+                    [interrupts.__saturn_supervisor_table__.len]?*const fn() void
                 )
             });
         },
         false => {
-            @call(.never_inline, &interrupt.init, .{});
+            @call(.never_inline, &interrupts.init, .{});
         },
     }
 }
@@ -61,4 +73,12 @@ export fn init() void {
 export fn main() void {
     @call(.always_inline, &init, .{});
     @call(.always_inline, &modules.callLinkableMods, .{});
+    asm volatile(
+        \\ movl $0xB8000, %eax
+        \\ movb $'H', (%eax)
+        \\ jmp .
+        :
+        :
+        :
+    );
 }
