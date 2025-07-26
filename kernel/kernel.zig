@@ -14,15 +14,6 @@ pub const debug: type = @import("saturn/debug");
 pub const interrupts: type = @import("saturn/interrupts");
 
 comptime {
-    if(!@hasDecl(interrupts, "init")) {
-        @compileError(
-            "interruption of the kernel target cpu architecture does not have a declared function for init"
-        );
-    }
-}
-
-export fn init() void {
-    @call(.never_inline, &arch.__SaturnEnabledArch__.init, .{});
     // Caso a arquitetura queira usar o supervisor, o saturn
     // precisa que a arquitetura tenha uma funçao para configurar
     // suas interrupçoes juntamente com o supervisor, caso contrario
@@ -30,43 +21,45 @@ export fn init() void {
     //
     // O uso do supervisor nao e obrigatorio, por exemplo, para microcontroladores
     // e desejavel ter maior controle sobre as interrupçoes
-    switch(arch.__SaturnEnabledArchSupervisor__) {
-        true => {
-            const supervisor_T: type = supervisor.supervisor_T;
-            if(!@hasDecl(interrupts, "__saturn_supervisor_table__")) {
-                @compileError(
-                    "__saturn_supervisor_table__ must be defined within the file"
-                );
-            }
-            switch(@typeInfo(@TypeOf(interrupts.__saturn_supervisor_table__))) {
-                .array => |A| {
-                    if(A.child != supervisor_T) {
-                        @compileError(
-                            "__saturn_supervisor_table__ must be an array of '" ++ @typeName(supervisor_T) ++ "'"
-                        );
-                    }
-                    if(@TypeOf(interrupts.init) != fn([A.len]?*const fn() void) void) {
-                        @compileError(
-                            "supervisor interrupt init function must be an '" ++ @typeName(fn([A.len]?*const fn() void) void) ++ "'"
-                        );
-                    }
-                },
-                else => {
+    if(!@hasDecl(interrupts, "init")) {
+        @compileError(
+            "interruption of the kernel target cpu architecture does not have a declared function for init"
+        );
+    }
+    if(arch.__SaturnEnabledArchSupervisor__) {
+        const supervisor_T: type = supervisor.supervisor_T;
+        if(!@hasDecl(interrupts, "__saturn_supervisor_table__")) {
+            @compileError(
+                "__saturn_supervisor_table__ must be defined within the file"
+            );
+        }
+        switch(@typeInfo(@TypeOf(interrupts.__saturn_supervisor_table__))) {
+            .array => |A| {
+                if(A.child != supervisor_T) {
                     @compileError(
                         "__saturn_supervisor_table__ must be an array of '" ++ @typeName(supervisor_T) ++ "'"
                     );
-                },
-            }
-            @call(.never_inline, &interrupts.init, .{
-                comptime supervisor.init(
-                    interrupts.__saturn_supervisor_table__,
-                    [interrupts.__saturn_supervisor_table__.len]?*const fn() void
-                )
-            });
-        },
-        false => {
-            @call(.never_inline, &interrupts.init, .{});
-        },
+                }
+                if(@TypeOf(interrupts.init) != fn([A.len]?*const fn() void) void) {
+                    @compileError(
+                        "supervisor interrupt init function must be an '" ++ @typeName(fn([A.len]?*const fn() void) void) ++ "'"
+                    );
+                }
+            },
+            else => {
+                @compileError(
+                    "__saturn_supervisor_table__ must be an array of '" ++ @typeName(supervisor_T) ++ "'"
+                );
+            },
+        }
+    }
+}
+
+export fn init() void {
+    @call(.never_inline, &arch.__SaturnEnabledArch__.init, .{});
+    switch(comptime arch.__SaturnEnabledArchSupervisor__) {
+        true => @call(.never_inline, &interrupts.init, .{ supervisor.supervisorHandlerPerIsr }), // with supervisor
+        false => @call(.never_inline, &interrupts.init, .{}), // without supervisor
     }
 }
 
