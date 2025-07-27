@@ -10,8 +10,12 @@ const supervisor_T: type = @import("root").supervisor.supervisor_T;
 const idtEntry_t: type = @import("idt.zig").idtEntry_T;
 const lidt_T: type = @import("idt.zig").lidt_T;
 
+const InterruptGate: comptime_int = 0b1110;
+const TrapGate: comptime_int = 0b1111;
+const TaskGate: comptime_int = 0b0101;
+
 // Exceptions Messagens
-pub const exceptionsMessagens = @import("idt.zig").cpuExceptionsMessagens;
+const exceptionsMessagens = @import("idt.zig").cpuExceptionsMessagens;
 
 pub const __saturn_supervisor_table__ = sst: {
     var interrupts: [256]supervisor_T = undefined;
@@ -47,6 +51,37 @@ pub const __saturn_supervisor_table__ = sst: {
     break :sst interrupts;
 };
 
+var lidt: lidt_T = undefined;
+
 pub fn init(handlers: [__saturn_supervisor_table__.len]*const fn() callconv(.c) void) void {
-    _ = handlers;
+    const idtEntries = comptime iE: {
+        var entries: [__saturn_supervisor_table__.len]idtEntry_t = undefined;
+        for(0..__saturn_supervisor_table__.len) |i| {
+            entries[i].segment = 0x08;
+            entries[i].flags = 0x80 | @as(u8, @intCast(InterruptGate));
+            entries[i].always0 = 0x00;
+        }
+        break :iE entries;
+    };
+    { // Runtime block
+        // Isso pode ser feito aqui pois estamos no baremetal, em um programa com OS, isso daria
+        // um segfault, já que idtEntries é conhecido em tempo de compilação e montado inteiramente
+        // na .rodata, pegar o endereço dele dessa maneira iria ser para um endereço de rodata
+        lidt.entries = @constCast(&idtEntries);
+        lidt.limit = (@sizeOf((idtEntry_t)) * __saturn_supervisor_table__.len) - 1;
+        // Aqui precisamos resolver o endereço das funções em execução, já que o compilador
+        // sabe da existencia de uma função pois o assembly vamos ter uma label para aquela
+        // função, mas mesmo assim o endereço ainda é um misterio para o compilador, ja que
+        // fica por conta do linker em resolver os endereços
+        for(0..__saturn_supervisor_table__.len) |i| {
+            lidt.entries[i].low = @intCast(@intFromPtr(handlers[i]) & 0xFFFF);
+            lidt.entries[i].high = @intCast((@intFromPtr(handlers[i]) >> 16) & 0xFFFF);
+        }
+        asm volatile(
+            \\ lidt (%eax)
+            :
+            :[_] "{eax}" (&lidt),
+            :"eax"
+        );
+    }
 }
