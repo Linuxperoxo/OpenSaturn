@@ -1,3 +1,8 @@
+// ┌────────────────────────────────────────────────┐
+// │  (c) 2025 Linuxperoxo  •  FILE: idt.zig        │
+// │            Author: Linuxperoxo                 │
+// └────────────────────────────────────────────────┘
+
 pub const idtEntry_T: type = packed struct {
     low: u16, // Parte baixa do endereço ISR (Interrupt Service Routine)
     segment: u16, // Aponta para o seletor de segmento usado para acessar o codigo do ISR
@@ -9,6 +14,11 @@ pub const idtEntry_T: type = packed struct {
     // * bit 3-0 - Gate Type
     high: u16, // Parte alta do endereço do ISR
 };
+
+// Gate Types:
+// Interrupt Gate(0b1110): Mascara interrupções, não permite interrupção dentro de interrupção
+// Trap Gate(0b1111): Não Mascara interrupções, permite interrupão dentro de interrupção
+// Task Gate(0b0101): CPU Troca para uma task diferente (Task State Segment)
 
 pub const lidt_T: type = packed struct {
     limit: u16, // Offset maximo de entradas em bytes
