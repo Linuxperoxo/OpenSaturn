@@ -3,6 +3,15 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
+const arch: type = @import("root").arch;
+
+const ModuleInfo_T: type = @import("modules/types.zig").ModuleInfo_T;
+const ModuleResolved_T: type = @import("modules/types.zig").ModuleResolved_T;
+const ModuleInfoResolvedInit_T: type = @import("modules/types.zig").ModuleInfoResolvedInit_T;
+
+const compileError = @import("modules/utils.zig").compileError;
+const cmpModsNames = @import("modules/utils.zig").cmpModsNames;
+
 // Esse arquivo serve para o kernel detectar os modulos
 // que devem ser linkados a ele. Como o kernel nao depende
 // de nenhum modulo, se nao tiver um intermediario como esse,
@@ -16,8 +25,11 @@
 //  voce deve ter explicitamente 3 declaraçoes dentro do arquivo do seu modulo
 //      * pub const __linkable_module_name__: []const u8 -> Diz o nome do modulo (Obrigatorio)
 //      * pub const __linkable_module_init__: *const fn() anyerror!void -> Aponta para a funçao init do modulo (Obrigatorio)
-//      * pub const __linkable_module_opti__: bool -> Diz se o modulo deve ter escolha de ser selecionado ou nao no menuconfig (Nao Obrigatorio)
-//                                                    caso nao definido sera sempre carregado no kernel
+//      * pub const __linkable_module_optional__: bool -> Diz se o modulo deve ter escolha de ser selecionado ou nao no menuconfig (Nao Obrigatorio)
+//                                                        caso nao definido sera sempre carregado no kernel
+//
+//      * pub const __linkable_module_arch__: target_T/[_]target_T -> Pode ser um array ou de apenas um valor. Diz quais arquiteturas sao suportadas pelo
+//                                                                    modulo
 //
 // Feito isso, voce deve adicionar o arquivo com essas declaraçoes dentro de __SaturnAllMods__ usando o @import()
 
@@ -26,63 +38,96 @@ pub const __SaturnAllMods__ = [_]type {
     @import("fs/rootfs/module.zig"),
 };
 
-const Module: type = struct {
-    name: []const u8 = undefined,
-    init: *const fn() anyerror!void = undefined,
-    status: enum {active, disable, undef} = .undef,
+pub const __SaturnModulesInfos__ = SMR: {
+    // Verificação de modulos
+    var saturnMods: [__SaturnAllMods__.len]ModuleInfo_T = undefined;
+        for(0..saturnMods.len) |i| {
+            // Module Name Decl
+            saturnMods[i].name = n: {
+            const declName: []const u8 = "__linkable_module_name__";
+            if(!@hasDecl(__SaturnAllMods__[i], declName)) {
+                compileError(@typeName(__SaturnAllMods__[i]), declName, null);
+            }
+            if(@TypeOf(__SaturnAllMods__[i].__linkable_module_name__) != []const u8) {
+                compileError(@typeName(__SaturnAllMods__[i]), declName, @as(?[]const u8, @typeName([]const u8)));
+            }
+            break :n __SaturnAllMods__[i].__linkable_module_name__;
+        };
+
+        // Module Arch Decl
+        aD: {
+            const declName: []const u8 = "__linkable_module_arch__";
+            if(!@hasDecl(__SaturnAllMods__[i], declName)) {
+                compileError(@typeName(__SaturnAllMods__[i]), declName, null);
+            }
+            const typeInfo = @typeInfo(@TypeOf(__SaturnAllMods__[i].__linkable_module_arch__));
+            switch(typeInfo) {
+                .array => |A| {
+                    if(A.child != arch.target_T) {
+                        @compileError(
+                            declName ++ " is defined in the module file" ++ @typeName(__SaturnAllMods__[i]) ++
+                            ", but it must be an [_]" ++ @typeName(arch.target_T)
+                        );
+                    }
+                    for(__SaturnAllMods__[i].__linkable_module_arch__) |modArch| {
+                        if(modArch == arch.__SaturnTarget__) {
+                            break :aD;
+                        }
+                    }
+                },
+                else => {
+                    if(@TypeOf(__SaturnAllMods__[i].__linkable_module_arch__) != arch.target_T) {
+                        @compileError(
+                            "__linkable_module_arch__ is defined in the module file" ++ @typeName(__SaturnAllMods__[i]) ++
+                            " but it must be an " ++ @typeName(arch.target_T) ++ " or [_]" ++ @typeName(arch.target_T)
+                        );
+                    }
+                    if(__SaturnAllMods__[i].__linkable_module_arch__ == arch.__SaturnTarget__) {
+                        break :aD;
+                    }
+                },
+            }
+            @compileError("module file " ++ @typeName(__SaturnAllMods__[i]) ++ " is not supported by target architecture " ++ @tagName(arch.__SaturnTarget__));
+        }
+
+        // Module Optional Decl
+        saturnMods[i].optional = o: {
+            const declName: []const u8 = "__linkable_module_optional__";
+            if(@hasDecl(__SaturnAllMods__[i], declName)) {
+                if(@TypeOf(__SaturnAllMods__[i].__linkable_module_optional__) != bool) {
+                    compileError(@typeName(__SaturnAllMods__[i]), declName, @as(?[]const u8, @typeName(bool)));
+                }
+                break :o __SaturnAllMods__[i].__linkable_module_optional__;
+            }
+            break :o false;
+        };
+    }
+    break :SMR saturnMods;
 };
 
-fn cmpModsNames(
-    comptime @"0": []u8,
-    comptime @"1": []u8
-) bool {
-    if(@"0".len != @"1".len) {
-        return false;
-    }
-    for(0..@"0".len) |i| {
-        if(@"0"[i] != @"1"[i]) {
-            return false;
+pub const __SaturnModulesResolved__ = SMR: {
+    var resolved = r: {
+        var modulesInfos: [__SaturnModulesInfos__.len]ModuleResolved_T = undefined;
+        for(0..__SaturnModulesInfos__.len) |i| {
+            modulesInfos[i].info = &__SaturnModulesInfos__[i];
+            modulesInfos[i].action = if(modulesInfos[i].info.optional) .undef else .include; // Por padrão vamos incluir o modulo
         }
-    }
-    return true;
-}
-
-// OPTIMIZE:
-
-pub const __SaturnInfoMods__ = resolve: {
-    var exportedMods = exporting: {
-        var mods: [__SaturnAllMods__.len]Module = undefined;
-        for(0..__SaturnAllMods__.len) |i| {
-            if(@hasDecl(__SaturnAllMods__[i], "__linkable_module_name__")) {
-                if(@hasDecl(__SaturnAllMods__[i], "__linkable_module_init__")) {
-                    if(@TypeOf(__SaturnAllMods__[i].__linkable_module_name__) == []const u8) {
-                        if(@TypeOf(__SaturnAllMods__[i].__linkable_module_init__) == *const fn() anyerror!void) {
-                            mods[i].name = __SaturnAllMods__[i].__linkable_module_name__;
-                            mods[i].init = __SaturnAllMods__[i].__linkable_module_init__;
-                            mods[i].status = block0: {
-                                if(@hasDecl(__SaturnAllMods__[i], "__linkable_module_opti__")) {
-                                    if(__SaturnAllMods__[i].__linkable_module_opti__) {
-                                        break :block0 .active;
-                                    }
-                                    break :block0 .undef;
-                                }
-                                break :block0 .active;
-                            };
-                            continue;
-                        }
-                        @compileError("the index file" ++ i ++ "is placed as a module but does not contain '__linkable_module_init__' of the declared type" ++
-                            @typeName(*const fn() anyerror!void));
-                    }
-                    @compileError("the index file" ++ i ++ "is placed as a module but does not contain '__linkable_module_init__' of the declared type" ++
-                        @typeName([]const u8));
-                }
-                @compileError("the index file" ++ i ++ "is placed as a module but does not contain '__linkable_module_init__' of the declared type");
-            }
-            @compileError("the index file" ++ i ++ "is placed as a module but does not contain '__linkable_module_name__' of the declared type");
-        }
-        break :exporting mods;
+        break :r modulesInfos;
     };
-    const loadedModFile = @embedFile("modules.sm");
+    // Resolvendo modulos no arquivo modules.sm
+    const loadedModFile = lMF: {
+        const modFile = @embedFile("modules.sm");
+        if(modFile.len == 0) {
+            for(resolved) |mod| {
+                if(mod.info.optional) {
+                    @compileError(
+                        "module " ++ mod.info.name ++ " is optional but it was not included in the module file, run 'zig build menuconfig'"
+                    );
+                }
+            }
+        }
+        break :lMF modFile;
+    };
     const loadedModFileLines = reading: {
         const linesNum = counting: {
             var count: usize = 1;
@@ -119,33 +164,68 @@ pub const __SaturnInfoMods__ = resolve: {
     for(0..loadedModFileLines.len) |line| {
         while(loadedModFileLines[line][offset] != '=') : (offset += 1) {
             if(offset + 1 >= loadedModFileLines[line].len) {
-                @compileError("Error in module description: " ++ line ++ ":" ++ offset);
+                @compileError("error in module description: " ++ line ++ ":" ++ offset);
             }
         }
         modName = @constCast(loadedModFileLines[line][0..offset]);
         offset += 1;
         if(offset + 1 < loadedModFileLines[line].len) {
-            @compileError("Error in module description: " ++ line ++ ":" ++ offset);
+            @compileError("error in module description: " ++ line ++ ":" ++ offset);
         }
         field = loadedModFileLines[line][offset];
-        for(&exportedMods) |*module| {
-            if(@call(.compile_time, &cmpModsNames, .{@constCast(module.name), modName})) {
+        for(&resolved) |*module| {
+            if(@call(.compile_time, &cmpModsNames, .{module.info.name, modName})) {
+                if(module.action != .undef) {
+                    @compileError(
+                        "double definition of inclusion of module " ++ module.info.name ++ ", run 'zig build menuconfig'"
+                    );
+                }
                 switch(field) {
-                    'y' => module.status = .active,
-                    'n' => module.status = .disable,
-                    else => module.status = .undef,
+                    'y' => module.action = .include,
+                    'n' => module.action = .skip,
+                    else => module.action = .skip,
                 }
             }
         }
         offset = 0;
     }
-    break :resolve exportedMods;
+    break :SMR resolved;
+};
+
+pub const __SaturnModulesInfoResolvedInit__ = SMIR: {
+    var modulesInfoResolvedInit: [__SaturnModulesResolved__.len]ModuleInfoResolvedInit_T = undefined;
+    for(0..__SaturnModulesResolved__.len) |i| {
+        // Module Init Decl
+        {
+            // So fazemos essa verificação aqui por causa do menuconfig, como ele
+            // não tem todos os modulos import que o kernel tem, ele vai dar um erro
+            // de compilação ao tentar resolver os arquivos que usarem os imports
+            const declName: []const u8 = "__linkable_module_init__";
+            if(!@hasDecl(__SaturnAllMods__[i], declName)) {
+                compileError(
+                    @typeName(__SaturnAllMods__[i]),
+                    declName,
+                    null
+                );
+            }
+            if(@TypeOf(__SaturnAllMods__[i].__linkable_module_init__) != *const fn() anyerror!void) {
+                compileError(
+                    @typeName(__SaturnAllMods__[i]),
+                    declName,
+                    @as(?[]const u8, @typeName(*const fn() anyerror!void))
+                );
+            }
+        }
+        modulesInfoResolvedInit[i].resolved = &__SaturnModulesResolved__[i];
+        modulesInfoResolvedInit[i].init = __SaturnAllMods__[i].__linkable_module_init__;
+    }
+    break :SMIR modulesInfoResolvedInit;
 };
 
 pub fn callLinkableMods() void {
-    inline for(__SaturnInfoMods__) |module| {
-        if(module.status == .active) {
-            @call(.never_inline, module.init, .{}) catch {
+    inline for(0..__SaturnModulesInfoResolvedInit__.len) |i| {
+        if(comptime __SaturnModulesInfoResolvedInit__[i].resolved.action == .include) {
+            @call(.never_inline, __SaturnModulesInfoResolvedInit__[i].init, .{}) catch {
                 // TODO:
             };
         }

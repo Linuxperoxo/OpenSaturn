@@ -73,6 +73,9 @@ pub fn build(b: *std.Build) void {
 
     // Kernel Modules
     const modules = makemod(b, "saturn/modules", "modules.zig");
+    const modulesFile =makemod(b, "modules.sm", "modules.sm");
+
+    modules.addImport("modules.sm", modulesFile);
 
     // Debug
     const debug = makemod(b, "saturn/debug", "debug.zig");
@@ -101,25 +104,27 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
-    // Menuconfig
-    const saturnmodules = b.addModule("saturn/modules", .{
-        .root_source_file = b.path("modules.zig"),
-    });
+    {
+        // Menuconfig
+        const menuconfig = b.addExecutable(.{
+            .name = "menuconfig",
+            .root_source_file = b.path("menuconfig.zig"),
+            .target = b.standardTargetOptions(.{}),
+            .optimize = .ReleaseFast,
+        });
 
-    const modsys = b.addExecutable(.{
-        .name = "modsys",
-        .root_source_file = b.path("menuconfig/modsys.zig"),
-        .target = b.standardTargetOptions(.{}),
-        .optimize = .ReleaseFast,
-    });
+        const archMod = b.addModule("saturn/arch", .{
+            .root_source_file = b.path("arch.zig"),
+        });
 
-    modsys.root_module.addImport("saturn/modules", saturnmodules);
+        menuconfig.root_module.addImport("saturn/arch", archMod);
 
-    const menuconfig = b.addRunArtifact(modsys);
-    const menuconfig_step = b.step("menuconfig", "Saturn menuconfig");
+        const menuconfig_run = b.addRunArtifact(menuconfig);
+        const menuconfig_step = b.step("menuconfig", "Saturn Menuconfig");
 
-    menuconfig_step.dependOn(&menuconfig.step);
-    // End Of Menuconfig
+        menuconfig_step.dependOn(&menuconfig_run.step);
+        // End Of Menuconfig
+    }
 
     binary.root_module.addImport("saturn/arch", arch);
     binary.root_module.addImport("saturn/interrupts", interrupt);
@@ -138,10 +143,10 @@ pub fn build(b: *std.Build) void {
         std.debug.print("\x1b[33mWARNING:\x1b[0m Debug Mode Enable\n", .{});
     }
 
-    const saturn = b.addInstallArtifact(binary, .{});
+    const saturn_install = b.addInstallArtifact(binary, .{});
     const saturn_step = b.step("saturn", "Install Saturn Binary");
 
-    saturn_step.dependOn(&binary.step);
-    saturn_step.dependOn(&saturn.step);
+    saturn_step.dependOn(&binary.step); // Compiler
+    saturn_step.dependOn(&saturn_install.step); // Install binary
 }
 
