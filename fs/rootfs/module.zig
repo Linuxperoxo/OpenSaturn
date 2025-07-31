@@ -15,7 +15,13 @@ const Fs_T: type = @import("root").interfaces.fs.Fs_T;
 
 pub const __linkable_module_name__: []const u8 = "ke_m_rootfs";
 pub const __linkable_module_init__: *const fn() anyerror!void = &init;
-pub const __linkable_module_arch__: [3]target_T = .{.x86, .x86_64, .arm}; // TODO:
+pub const __linkable_module_optional__: bool = false;
+pub const __linkable_module_arch__: [4]target_T = .{
+    .x86,
+    .x86_64,
+    .arm,
+    .avr,
+};
 
 const rootfsMod: Mod_T = .{
     .name = "rootfs",
