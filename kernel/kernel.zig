@@ -5,13 +5,15 @@
 
 pub const arch: type = @import("saturn/arch");
 pub const core: type = @import("saturn/kernel/core");
-pub const interfaces: type = @import("saturn/lib/interfaces");
-pub const kernel: type = @import("saturn/lib/kernel");
+pub const exported: type = @import("saturn/kernel/exported");
 pub const memory: type = @import("saturn/kernel/memory");
-pub const supervisor: type = @import("saturn/supervisor");
-pub const modules: type = @import("saturn/modules");
-pub const debug: type = @import("saturn/debug");
-pub const interrupts: type = @import("saturn/interrupts");
+pub const modules: type = @import("saturn/kernel/modules");
+pub const interfaces: type = @import("saturn/kernel/modules/interfaces");
+pub const debug: type = @import("saturn/kernel/debug");
+pub const supervisor: type = @import("saturn/kernel/supervisor");
+pub const interrupts: type = @import("saturn/kernel/interrupts");
+pub const kernel: type = @import("saturn/kernel/lib"); // Possibly obsolete in the future
+pub const userspace: type = @import("saturn/userspace/lib");
 
 comptime {
     // Caso a arquitetura queira usar o supervisor, o saturn
