@@ -1,5 +1,5 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: kmem.zig     │
+// │  (c) 2025 Linuxperoxo  •  FILE: memory.zig   │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
