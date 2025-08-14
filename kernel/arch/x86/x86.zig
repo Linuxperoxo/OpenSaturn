@@ -47,7 +47,8 @@ pub fn entry() linksection(".text.entry") callconv(.naked) noreturn {
     // * Offset dentro do arquivo onde fica o entry do codigo, o atlas vai dar jump nesse offset
     // * AtlasImgSize: Tamanho total do binario em bytes
     // * AtlasVMode: Modo de video que deve ser colocado
-    // * AtlasFlags: Flags gerais para o Atlas, consulte a documentaçao no fonte do atlas NOTE:https://github.com/Linuxperoxo/AtlasB/blob/master/src/atlas.s
+    // * AtlasFlags: Flags gerais para o Atlas, consulte a documentaçao no fonte do atlas
+    //    NOTE: https://github.com/Linuxperoxo/AtlasB/blob/master/src/atlas.s
     asm volatile(
         \\  .equ AtlasMagic, 0xAB00
         \\  .equ AtlasLoadDest, 0x1000000

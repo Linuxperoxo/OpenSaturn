@@ -54,7 +54,7 @@ pub fn rootfs_mount() FsErr_T!Superblock_T {
     return FsErr_T.AllocInternal;
 }
 
-pub fn rootfs_unmount() FsErr_T!void {
+pub fn rootfs_umount() FsErr_T!void {
     // Como e um sistema de arquivos em ram, devemos
     // liberar qualquer memoria aqui
 }
