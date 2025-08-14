@@ -1,5 +1,5 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: rootfs.zig   │
+// │  (c) 2025 Linuxperoxo  •  FILE: types.zig    │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
