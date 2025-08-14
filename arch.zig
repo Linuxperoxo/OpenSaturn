@@ -5,7 +5,7 @@
 
 // --- SATURN TARGET ---
 pub const __SaturnTarget__: target_T = .x86;
-pub const __SaturnCodeModel__: codeMode_T = .Runtime;
+pub const __SaturnCodeModel__: codeMode_T = .Debug;
 pub const __SaturnOptimize__: opt_T = .Small;
 
 // --- SATURN ARCH ---
