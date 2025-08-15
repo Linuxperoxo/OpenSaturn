@@ -3,9 +3,7 @@
 // │            Author: Linuxperoxo                 │
 // └────────────────────────────────────────────────┘
 
-pub const arch: type = @import("saturn/arch");
 const std: type = @import("std");
-
 const ModulesInfos = @import("modules.zig").__SaturnModulesInfos__;
 
 pub fn main() void {

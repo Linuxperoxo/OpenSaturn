@@ -6,24 +6,35 @@
 // Kernel Arch Infos
 const target_T: type = @import("root").arch.target_T;
 
-// kernel modules types
+// kernel Modules Types
 const Mod_T: type = @import("root").interfaces.module.Mod_T;
 const ModErr_T: type = @import("root").interfaces.module.ModErr_T;
 
-// kernel fs types
+// Module Description Types
+const ModuleDescription_T: type = @import("root").modules.ModuleDescription_T;
+const ModuleDescriptionTarget_T: type = @import("root").modules.ModuleDescriptionTarget_T;
+
+// Kernel FS Types
 const Fs_T: type = @import("root").interfaces.fs.Fs_T;
 
 const rootfs_mount = &@import("management.zig").rootfs_mount;
 const rootfs_umount = &@import("management.zig").rootfs_umount;
 
-pub const __linkable_module_name__: []const u8 = "ke_m_rootfs";
-pub const __linkable_module_init__: *const fn() anyerror!void = &init;
-pub const __linkable_module_optional__: bool = false;
-pub const __linkable_module_arch__: [4]target_T = .{
-    .x86,
-    .x86_64,
-    .arm,
-    .avr,
+pub const __LinkableSaturnModuleDescription_: ModuleDescription_T = .{
+    .name = "ke_m_rootfs",
+    .init = &init,
+    .optional = false,
+    .type = .{
+        .fs = .{
+            .compile = "/"
+        }
+    },
+    .arch = &[_]ModuleDescriptionTarget_T {
+        .x86,
+        .x86_64,
+        .arm,
+        .avr,
+    },
 };
 
 const rootfsMod: *const Mod_T = &Mod_T {
