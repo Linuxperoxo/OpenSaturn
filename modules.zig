@@ -33,15 +33,22 @@ const cmpModsNames = @import("modules/utils.zig").cmpModsNames;
 //
 // Feito isso, voce deve adicionar o arquivo com essas declaraçoes dentro de __SaturnAllMods__ usando o @import()
 
+
+
 // --- SATURN MODULES ---
 pub const __SaturnAllMods__ = [_]type {
+    // Module Location!
     @import("fs/rootfs/module.zig"),
 };
+
+
 
 pub const __SaturnModulesInfos__ = SMR: {
     // Verificação de modulos
     var saturnMods: [__SaturnAllMods__.len]ModuleInfo_T = undefined;
         for(0..saturnMods.len) |i| {
+            if(__SaturnAllMods__[i] )
+
             // Module Name Decl
             saturnMods[i].name = n: {
             const declName: []const u8 = "__linkable_module_name__";
