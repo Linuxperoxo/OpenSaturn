@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const arch: type = @import("root").arch;
+const arch: type = @import("arch.zig");
 
 const ModuleInfo_T: type = @import("modules/types.zig").ModuleInfo_T;
 const ModuleResolved_T: type = @import("modules/types.zig").ModuleResolved_T;
@@ -11,6 +11,24 @@ const ModuleInfoResolvedInit_T: type = @import("modules/types.zig").ModuleInfoRe
 
 const compileError = @import("modules/utils.zig").compileError;
 const cmpModsNames = @import("modules/utils.zig").cmpModsNames;
+
+pub const ModuleDescriptionTarget_T: type = arch.target_T;
+pub const ModuleDescription_T: type = struct {
+    name: []const u8,
+    init: *const fn() anyerror!void,
+    optional: bool,
+    arch: []const ModuleDescription_T,
+    type: union(enum) {
+        driver: void,
+        syscall: void,
+        interrupt: void,
+        irq: void,
+        fs: union(enum) {
+            compile: []const u8,
+            dinamic: void,
+        },
+    },
+};
 
 // Esse arquivo serve para o kernel detectar os modulos
 // que devem ser linkados a ele. Como o kernel nao depende
@@ -33,10 +51,14 @@ const cmpModsNames = @import("modules/utils.zig").cmpModsNames;
 //
 // Feito isso, voce deve adicionar o arquivo com essas declaraçoes dentro de __SaturnAllMods__ usando o @import()
 
+
+
 // --- SATURN MODULES ---
 pub const __SaturnAllMods__ = [_]type {
     @import("fs/rootfs/module.zig"),
 };
+
+
 
 pub const __SaturnModulesInfos__ = SMR: {
     // Verificação de modulos
