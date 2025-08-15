@@ -12,11 +12,5 @@ pub const Dev_T: type = struct {
     ioctrl: *fn(usize, usize) anyerror!usize,
 };
 
-pub const DevType_T: type = enum {
-    char,
-    block,
-};
-
-pub const DevErr_T: type = error {
-    
-};
+pub const register_dev = @import("management.zig").register_dev;
+pub const unregister_dev = @import("management.zig").unregister_dev;
