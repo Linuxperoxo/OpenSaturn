@@ -114,9 +114,9 @@ pub const __SaturnModulesResolved__ = SMR: {
         }
         break :r modulesInfos;
     };
-    // Resolvendo modulos no arquivo modules.sm
+    // Resolvendo modulos no arquivo .config.sm
     const loadedModFile = lMF: {
-        const modFile = @embedFile("modules.sm");
+        const modFile = @embedFile(".config.sm");
         if(modFile.len == 0) {
             for(resolved) |mod| {
                 if(mod.info.optional) {
