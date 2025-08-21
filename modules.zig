@@ -40,6 +40,7 @@ pub const ModuleDescription_T: type = struct {
 
 // --- SATURN MODULES ---
 pub const __SaturnAllMods__ = [_]type {
+    // Module Location!
     @import("fs/rootfs/module.zig"),
 };
 

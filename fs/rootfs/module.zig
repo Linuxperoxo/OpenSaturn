@@ -38,7 +38,7 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
 };
 
 const rootfsMod: *const Mod_T = &Mod_T {
-    .name = "rootfs",
+    .name = "ke_m_rootfs",
     .desc = "Core Kernel Root Filesystem",
     .author = "Linuxperoxo",
     .version = "1.0-1",
@@ -46,7 +46,7 @@ const rootfsMod: *const Mod_T = &Mod_T {
     .init = &init,
     .exit = &exit,
     .private = @constCast(&@import("root").interfaces.fs.Fs_T {
-        .name = "rootfs",
+        .name = "ke_m_rootfs",
         .flags = .R,
         .mount = rootfs_mount,
         .unmount = rootfs_umount,
