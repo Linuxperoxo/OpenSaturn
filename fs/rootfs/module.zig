@@ -20,10 +20,10 @@ const Fs_T: type = @import("root").interfaces.fs.Fs_T;
 const rootfs_mount = &@import("management.zig").rootfs_mount;
 const rootfs_umount = &@import("management.zig").rootfs_umount;
 
-pub const __LinkableSaturnModuleDescription_: ModuleDescription_T = .{
-    .name = "ke_m_rootfs",
+pub const __SaturnModuleDescription__: ModuleDescription_T = .{
+    .name = null,
+    .need = null,
     .init = &init,
-    .optional = false,
     .type = .{
         .fs = .{
             .compile = "/"
