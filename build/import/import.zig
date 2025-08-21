@@ -80,6 +80,24 @@ pub const importsToAdd = [_]toImport_T {
 
 
 
+    // Kernel Config
+    toImport_T {
+        .name = "saturn/kernel/config",
+        .file = "config/config.zig",
+    },
+    // =================
+
+
+
+    // Kernel Loader
+    toImport_T {
+        .name = "saturn/kernel/loader",
+        .file = "kernel/loader.zig",
+    },
+    // =================
+
+
+
     // Arch Depender
     toImport_T {
         .name = "saturn/kernel/lib",

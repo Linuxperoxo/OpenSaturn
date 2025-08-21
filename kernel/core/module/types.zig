@@ -3,6 +3,8 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
+const arch: type = @import("root").arch;
+
 // Interfaces
 pub const Mod_T: type = struct {
     name: []const u8,
@@ -15,10 +17,12 @@ pub const Mod_T: type = struct {
     private: ?*anyopaque,
 };
 
-pub const ModType_T: type = enum(u2) {
+pub const ModType_T: type = enum {
     driver,
-    filesystem,
     syscall,
+    interrupt,
+    irq,
+    filesystem,
 };
 
 pub const ModErr_T: type = error {
@@ -26,6 +30,25 @@ pub const ModErr_T: type = error {
     NoNInitialized,
     AllocatorError,
     InternalError,
+};
+
+pub const ModuleDescriptionTarget_T: type = arch.target_T;
+
+pub const ModuleDescription_T: type = struct {
+    name: ?[]const u8, // usado no futuro
+    need: ?bool = null, // usado no futuro
+    init: *const fn() anyerror!void, // ponteiro para a funcao init
+    arch: []const ModuleDescriptionTarget_T, // arch suportadas
+    type: union(ModType_T) {
+        driver: void,
+        syscall: void,
+        interrupt: void,
+        irq: void,
+        filesystem: union(enum) {
+            compile: []const u8, // faz a montagem de forma direta no kernel (fstab permanente)
+            dinamic: void, // sera adicionado ao kernel, mas sua montagem acontece em runtime
+        },
+    },
 };
 
 // Internal

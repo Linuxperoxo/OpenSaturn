@@ -9,10 +9,8 @@ const target_T: type = @import("root").arch.target_T;
 // kernel Modules Types
 const Mod_T: type = @import("root").interfaces.module.Mod_T;
 const ModErr_T: type = @import("root").interfaces.module.ModErr_T;
-
-// Module Description Types
-const ModuleDescription_T: type = @import("root").modules.ModuleDescription_T;
-const ModuleDescriptionTarget_T: type = @import("root").modules.ModuleDescriptionTarget_T;
+const ModuleDescription_T: type = @import("root").interfaces.module.ModuleDescription_T;
+const ModuleDescriptionTarget_T: type = @import("root").interfaces.module.ModuleDescriptionTarget_T;
 
 // Kernel FS Types
 const Fs_T: type = @import("root").interfaces.fs.Fs_T;
@@ -21,11 +19,10 @@ const rootfs_mount = &@import("management.zig").rootfs_mount;
 const rootfs_umount = &@import("management.zig").rootfs_umount;
 
 pub const __SaturnModuleDescription__: ModuleDescription_T = .{
-    .name = null,
-    .need = null,
+    .name = "ke_m_rootfs",
     .init = &init,
     .type = .{
-        .fs = .{
+        .filesystem = .{
             .compile = "/"
         }
     },
