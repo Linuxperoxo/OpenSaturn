@@ -1,9 +1,13 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: modules.zig  │
+// │  (c) 2025 Linuxperoxo  •  FILE: types.zig    │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-// Menuconfig foi removido por um momento, seu uso estava limitando
-// o projeto, ele sera refeito totalmente do 0 no futuro
+pub const Load_T: type = enum {
+    yes,
+    no,
+};
 
-pub const IgnoreModuleWithArchNotSupported: bool = true;
+pub const Menuconfig_T: type = struct {
+    ke_m_rootfs: Load_T,
+};

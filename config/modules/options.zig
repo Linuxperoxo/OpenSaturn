@@ -1,7 +1,10 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: config.zig   │
+// │  (c) 2025 Linuxperoxo  •  FILE: options.zig  │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const modules: type = @import("modules/config.zig");
-// pub const arch: type = @import("arch.zig");
+// Menuconfig foi removido por um momento, seu uso estava limitando
+// o projeto, ele sera refeito totalmente do 0 no futuro
+
+pub const UseMenuconfigAsRef: bool = true;
+pub const IgnoreModuleWithArchNotSupported: bool = false;

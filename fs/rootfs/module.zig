@@ -20,6 +20,7 @@ const rootfs_umount = &@import("management.zig").rootfs_umount;
 
 pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .name = "ke_m_rootfs",
+    .load = .linkable,
     .init = &init,
     .type = .{
         .filesystem = .{
@@ -50,7 +51,7 @@ const rootfsMod: *const Mod_T = &Mod_T {
     }),
 };
 
-pub fn init() ModErr_T!void {
+fn init() ModErr_T!void {
     @call(.never_inline, &@import("root").interfaces.module.inmod, .{
         rootfsMod
     }) catch |err| {

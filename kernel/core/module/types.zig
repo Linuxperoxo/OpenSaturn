@@ -35,8 +35,8 @@ pub const ModErr_T: type = error {
 pub const ModuleDescriptionTarget_T: type = arch.target_T;
 
 pub const ModuleDescription_T: type = struct {
-    name: ?[]const u8, // usado no futuro
-    need: ?bool = null, // usado no futuro
+    name: []const u8,
+    load: enum { linkable, dinamic, unlinkable },
     init: *const fn() anyerror!void, // ponteiro para a funcao init
     arch: []const ModuleDescriptionTarget_T, // arch suportadas
     type: union(ModType_T) {

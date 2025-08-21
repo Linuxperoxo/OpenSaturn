@@ -73,31 +73,61 @@ pub fn loadModules() void {
         }
     }
     inline for(modules.__SaturnAllMods__) |M| {
-        for(M.__SaturnModuleDescription__.arch) |supported| {
-            if(arch.__SaturnTarget__ == supported) {
-                @call(.never_inline, M.__SaturnModuleDescription__.init, .{}) catch {
-
-                };
-                // resolvendo modulo com base no seu tipo
-                sw: switch(M.__SaturnModuleDescription__.type) {
-                    .driver => {},
-                    .syscall => {},
-                    .interrupt => {},
-                    .irq => {},
-                    .filesystem => {
-                        switch(M.__SaturnModuleDescription__.type.filesystem) {
-                            // caso o modulo fs use compile, vamos fazer uma
-                            // montagem do fs em tempo de compilacao
-                            .compile => {}, // call mount
-                            .dinamic => break :sw,
-                        }
-                    },
+        // Skip nao pode ser comptime se nao vamos ter um
+        // erro de compilacao, ja que ele vai tentar carregar
+        // os modulos em comptime
+        skip: {
+            // Precisamos forçar um comptime aqui para evitar 
+            // erro de compilacao
+            comptime arch: {
+                for(M.__SaturnModuleDescription__.arch) |supported| {
+                    if(arch.__SaturnTarget__ == supported) {
+                        break :arch;
+                    }
                 }
-                continue;
+                if(!config.modules.options.IgnoreModuleWithArchNotSupported) {
+                    @compileError("module file " ++ @typeName(M) ++ " is not supported by target architecture " ++ @tagName(arch.__SaturnTarget__));
+                }
+                break :skip;
             }
-        }
-        if(!config.modules.IgnoreModuleWithArchNotSupported) {
-            @compileError("module file " ++ @typeName(M) ++ " is not supported by target architecture " ++ @tagName(arch.__SaturnTarget__));
+            switch(comptime M.__SaturnModuleDescription__.load) {
+                .dinamic => {},
+                .unlinkable => {},
+                .linkable => {
+                    // comptime nao necessario, mas preciso ter certeza que ele vai resolver em
+                    // compilacao, por mais que tenha o @compileError
+                    comptime {
+                        if(config.modules.options.UseMenuconfigAsRef) {
+                            if(!@hasField(config.modules.menuconfig.Menuconfig_T, M.__SaturnModuleDescription__.name)) {
+                                @compileError(
+                                    "module " ++ M.__SaturnModuleDescription__.name ++ " in file " ++ @typeName(M) ++ " needs to be added in Menuconfig_T"
+                                );
+                            }
+                            switch(@field(config.modules.menuconfig.ModulesSelection, M.__SaturnModuleDescription__.name)) {
+                                .yes => {},
+                                .no => break :skip,
+                            }
+                        }
+                    }
+                    @call(.never_inline, M.__SaturnModuleDescription__.init, .{}) catch {
+                    };
+                },
+            }
+            // resolvendo modulo com base no seu tipo
+            switch(comptime M.__SaturnModuleDescription__.type) {
+                .driver => {},
+                .syscall => {},
+                .interrupt => {},
+                .irq => {},
+                .filesystem => {
+                    switch(comptime M.__SaturnModuleDescription__.type.filesystem) {
+                        // caso o modulo fs use compile, vamos fazer uma
+                        // montagem do fs em tempo de compilacao
+                        .compile => {}, // call mount
+                        .dinamic => break :skip,
+                    }
+                },
+            }
         }
     }
 }
