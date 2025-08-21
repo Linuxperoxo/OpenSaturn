@@ -9,7 +9,7 @@ const Inode_T: type = @import("root").core.vfs.interfaces.Inode_T;
 const InodeOp_T: type = @import("root").core.vfs.interfaces.InodeOp_T;
 
 // rootfs types
-const RootfsBranch_T: type = @import("rootfs.zig").RootfsBranch_T;
+const RootfsBranch_T: type = @import("types.zig").RootfsBranch_T;
 
 // rootfs fn
 const rootfs_create = @import("management.zig").rootfs_create;

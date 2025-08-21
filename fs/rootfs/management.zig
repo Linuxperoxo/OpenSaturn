@@ -15,8 +15,8 @@ const VfsErr_T: type = @import("root").core.vfs.interfaces.VfsErr_T;
 const FsErr_T: type = @import("root").interfaces.fs.FsErr_T;
 
 // rootfs
-const RootfsBranch_T: type = @import("rootfs.zig").RootfsBranch_T;
-const RootfsErr_T: type = @import("rootfs.zig").RootfsErr_T;
+const RootfsBranch_T: type = @import("types.zig").RootfsBranch_T;
+const RootfsErr_T: type = @import("types.zig").RootfsErr_T;
 const defaultDirs: [5]RootfsBranch_T = .{
     @import("files.zig").@"/",
     @import("files.zig").@"usr",
