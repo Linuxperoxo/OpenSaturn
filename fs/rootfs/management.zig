@@ -15,8 +15,8 @@ const VfsErr_T: type = @import("root").core.vfs.interfaces.VfsErr_T;
 const FsErr_T: type = @import("root").interfaces.fs.FsErr_T;
 
 // rootfs
-const RootfsBranch_T: type = @import("rootfs.zig").RootfsBranch_T;
-const RootfsErr_T: type = @import("rootfs.zig").RootfsErr_T;
+const RootfsBranch_T: type = @import("types.zig").RootfsBranch_T;
+const RootfsErr_T: type = @import("types.zig").RootfsErr_T;
 const defaultDirs: [5]RootfsBranch_T = .{
     @import("files.zig").@"/",
     @import("files.zig").@"usr",
@@ -54,7 +54,7 @@ pub fn rootfs_mount() FsErr_T!Superblock_T {
     return FsErr_T.AllocInternal;
 }
 
-pub fn rootfs_unmount() FsErr_T!void {
+pub fn rootfs_umount() FsErr_T!void {
     // Como e um sistema de arquivos em ram, devemos
     // liberar qualquer memoria aqui
 }

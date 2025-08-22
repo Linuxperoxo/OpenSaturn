@@ -18,8 +18,8 @@ pub const FsFlags_T: type = enum(u2) {
 pub const Fs_T: type = struct {
     name: []const u8,
     flags: FsFlags_T,
-    mount: *fn() FsErr_T!Vfs.interfaces.Superblock_T,
-    unmount: *fn() FsErr_T!void,
+    mount: *const fn() FsErr_T!Vfs.interfaces.Superblock_T,
+    unmount: *const fn() FsErr_T!void,
 };
 
 pub const FsErr_T: type = error {
