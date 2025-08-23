@@ -4,4 +4,4 @@
 // └──────────────────────────────────────────────┘
 
 pub const modules: type = @import("modules/config.zig");
-// pub const arch: type = @import("arch.zig");
+pub const arch: type = @import("arch/config.zig");
