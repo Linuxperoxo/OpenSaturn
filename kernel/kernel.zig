@@ -8,6 +8,7 @@ pub const core: type = @import("saturn/kernel/core");
 pub const exported: type = @import("saturn/kernel/exported");
 pub const memory: type = @import("saturn/kernel/memory");
 pub const interfaces: type = @import("saturn/kernel/modules/interfaces");
+pub const fs: type = @import("saturn/kernel/fs/internal");
 pub const debug: type = @import("saturn/kernel/debug");
 pub const supervisor: type = @import("saturn/kernel/supervisor");
 pub const interrupts: type = @import("saturn/kernel/interrupts");

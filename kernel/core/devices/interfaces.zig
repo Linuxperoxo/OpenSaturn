@@ -3,18 +3,7 @@
 // │            Author: Linuxperoxo                 │
 // └────────────────────────────────────────────────┘
 
-pub const Dev_T: type = struct {
-    name: []const u8,
-    write: *fn(u16, []const u8) anyerror!usize,
-    read: *fn(u16, []u8) anyerror!usize,
-    ioctrl: *fn(usize, usize) anyerror!usize,
-};
+pub const Dev_T: type = @import("types.zig").Dev_T;
 
-pub const DevType_T: type = enum {
-    char,
-    block,
-};
-
-pub const DevErr_T: type = error {
-    
-};
+pub const register_dev = @import("management.zig").register_dev;
+pub const unregister_dev = @import("management.zig").unregister_dev;

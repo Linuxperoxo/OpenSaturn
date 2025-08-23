@@ -60,6 +60,13 @@ pub const importsToAdd = [_]toImport_T {
     // =================
 
 
+    // Kernel Internal Filesystem
+    toImport_T {
+        .name = "saturn/kernel/fs/internal",
+        .file = "fs/internal/internal.zig"
+    },
+    // =================
+
 
     // Kernel Debug
     toImport_T {
