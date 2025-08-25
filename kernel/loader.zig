@@ -14,7 +14,31 @@ const modules: type = @import("root").modules;
 const supervisor: type = @import("root").supervisor;
 const interrupts: type = @import("root").interrupts;
 
-pub fn loadInterrupts() void {
+pub fn SaturnArch() void {
+    const EnabledArch: type = comptime switch(arch.config.Target) {
+        .x86 => arch.SupportedArch[0],
+        .x86_64 => arch.SupportedArch[1],
+        .arm => arch.SupportedArch[2],
+        .avr => arch.SupportedArch[3],
+    };
+    // Comptime para fazer verificacao geral sobre a arch
+    comptime {
+        if(!@hasDecl(EnabledArch, "__SaturnArchDescription__")) {
+            @compileError(
+                \\ Arch Error
+            );
+        }
+        if(!EnabledArch.__SaturnArchDescription__.usable) {
+            @compileError(
+                "target kernel cpu architecture " ++ @tagName(config.arch.Target) ++ " has no guarantee of functioning by the developer"
+            );
+        }
+        switch(EnabledArch.__SaturnArchDescription__.interrupt) {
+            .raw => {},
+            .supervisor => {},
+        }
+    }
+    // Comptime para fazer verificacao das interrupçoes
     comptime {
         // Caso a arquitetura queira usar o supervisor, o saturn
         // precisa que a arquitetura tenha uma funçao para configurar
@@ -23,11 +47,6 @@ pub fn loadInterrupts() void {
         //
         // O uso do supervisor nao e obrigatorio, por exemplo, para microcontroladores
         // e desejavel ter maior controle sobre as interrupçoes
-        if(!@hasDecl(interrupts, "init")) {
-            @compileError(
-                "interruption of the kernel target cpu architecture does not have a declared function for init"
-            );
-        }
         if(arch.__SaturnEnabledArchSupervisor__) {
             const supervisor_T: type = supervisor.supervisor_T;
             if(!@hasDecl(interrupts, "__saturn_supervisor_table__")) {
@@ -62,7 +81,7 @@ pub fn loadInterrupts() void {
     }
 }
 
-pub fn loadModules() void {
+pub fn SaturnModules() void {
     comptime {
         for(modules.__SaturnAllMods__) |M| {
             if(!@hasDecl(M, "__SaturnModuleDescription__")) {
