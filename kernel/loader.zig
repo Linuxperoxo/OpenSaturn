@@ -14,8 +14,32 @@ const modules: type = @import("root").modules;
 const supervisor: type = @import("root").supervisor;
 const interrupts: type = @import("root").interrupts;
 
-pub fn loadInterrupts() void {
+pub fn SaturnArch() void {
+    const EnabledArch: type = comptime switch(config.arch.options.Target) {
+        .x86 => arch.SupportedArch[0],
+        .x86_64 => arch.SupportedArch[1],
+        .arm => arch.SupportedArch[2],
+        .avr => arch.SupportedArch[3],
+    };
+    // Comptime para fazer verificacao geral sobre a arch
     comptime {
+        if(!@hasDecl(EnabledArch, "__SaturnArchDescription__")) {
+            @compileError(
+                \\ Arch Error
+            );
+        }
+        if(!EnabledArch.__SaturnArchDescription__.usable) {
+            @compileError(
+                "target kernel cpu architecture " ++ @tagName(config.arch.options.Target) ++ " has no guarantee of functioning by the developer"
+            );
+        }
+    }
+    // Fazendo chamada para o init da arquitetura
+    @call(.never_inline, EnabledArch.__SaturnArchDescription__.init, .{});
+    // Comptime para fazer verificacao das interrupçoes
+    comptime {
+        // OPTIMIZE:
+
         // Caso a arquitetura queira usar o supervisor, o saturn
         // precisa que a arquitetura tenha uma funçao para configurar
         // suas interrupçoes juntamente com o supervisor, caso contrario
@@ -23,23 +47,32 @@ pub fn loadInterrupts() void {
         //
         // O uso do supervisor nao e obrigatorio, por exemplo, para microcontroladores
         // e desejavel ter maior controle sobre as interrupçoes
-        if(!@hasDecl(interrupts, "init")) {
-            @compileError(
-                "interruption of the kernel target cpu architecture does not have a declared function for init"
-            );
+        const InterruptArch: type = switch(EnabledArch.__SaturnArchDescription__.interrupt) {
+            // TODO:
+            .raw => if(@hasDecl(interrupts, "raw"))
+                interrupts.raw
+            else
+                @compileError(""),
+            .supervisor => if(@hasDecl(interrupts, "supervisor"))
+                interrupts.supervisor
+            else
+                @compileError(""),
+        };
+        if(!@hasDecl(InterruptArch, "init")) {
+            // TODO:
+            @compileError("");
         }
-        if(arch.__SaturnEnabledArchSupervisor__) {
-            const supervisor_T: type = supervisor.supervisor_T;
-            if(!@hasDecl(interrupts, "__saturn_supervisor_table__")) {
+        if(EnabledArch.__SaturnArchDescription__.interrupt == .supervisor) {
+            if(!@hasDecl(interrupts, "__SaturnSupervisorTable__")) {
                 @compileError(
-                    "__saturn_supervisor_table__ must be defined within the file"
+                    "__SaturnSupervisorTable__ must be defined within the file"
                 );
             }
-            switch(@typeInfo(@TypeOf(interrupts.__saturn_supervisor_table__))) {
+            switch(@typeInfo(@TypeOf(interrupts.__SaturnSupervisorTable__))) {
                 .array => |A| {
-                    if(A.child != supervisor_T) {
+                    if(A.child != supervisor.supervisor_T) {
                         @compileError(
-                            "__saturn_supervisor_table__ must be an array of '" ++ @typeName(supervisor_T) ++ "'"
+                            "__SaturnSupervisorTable__ must be an array of '" ++ @typeName(supervisor.supervisor_T) ++ "'"
                         );
                     }
                     if(@TypeOf(interrupts.init) != fn([A.len]*const fn() callconv(.c) void) void) {
@@ -50,7 +83,7 @@ pub fn loadInterrupts() void {
                 },
                 else => {
                     @compileError(
-                        "__saturn_supervisor_table__ must be an array of '" ++ @typeName(supervisor_T) ++ "'"
+                        "__SaturnSupervisorTable__ must be an array of '" ++ @typeName(supervisor.supervisor_T) ++ "'"
                     );
                 },
             }
@@ -62,7 +95,7 @@ pub fn loadInterrupts() void {
     }
 }
 
-pub fn loadModules() void {
+pub fn SaturnModules() void {
     comptime {
         for(modules.__SaturnAllMods__) |M| {
             if(!@hasDecl(M, "__SaturnModuleDescription__")) {

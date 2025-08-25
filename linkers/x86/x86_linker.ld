@@ -1,13 +1,13 @@
 OUTPUT_FORMAT(binary)
 
 SECTIONS {
-  . = 0x1000000; 
+  . = 0x1000000;
 
   SF = .;
 
   .opensaturn.atlas : {
     KEEP(*(.opensaturn.data.atlas.header))
-    AtlasImgSize = ( EF - SF) - 0x1000000;
+    AtlasImgSize = (EF - SF) - 0x1000000;
   }
 
   .opensaturn.text : {

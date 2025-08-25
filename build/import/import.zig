@@ -21,8 +21,8 @@ pub const importsToAdd = [_]toImport_T {
 
     // Kernel Arch Desc
     toImport_T {
-        .name = "saturn/arch",
-        .file = "arch.zig",
+        .name = "saturn/arch/supported",
+        .file = "supported.zig",
     },
     // =================
 
