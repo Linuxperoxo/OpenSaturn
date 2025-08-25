@@ -1,5 +1,5 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: cpu.zig      │
+// │  (c) 2025 Linuxperoxo  •  FILE: x86.zig      │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
@@ -8,69 +8,16 @@ pub const apic: type = @import("apic.zig");
 pub const msr: type = @import("msr.zig");
 //pub const pic: type = @import("pic.zig");
 
-pub const __arch_maintainer__: []const u8 = "Linuxperoxo";
-pub const __arch_linker_build__: []const u8 = "x86/linker.ld";
-pub const __arch_usable__: bool = true;
-pub const __arch_supervisor__: bool = true;
+const arch_T: type = @import("root").interfaces.arch.arch_T;
 
-comptime {
-    @export(&entry, .{
-        .name = "entry",
-    });
-}
+pub const __SaturnArchDescription__: arch_T = .{
+    .maintainer = "Linuxperoxo",
+    .interrupt = .supervisor,
+    .usable = true,
+    .init = &init,
+};
 
-// callconv(.naked) não tem prólogo e epílogo automáticos é simplesmente fazer uma função do 0,
-// o compilador não adiciona o código de prólogo/epílogo para salvar/restaurar registradores ou
-// manipular a pilha, como alocações e desalocação.
-//
-// linksection(".text.saturn.entry") serve para por essa label em uma section explícita, poderiamos
-// usar o @export para isso
-//
-// export serve para deixar o símbolo vísivel no assembly, ou seja, poderiamos usar o asm volatile(\\call Sentry);
-// em qualquer arquivo, já que o símbolo está vísivel em todo o assembly.
-pub fn entry() linksection(".text.entry") callconv(.naked) noreturn {
-    asm volatile(
-        \\ cli
-        \\ movl $0xF00000, %esp
-        \\ call init
-        \\ call main
-        \\ jmp .
-    );
-
-    // AtlasB Headers
-    //
-    // Esse Headers deve ser colocado no inicio do binario, em 
-    // seus primeiros 17 bytes.
-    //
-    // * AtlasMagic: Numero magico que fala para o Atlas que e uma imagem valida
-    // * AtlasLoadDest: Endereço de memoria fisico onde o binario vai ser carregado
-    // * Offset dentro do arquivo onde fica o entry do codigo, o atlas vai dar jump nesse offset
-    // * AtlasImgSize: Tamanho total do binario em bytes
-    // * AtlasVMode: Modo de video que deve ser colocado
-    // * AtlasFlags: Flags gerais para o Atlas, consulte a documentaçao no fonte do atlas
-    //    NOTE: https://github.com/Linuxperoxo/AtlasB/blob/master/src/atlas.s
-    asm volatile(
-        \\  .equ AtlasMagic, 0xAB00
-        \\  .equ AtlasLoadDest, 0x1000000
-        \\  .weak AtlasImgSize
-        \\  .equ AtlasVMode, 0x1000
-        \\  .equ AtlasFlags, 0b00000001
-        \\  .section .opensaturn.data.atlas.header,"a",@progbits
-        \\  .type AtlasHeaders,@object
-        \\ AtlasHeaders:
-        \\   .word AtlasMagic
-        \\   .long AtlasLoadDest
-        \\   .long entry - AtlasLoadDest
-        \\   .long AtlasImgSize
-        \\   .word AtlasVMode
-        \\   .byte AtlasFlags
-        :
-        :
-        :
-    );
-}
-
-pub fn init() void {
+fn init() void {
     // Este trecho de assembly habilita a FPU e o conjunto de instruções SSE:
     //
     // * Limpa o bit EM (bit 2) do CR0 para permitir instruções de ponto flutuante reais, quanto 1 o processador gera uma interrupção

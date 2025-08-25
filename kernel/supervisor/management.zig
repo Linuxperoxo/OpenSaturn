@@ -6,7 +6,7 @@
 const supervisor_T: type = @import("types.zig").supervisor_T;
 const supervisorIsrTable_T: type = @import("types.zig").supervisorIsrTable_T;
 
-const arch__saturn_supervisor_table__ = @import("root").interrupts.__saturn_supervisor_table__;
+const SaturnSupervisorTable = @import("root").cpu.Interrupt.supervisor.__SaturnSupervisorTable__;
 
 const fmt: type = struct {
     pub fn toString(comptime N: usize, comptime C: usize) [C]u8 {
@@ -33,12 +33,12 @@ const fmt: type = struct {
 };
 
 pub const supervisorIsrTable = sIT: {
-    var archSupervisorISRInfo: [arch__saturn_supervisor_table__.len]supervisorIsrTable_T = undefined;
-    for(0..arch__saturn_supervisor_table__.len) |i| {
-        archSupervisorISRInfo[i].rewritten = arch__saturn_supervisor_table__[i].rewritten;
-        archSupervisorISRInfo[i].status = arch__saturn_supervisor_table__[i].status;
-        archSupervisorISRInfo[i].type = arch__saturn_supervisor_table__[i].type;
-        archSupervisorISRInfo[i].isr = switch(arch__saturn_supervisor_table__[i].type) {
+    var archSupervisorISRInfo: [SaturnSupervisorTable.len]supervisorIsrTable_T = undefined;
+    for(0..SaturnSupervisorTable.len) |i| {
+        archSupervisorISRInfo[i].rewritten = SaturnSupervisorTable[i].rewritten;
+        archSupervisorISRInfo[i].status = SaturnSupervisorTable[i].status;
+        archSupervisorISRInfo[i].type = SaturnSupervisorTable[i].type;
+        archSupervisorISRInfo[i].isr = switch(SaturnSupervisorTable[i].type) {
             .exception => .{ .exception = null },
             else => .{ .noexception = null },
         };
@@ -48,15 +48,15 @@ pub const supervisorIsrTable = sIT: {
 
 pub const supervisorHandlerPerIsr = sHP: {
     @setEvalBranchQuota(4096);
-    var isrHandlers: [arch__saturn_supervisor_table__.len]*const fn() callconv(.c) void = undefined;
+    var isrHandlers: [SaturnSupervisorTable.len]*const fn() callconv(.c) void = undefined;
     var counts: struct {exception: usize, irq: usize, syscall: usize, none: usize} = .{
         .exception = 0,
         .irq = 0,
         .syscall = 0,
         .none = 0,
     };
-    for(0..arch__saturn_supervisor_table__.len) |i| {
-        isrHandlers[i] = iH: switch(arch__saturn_supervisor_table__[i].type) {
+    for(0..SaturnSupervisorTable.len) |i| {
+        isrHandlers[i] = iH: switch(SaturnSupervisorTable[i].type) {
             .exception => {
                 const exception = &(struct {
                     pub fn exception() callconv(.c) void {

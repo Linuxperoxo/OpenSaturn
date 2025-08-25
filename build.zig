@@ -4,7 +4,7 @@
 // └──────────────────────────────────────────────┘
 
 pub const std: type = @import("std");
-pub const SaturnArchInfo: type = @import("arch.zig");
+pub const SaturnArchConfig: type = @import("config/arch/config.zig");
 
 pub const target: type = @import("build/target/target.zig");
 pub const import: type = @import("build/import/import.zig");
@@ -33,7 +33,7 @@ pub fn build(b: *std.Build) void {
 
     import.createImportsAndAddLinker(b, saturn);
 
-    if(SaturnArchInfo.__SaturnCodeModel__ == .Debug) {
+    if(SaturnArchConfig.options.CodeMode == .Debug) {
         std.debug.print("\x1b[33mWARNING:\x1b[0m Debug Mode Enable\n", .{});
     }
 
