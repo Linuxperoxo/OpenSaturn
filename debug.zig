@@ -3,6 +3,10 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
+comptime {
+    @compileError("File Not Working");
+}
+
 pub const saturnArchInfos: type = @import("root").arch;
 
 pub const RegDebug_x86_64: type = enum(u2) {

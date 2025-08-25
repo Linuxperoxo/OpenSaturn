@@ -16,13 +16,23 @@ pub const toImport_T: type = struct {
 };
 
 pub const importsToAdd = [_]toImport_T {
-
-
-
-    // Kernel Arch Desc
+    // Kernel Arch
     toImport_T {
-        .name = "saturn/arch",
-        .file = "arch.zig",
+        .name = "saturn/kernel/arch/supported",
+        .file = "kernel/arch/arch.zig",
+    },
+
+    toImport_T {
+        .name = "saturn/kernel/arch/entries",
+        .file = "kernel/entries/entries.zig"
+    },
+    toImport_T {
+        .name = "saturn/kernel/arch/interrupts",
+        .file = "kernel/interrupts/interrupts.zig",
+    },
+    toImport_T {
+        .name = "saturn/kernel/cpu",
+        .file = "kernel/cpu.zig",
     },
     // =================
 
@@ -102,11 +112,6 @@ pub const importsToAdd = [_]toImport_T {
     toImport_T {
         .name = "saturn/kernel/lib",
         .file = archResolvedFiles.libk,
-    },
-
-    toImport_T {
-        .name = "saturn/kernel/interrupts",
-        .file = archResolvedFiles.interrupt,
     },
 
     toImport_T {
