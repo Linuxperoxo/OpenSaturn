@@ -8,7 +8,7 @@ const entry_T: type = @import("root").interfaces.arch.entry_T;
 pub const __SaturnEntryDescription__: entry_T = .{
     .maintainer = "Linuxperoxo",
     .entry = &entry,
-    .label = "entry",
+    .label = "x86_entry",
     .section = ".text.entry",
 };
 
@@ -52,7 +52,7 @@ fn entry() callconv(.naked) noreturn {
         \\ AtlasHeaders:
         \\   .word AtlasMagic
         \\   .long AtlasLoadDest
-        \\   .long entry - AtlasLoadDest
+        \\   .long x86_entry - AtlasLoadDest
         \\   .long AtlasImgSize
         \\   .word AtlasVMode
         \\   .byte AtlasFlags

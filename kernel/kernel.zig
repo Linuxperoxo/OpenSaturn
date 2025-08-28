@@ -42,7 +42,10 @@ export fn init() void {
     // ela e responsavel tambem por resolver o tipo de interrupcao usada
     // pela arquitetura, a chamada da fn init para a interrupcao tambem
     // e feita aqui
-    @call(.always_inline, &loader.SaturnArch, .{});
+
+    // Deixar essa chamada como .always_inline, causa um bug de exported symbol collision.
+    // ele tenta resolver o bloco comptime mais 2 uma vez por algum motivo.
+    @call(.never_inline, &loader.SaturnArch, .{});
 }
 
 export fn main() void {
@@ -51,13 +54,4 @@ export fn main() void {
     // Depois da arquitetura resolver todos os seus detalhes, podemos iniciar
     // os modulos linkados ao kernel
     @call(.always_inline, &loader.SaturnModules, .{});
-    // FIXME: loader.SaturnModules nao deixa chegar no assembly inline
-    asm volatile(
-        \\ movl $0xB8000, %eax
-        \\ movb $'H', (%eax)
-        \\ jmp .
-        :
-        :
-        :
-    );
 }
