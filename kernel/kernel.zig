@@ -37,21 +37,39 @@ const loader: type = @import("saturn/kernel/loader");
 //    ele vai passar o controle para a fn entry. O entry deve obrigatoriamente
 //    chamar a fn main do kernel, feito isso, o kernel vai fazer o resto
 
-export fn init() void {
+comptime {
+    @export(&@"saturn.main", .{
+        .name = "saturn.main",
+        .section = ".text.saturn",
+        .linkage = .strong,
+        .visibility = .default,
+    });
+}
+
+fn @"saturn.main"() void {
     // SaturnArch e resposavel por chamar a fn init da arquitetura alvo,
     // ela e responsavel tambem por resolver o tipo de interrupcao usada
     // pela arquitetura, a chamada da fn init para a interrupcao tambem
     // e feita aqui
 
-    // Deixar essa chamada como .always_inline, causa um bug de exported symbol collision.
-    // ele tenta resolver o bloco comptime mais 2 uma vez por algum motivo.
-    @call(.never_inline, &loader.SaturnArch, .{});
-}
+    // Aqui existe um pequeno detalhe, bem interessante por sinal.
+    // Quando passamos um ponteiro para uma funcao conhecida em tempo
+    // de compilacao para o @call, o compilador precisa considerar que
+    // esse ponteiro pode ser usado em runtime, por exemplo, se carregamos
+    // o endereco da funcao em um registrador, para ter um endereco ela precisa
+    // estar no binário, ou seja, mesmo que estajamos pedindo para colocar como
+    // inline, o compilador cria um .never_inline para essa funcao ja que usamos
+    // o endereço dela, mas so vamos ter uma copia da funcao como .never_inline
+    // se realmente o endereco dela seja usado em runtime. O maior problema disso
+    // nesse caso, e usar um bloco comptime dentro da funcao, nesse caso ele iria
+    // ser executado 2 vezes, e nessa funcao o bloco comptime nao pode ser chamado
+    // 2 vezes, que e @export(), executar ele usando o mesmo nome de simbolo causa um
+    // exported symbol collision, como resolver isso então? Simplemente usando o .never_inline
+    // ou usando somente loader.SaturnArch, isso evita de criar um possivel .never_inline
+    // implicito
+    @call(.always_inline, loader.SaturnArch, .{});
 
-export fn main() void {
-    // init do kernel
-    @call(.always_inline, &init, .{});
     // Depois da arquitetura resolver todos os seus detalhes, podemos iniciar
     // os modulos linkados ao kernel
-    @call(.always_inline, &loader.SaturnModules, .{});
+    @call(.always_inline, loader.SaturnModules, .{});
 }
