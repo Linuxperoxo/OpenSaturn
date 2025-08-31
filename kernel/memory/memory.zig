@@ -3,6 +3,8 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
+pub const SOA: type = @import("internal/SOA/SOA.zig");
+
 // NOTE: Esse alocador e temporario, so sera usado temporariamente
 //       ate o paging esta totamente completo
 
@@ -38,7 +40,7 @@ const pageTypeFlags: type = enum(u1) {
 };
 
 const pageDirectory: type = struct {
-    pages: [PagePerPageDir]pageStruct, 
+    pages: [PagePerPageDir]pageStruct,
     free: u5, // Aponta para a página livre mais baixa do diretório
 };
 
