@@ -3,5 +3,5 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const modules: type = @import("modules/config.zig");
-pub const arch: type = @import("arch/config.zig");
+pub const options: type = @import("options.zig");
+pub const types: type = @import("types.zig");

@@ -1,7 +1,13 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: config.zig   │
+// │  (c) 2025 Linuxperoxo  •  FILE: entries.zig  │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const modules: type = @import("modules/config.zig");
-pub const arch: type = @import("arch/config.zig");
+// --- SATURN ARCH ENTRIES ---
+pub const ArchEntries = [_]type {
+    @import("x86/entry.zig"),
+    @import("x86_64/entry.zig"),
+    @import("arm/entry.zig"),
+    @import("avr/entry.zig"),
+    @import("xtensa/entry.zig"),
+};

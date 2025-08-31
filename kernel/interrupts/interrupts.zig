@@ -1,9 +1,13 @@
 // ┌────────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: interfaces.zig │
+// │  (c) 2025 Linuxperoxo  •  FILE: interrupts.zig │
 // │            Author: Linuxperoxo                 │
 // └────────────────────────────────────────────────┘
 
-pub const device: type = @import("devices.zig");
-pub const fs: type = @import("fs.zig");
-pub const module: type = @import("module.zig");
-pub const arch: type = @import("arch.zig");
+// --- SATURN ARCH INTERRUPTS ---
+pub const ArchInterrupts = [_]type {
+    @import("x86/x86_interrupts.zig"),
+    @import("x86_64/x86_64_interrupts.zig"),
+    @import("arm/arm_interrupts.zig"),
+    @import("avr/avr_interrupts.zig"),
+    @import("xtensa/xtensa_interrupts.zig"),
+};
