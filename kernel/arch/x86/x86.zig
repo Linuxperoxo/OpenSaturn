@@ -56,7 +56,7 @@ fn init() void {
         \\ movl %eax,      %cr4
         :
         :
-        :
+        : .{}
     );
 
     @call(.always_inline, &gdt.GDT.load, .{@constCast(&gdt.GDT {

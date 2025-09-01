@@ -201,7 +201,7 @@ pub const GDT: type = struct {
             :[GDT] "{eax}" (&GDTPointer),
              [kernelcode] "i" (GDTSegments.@"kernelcode"),
              [kerneldata] "i" (GDTSegments.@"kerneldata")
-            :
+            : .{}
         );
     }
 

@@ -16,7 +16,7 @@ pub fn wrmsr(Msr: u32, Low: u32, High: u32) void {
         :[_] "{ecx}" (Msr),
          [_] "{eax}" (Low),
          [_] "{edx}" (High)
-        :
+        : .{}
     );
 }
 
@@ -30,7 +30,7 @@ pub fn rdmsr(Msr: u32) MsrReturn {
         :[_] "={eax}" (Low),
          [_] "={edx}" (High)
         :[_] "{ecx}" (Msr)
-        :
+        : .{}
     );
 
     return MsrReturn {

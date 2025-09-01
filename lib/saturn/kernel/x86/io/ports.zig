@@ -10,7 +10,7 @@ pub fn outb(port: u16, data: u8) void {
         :
         :[dx] "{dx}" (port),
          [al] "{al}" (data),
-        :
+        : .{}
     );
 }
 
@@ -20,7 +20,7 @@ pub fn outw(port: u16, data: u16) void {
         :
         : [dx] "{dx}" (port),
           [ax] "{ax}" (data),
-        :
+        : .{}
     );
 }
 
@@ -31,7 +31,7 @@ pub fn outl(port: u16, data: u32) void {
         :
         : [dx] "{dx}" (port),
           [eax] "{eax}" (data),
-        :
+        : .{}
     );
 }
 
@@ -41,7 +41,7 @@ pub fn inb(port: u16) u8 {
 
         :[al] "={al}" (-> u8)
         :[dx] "{dx}" (port),
-        :
+        : .{}
     );
 }
 
@@ -51,7 +51,7 @@ pub fn inw(port: u16) u16 {
 
         :[ax] "={ax}" (-> u16)
         :[dx] "{dx}" (port)
-        :
+        : .{}
     );
 }
 
@@ -61,6 +61,6 @@ pub fn inl(port: u16) u32 {
 
         :[eax] "={eax}" (-> u32)
         :[dx] "{dx}" (port)
-        :
+        : .{}
     );
 }

@@ -11,7 +11,7 @@ pub const core: type = @import("saturn/kernel/core");
 pub const exported: type = @import("saturn/kernel/exported");
 pub const memory: type = @import("saturn/kernel/memory");
 pub const interfaces: type = @import("saturn/kernel/modules/interfaces");
-pub const debug: type = @import("saturn/kernel/debug");
+// pub const debug: type = @import("saturn/kernel/debug");
 pub const supervisor: type = @import("saturn/kernel/supervisor");
 pub const kernel: type = @import("saturn/kernel/lib"); // NOTE: Possibly obsolete in the future
 pub const userspace: type = @import("saturn/userspace/lib");
@@ -46,7 +46,7 @@ comptime {
     });
 }
 
-fn @"saturn.main"() void {
+fn @"saturn.main"() callconv(.c) void {
     // SaturnArch e resposavel por chamar a fn init da arquitetura alvo,
     // ela e responsavel tambem por resolver o tipo de interrupcao usada
     // pela arquitetura, a chamada da fn init para a interrupcao tambem
