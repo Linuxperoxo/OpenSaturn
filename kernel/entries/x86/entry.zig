@@ -56,9 +56,6 @@ fn entry() callconv(.naked) noreturn {
         \\   .long AtlasImgSize
         \\   .word AtlasVMode
         \\   .byte AtlasFlags
-        :
-        :
-        :
     );
 }
 
