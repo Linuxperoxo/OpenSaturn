@@ -208,7 +208,9 @@ pub fn enableLAPIC() void {
 
         :
         :[I0] "i" (comptime LAPIC_BASE_PHYS + @intFromEnum(LAPICOffsets.SpuriousIntVectorRegister)),
-        :"eax"
+        : .{
+            .eax = true,
+        }
     );
 }
 
@@ -224,6 +226,6 @@ pub fn sendIPI(ICRL: ICRLow, ICRH: ICRHigh) void {
          [_] "{edx}" (ICRH),
          [I0] "i" (comptime LAPIC_BASE_PHYS + @intFromEnum(LAPICOffsets.InterruptCommandRegisterLow)),
          [I1] "i" (comptime LAPIC_BASE_PHYS + @intFromEnum(LAPICOffsets.InterruptCommandRegisterHigh))
-        :
+        : .{}
     );
 }

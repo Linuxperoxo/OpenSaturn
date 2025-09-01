@@ -81,7 +81,9 @@ pub fn init(handlers: [__SaturnSupervisorTable__.len]*const fn() callconv(.c) vo
             \\ lidt (%eax)
             :
             :[_] "{eax}" (&lidt),
-            :"eax"
+            : .{
+                .eax = true,
+            }
         );
     }
 }

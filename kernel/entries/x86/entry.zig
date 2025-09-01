@@ -25,7 +25,7 @@ fn entry() callconv(.naked) noreturn {
     asm volatile(
         \\ cli
         \\ movl $0xF00000, %esp
-        \\ call main
+        \\ call saturn.main
         \\ jmp .
     );
 
@@ -56,9 +56,6 @@ fn entry() callconv(.naked) noreturn {
         \\   .long AtlasImgSize
         \\   .word AtlasVMode
         \\   .byte AtlasFlags
-        :
-        :
-        :
     );
 }
 

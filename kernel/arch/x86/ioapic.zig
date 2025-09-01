@@ -95,7 +95,7 @@ pub fn writeIOAPIC(Register: IOAPICRegs, Data: u32) void {
          [IOAPICBase] "i" (IOAPICBasePhys),
          [IOAPICRegSel] "i" (IOAPICOffset.RegSel),
          [IOAPICWin] "i" (IOAPICOffset.Win)
-        :
+        : .{}
     );
 }
 
@@ -110,7 +110,7 @@ pub fn readIOAPIC(Register: IOAPICRegs) u32 {
          [IOAPICBase] "i" (IOAPICBasePhys),
          [IOAPICRegSel] "i" (IOAPICOffset.RegSel),
          [IOAPICWin] "i" (IOAPICOffset.Win)
-        :
+        : .{}
     );
 }
 
