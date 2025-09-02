@@ -4,19 +4,19 @@
 // └──────────────────────────────────────────────┘
 
 // Kernel Arch Infos
-const target_T: type = @import("root").arch.target_T;
+const target_T: type = @import("root").cpu.Arch;
 
 // kernel Modules Types
-const Mod_T: type = @import("root").interfaces.module.Mod_T;
-const ModErr_T: type = @import("root").interfaces.module.ModErr_T;
-const ModuleDescription_T: type = @import("root").interfaces.module.ModuleDescription_T;
-const ModuleDescriptionTarget_T: type = @import("root").interfaces.module.ModuleDescriptionTarget_T;
+const Mod_T: type = @import("root").interfaces.module.types.Mod_T;
+const ModErr_T: type = @import("root").interfaces.module.types.ModErr_T;
+const ModuleDescription_T: type = @import("root").interfaces.module.types.ModuleDescription_T;
+const ModuleDescriptionTarget_T: type = @import("root").interfaces.module.types.ModuleDescriptionTarget_T;
 
 // Kernel FS Types
 const Fs_T: type = @import("root").interfaces.fs.Fs_T;
 
-const rootfs_mount = &@import("management.zig").rootfs_mount;
-const rootfs_umount = &@import("management.zig").rootfs_umount;
+const rootfs_mount = &@import("core.zig").rootfs_mount;
+const rootfs_umount = &@import("core.zig").rootfs_umount;
 
 pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .name = "ke_m_rootfs",
@@ -52,7 +52,7 @@ const rootfsMod: *const Mod_T = &Mod_T {
 };
 
 fn init() ModErr_T!void {
-    @call(.never_inline, &@import("root").interfaces.module.inmod, .{
+    @call(.never_inline, &@import("root").interfaces.module.fun.inmod, .{
         rootfsMod
     }) catch |err| {
         return err;
@@ -60,7 +60,7 @@ fn init() ModErr_T!void {
 }
 
 fn exit() ModErr_T!void {
-    @call(.never_inline, &@import("root").interfaces.module.rmmod, .{
+    @call(.never_inline, &@import("root").interfaces.module.fun.rmmod, .{
         rootfsMod
     }) catch |err| {
         return err;

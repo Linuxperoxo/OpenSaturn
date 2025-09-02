@@ -12,11 +12,11 @@ const InodeOp_T: type = @import("root").core.vfs.interfaces.InodeOp_T;
 const RootfsBranch_T: type = @import("types.zig").RootfsBranch_T;
 
 // rootfs fn
-const rootfs_create = @import("management.zig").rootfs_create;
-const rootfs_interator = @import("management.zig").rootfs_interator;
-const rootfs_lookup = @import("management.zig").rootfs_lookup;
-const rootfs_mkdir = @import("management.zig").rootfs_mkdir;
-const rootfs_unlink = @import("management.zig").rootfs_unlink;
+const rootfs_create = @import("core.zig").rootfs_create;
+const rootfs_interator = @import("core.zig").rootfs_interator;
+const rootfs_lookup = @import("core.zig").rootfs_lookup;
+const rootfs_mkdir = @import("core.zig").rootfs_mkdir;
+const rootfs_unlink = @import("core.zig").rootfs_unlink;
 
 pub var @"/": RootfsBranch_T = .{
     .dentry = null,
