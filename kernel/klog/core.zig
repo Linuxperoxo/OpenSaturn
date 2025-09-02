@@ -1,8 +1,5 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: options.zig  │
+// │  (c) 2025 Linuxperoxo  •  FILE: core.zig     │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const UseMenuconfigAsRef: bool = true;
-pub const IgnoreModuleWithArchNotSupported: bool = false;
-pub const AllowDynamicModulesLoad: bool = true;
