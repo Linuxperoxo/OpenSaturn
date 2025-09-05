@@ -3,20 +3,10 @@
 // │            Author: Linuxperoxo                 │
 // └────────────────────────────────────────────────┘
 
-pub const MinorNum_T: type = if(@sizeOf(usize) > 1) u16 else u8;
+pub const Driver_T: type = @import("types.zig").Driver_T;
+pub const DriverErr_T: type = @import("types.zig").DriverErr_T;
+pub const Ops_T: type = @import("types.zig").Ops_T;
+pub const OpsErr_T: type = @import("types.zig").OpsErr_T;
+pub const MajorNum_T: type = @import("types.zig").MajorNum_T;
 
-pub const Dev_T: type = struct {
-    name: []const u8,
-    write: *fn(u16, []const u8) anyerror!usize,
-    read: *fn(u16, []u8) anyerror!usize,
-    ioctrl: *fn(usize, usize) anyerror!usize,
-};
-
-pub const DevType_T: type = enum {
-    char,
-    block,
-};
-
-pub const DevErr_T: type = error {
-    
-};
+pub fn open =  @import("ops.zig").
