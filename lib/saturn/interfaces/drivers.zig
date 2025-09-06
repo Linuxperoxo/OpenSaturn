@@ -1,7 +1,7 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: lib.zig      │
+// │  (c) 2025 Linuxperoxo  •  FILE: drivers.zig  │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const io: type = @import("io/io.zig");
-pub const mem: type = @import("mem/mem.zig");
+pub const types: type = @import("root").core.drivers.types;
+pub const fun: type = @import("root").core.drivers.fun;
