@@ -6,9 +6,6 @@
 const saturn: type = @import("saturn");
 
 pub const cpu: type = saturn.cpu;
-pub const supported: type = saturn.supported;
-pub const entries: type = saturn.entries;
-pub const interrupts: type = saturn.interrupts;
 pub const core: type = saturn.core;
 pub const exported: type = saturn.exported;
 pub const memory: type = saturn.memory;
