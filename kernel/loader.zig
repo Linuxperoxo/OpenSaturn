@@ -126,6 +126,7 @@ pub fn SaturnArch() void {
 }
 
 pub fn SaturnModules() void {
+    if(config.modules.options.EnableSafeMode) return {};
     comptime {
         for(modules.__SaturnAllMods__) |M| {
             if(!@hasDecl(M, "__SaturnModuleDescription__")) {
