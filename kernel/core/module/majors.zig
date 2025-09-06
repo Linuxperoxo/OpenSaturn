@@ -15,13 +15,23 @@ const allMajors = [_]Major_T {
     @import("majors/filesystem.zig").filesystemMajors,
 };
 
-pub fn inMajor(M: *const Mod_T) ModErr_T!void {
+pub fn inMajor(comptime M: *const Mod_T) ModErr_T!void {
+    // NOTE: development switch type check
+    switch(M.type) {
+        .filesystem => {},
+        .driver => {},
+        else => @compileError(
+            "initialize module type " ++
+            @tagName(M.type) ++
+            " is not currently supported"
+        ),
+    }
     return @call(.never_inline, allMajors[@intFromEnum(M.type)].in, .{
         M,
     });
 }
 
-pub fn rmMajor(M: *const Mod_T) ModErr_T!void {
+pub fn rmMajor(comptime M: *const Mod_T) ModErr_T!void {
     return @call(.never_inline, allMajors[@intFromEnum(M.type)].rm, .{
         M,
     });
