@@ -32,7 +32,7 @@ const Allocator_T: type = SOA.buildObjAllocator(
 
 comptime {
     @export(&Allocator, .{
-        .name = "allocator.drivers",
+        .name = "saturn.alloc.allocator.drivers",
         .section = ".data.saturn.allocator",
     });
 }

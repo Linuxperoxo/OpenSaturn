@@ -7,3 +7,4 @@ pub const device: type = @import("devices.zig");
 pub const fs: type = @import("fs.zig");
 pub const module: type = @import("module.zig");
 pub const arch: type = @import("arch.zig");
+pub const drivers: type = @import("drivers.zig");

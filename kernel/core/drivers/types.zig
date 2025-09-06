@@ -15,6 +15,9 @@ pub const DriverErr_T: type = error {
     MinorRewritten,
     InternalError,
     Blocked,
+    NoNFound,
+    NullFound,
+    MinorCollision,
 };
 
 pub const Ops_T: type = struct {
@@ -27,6 +30,14 @@ pub const Ops_T: type = struct {
 };
 
 pub const Driver_T: type = struct {
-    major: MajorNum_T,
-    ops: Ops_T,
+    major: ?MajorNum_T,
+    ops: ?Ops_T,
+};
+
+pub const DriversBunch_T: type = struct {
+    bunch: [4]?*Driver_T,
+    flags: struct {
+        lock: u1,
+        full: u1,
+    },
 };
