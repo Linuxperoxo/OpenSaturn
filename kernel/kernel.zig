@@ -3,22 +3,24 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const cpu: type = @import("saturn/kernel/cpu");
-pub const supported: type = @import("saturn/kernel/arch/supported");
-pub const entries: type = @import("saturn/kernel/arch/entries");
-pub const interrupts: type = @import("saturn/kernel/arch/interrupts");
-pub const core: type = @import("saturn/kernel/core");
-pub const exported: type = @import("saturn/kernel/exported");
-pub const memory: type = @import("saturn/kernel/memory");
-pub const interfaces: type = @import("saturn/kernel/modules/interfaces");
-// pub const debug: type = @import("saturn/kernel/debug");
-pub const supervisor: type = @import("saturn/kernel/supervisor");
-pub const kernel: type = @import("saturn/kernel/lib"); // NOTE: Possibly obsolete in the future
-pub const userspace: type = @import("saturn/userspace/lib");
-pub const config: type = @import("saturn/kernel/config");
-pub const modules: type = @import("saturn/kernel/modules");
+const saturn: type = @import("saturn");
 
-const loader: type = @import("saturn/kernel/loader");
+pub const cpu: type = saturn.cpu;
+pub const supported: type = saturn.supported;
+pub const entries: type = saturn.entries;
+pub const interrupts: type = saturn.interrupts;
+pub const core: type = saturn.core;
+pub const exported: type = saturn.exported;
+pub const memory: type = saturn.memory;
+pub const interfaces: type = saturn.interfaces;
+//pub const debug: type = saturn.debug;
+pub const supervisor: type = saturn.supervisor;
+pub const kernel: type = saturn.lib.kernel;
+pub const userspace: type = saturn.lib.userspace;
+pub const config: type = saturn.config;
+pub const modules: type = saturn.modules;
+
+const loader: type = saturn.loader;
 
 // NOTE: Para obter mais detalhes de como funciona a inicializacao do
 // kernel voce pode olhar o arquivo kernel/loader.zig, nele vai ter toda
