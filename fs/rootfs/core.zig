@@ -1,7 +1,7 @@
-// ┌────────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: management.zig │
-// │            Author: Linuxperoxo                 │
-// └────────────────────────────────────────────────┘
+// ┌──────────────────────────────────────────────┐
+// │  (c) 2025 Linuxperoxo  •  FILE: core.zig     │
+// │            Author: Linuxperoxo               │
+// └──────────────────────────────────────────────┘
 
 // kernel vfs types
 const Dentry_T: type = @import("root").core.vfs.interfaces.Dentry_T;
