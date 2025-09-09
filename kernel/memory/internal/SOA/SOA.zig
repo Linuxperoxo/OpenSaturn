@@ -68,6 +68,7 @@ pub fn buildObjAllocator(
                 );
             }
         }
+
         pub const err_T: type = error {
             OutOfMemory,
             DoubleFree,
@@ -106,15 +107,15 @@ pub fn buildObjAllocator(
 
         const self_T: type = @This();
 
-        pub const BitMap: type = packed struct {
-            b0: State_T,
-            b1: State_T,
-            b2: State_T,
-            b3: State_T,
-            b4: State_T,
-            b5: State_T,
-            b6: State_T,
-            b7: State_T,
+        pub const BitMap: type = packed struct(u8) {
+            bit0: State_T,
+            bit1: State_T,
+            bit2: State_T,
+            bit3: State_T,
+            bit4: State_T,
+            bit5: State_T,
+            bit6: State_T,
+            bit7: State_T,
         };
 
         const Bit_T= switch(O) {
@@ -122,6 +123,8 @@ pub fn buildObjAllocator(
             256...65535 => u16,
             else => u32,
         };
+
+        const objPerBitMap: usize = @sizeOf(BitMap) * 8;
 
         objs: [O]T align(@intFromEnum(alignment orelse Align_T.in16)), // Object Pool
         obja: Bit_T, // Quantidade de objetos alocados
@@ -140,7 +143,6 @@ pub fn buildObjAllocator(
         objo: if(optimize == .linear) void else ?Bit_T, // Index para fast
         objc: ?Bit_T, // Index para continuos
         objm: [r: { // Bitmap dos objetos
-            const objPerBitMap: usize = @sizeOf(BitMap) * 8;
             // essa calculo garante que tenha a quantidade certa
             // de bitmap para objetos caso seja um numero impar
             // de objetos
@@ -169,12 +171,12 @@ pub fn buildObjAllocator(
 
         pub fn set(self: *self_T, index: usize, state: State_T) err_T!void {
             return if(index >= O) err_T.IndexOutBounds else r: {
-                const bitmapIndex: usize = index / (@sizeOf(BitMap) * 8);
-                const offset: usize = index - ((@sizeOf(BitMap) * 8) * bitmapIndex);
-                @as(*u8, @ptrCast(&self.objm[bitmapIndex])).* = if(state == .free)
-                    @as(u8, @bitCast(self.objm[bitmapIndex])) & (~(@as(u8, 0x01) << @intCast(offset)))
-                else
-                    @as(u8, @bitCast(self.objm[bitmapIndex])) | (@as(u8, 0x01) << @intCast(offset));
+                const bitmapIndex: usize = index / objPerBitMap;
+                const offset: usize = index - (objPerBitMap * bitmapIndex);
+                @as(*u8, @ptrCast(&self.objm[bitmapIndex])).* = switch(state) {
+                    .busy => @as(*u8, @ptrCast(&self.objm[bitmapIndex])).* | (@as(u8, @intCast(0x01)) << @intCast(offset)),
+                    .free => @as(*u8, @ptrCast(&self.objm[bitmapIndex])).* & (~(@as(u8, @intCast(0x01)) << @intCast(offset))),
+                };
                 break :r {};
             };
         }
@@ -359,7 +361,7 @@ pub fn buildObjAllocator(
                 @call(.always_inline, &Cache.add, .{
                     self, I, null
                 });
-                self.obja -= 1; break :r {};
+                self.obja = @subWithOverflow(self.obja, 1).@"0"; break :r {};
             };
         }
     };
