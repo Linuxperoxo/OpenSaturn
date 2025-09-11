@@ -1,30 +1,30 @@
-// ┌────────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: types.zig      │
-// │            Author: Linuxperoxo                 │
-// └────────────────────────────────────────────────┘
+// ┌──────────────────────────────────────────────┐
+// │  (c) 2025 Linuxperoxo  •  FILE: types.zig    │
+// │            Author: Linuxperoxo               │
+// └──────────────────────────────────────────────┘
+
+pub const MinorNum_T: type = u8;
 
 pub const Dev_T: type = struct {
-    pub const write_T: type = *const fn(data: []const u8) err_T!void;
-    pub const read_T: type = *const fn(offset: usize, buffer: []u8) err_T!void;
-
-    pub const type_T: type = enum {
+    major: @import("root").interfaces.drivers.types.MajorNum_T,
+    minor: MinorNum_T,
+    type: enum {
         char,
-        block,
-    };
-
-    pub const err_T: type = error {
-        
-    };
-
-    name: []const u8,
-    write: write_T,
-    read: read_T,
-    type: type_T,
+        block
+    },
 };
 
-pub const DevBranch_T: type = struct {
-    device: ?Dev_T,
-    next: ?*@This(),
-    prev: ?*@This(),
+pub const DevErr_T: type = error {
+    MinorCollision,
+    Locked,
+    OutOfMinor,
+    InternalError,
+    MinorDoubleFree,
 };
 
+pub const DevMajorBunch_T: type = struct {
+    bunch: [16]?*const Dev_T,
+    alloc: u16,
+    miss: u16,
+    part: ?u4,
+};
