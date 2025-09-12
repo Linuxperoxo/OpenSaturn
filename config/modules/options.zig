@@ -8,3 +8,4 @@
 
 pub const UseMenuconfigAsRef: bool = true;
 pub const IgnoreModuleWithArchNotSupported: bool = false;
+pub const DinamicModulesLoad: bool = true;
