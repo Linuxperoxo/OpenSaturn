@@ -10,7 +10,11 @@ const MinorNum_T: type = @import("types.zig").MinorNum_T;
 const add = @import("core.zig").add;
 const del = @import("core.zig").del;
 
-pub fn register(
+// Chamar essas funcoes de forma independente, faz com que crie um minor
+// anonimo, ou seja, somente quem tem o minor e o major vai conseguir se
+// comunicar com ele, nada de criar no vfs
+
+pub fn create(
     D: *const Dev_T,
 ) DevErr_T!void {
     return @call(.always_inline, &add, .{
@@ -18,7 +22,7 @@ pub fn register(
     });
 }
 
-pub fn unregister(
+pub fn delete(
     M: MinorNum_T
 ) DevErr_T!void {
     return @call(.always_inline, &del, .{
