@@ -25,10 +25,16 @@ var devicesBunch= [_]DevMajorBunch_T {.{
 // O algoritmo usado aqui nao vem de nenhum livro ou outros projetos,
 // e um algoritmo desenhado exclusivamente para o saturn.
 
+const Steps: type = enum {
+    shot,
+    rec,
+    miss,
+    new
+};
+
 pub fn add(D: *const Dev_T) DevErr_T!void {
     return r: {
         const bunch: u4, const device: u4 = t: {
-            const Steps: type = enum { shot, rec, miss, new};
             var localBunch = D.major & 0x0F;
             sw: switch(Steps.shot) {
                 .shot => {
@@ -75,7 +81,7 @@ pub fn add(D: *const Dev_T) DevErr_T!void {
                         break :r DevErr_T.OutOfMinor;
                     };
                     // parent bunch to child link
-                    devicesBunch[localBunch].part = bunchChild; break .{ bunchChild, D.minor & 0x0F }; // D.minor & 0x0F is default
+                    devicesBunch[localBunch].part = bunchChild; break :t .{ bunchChild, D.minor & 0x0F }; // D.minor & 0x0F is default
                 },
             }
         };
@@ -89,7 +95,6 @@ pub fn add(D: *const Dev_T) DevErr_T!void {
 pub fn del(Ma: MajorNum_T, Mi: MinorNum_T) DevErr_T!void {
     return r: {
         const bunch: u4, const device: u4, const parent: ?u4 = t: {
-            const Steps: type = enum { shot, rec, miss, new};
             var localBunch: u4 = Ma & 0x0F;
             var localParent: ?u4 = null;
             sw: switch(Steps.shot) {
@@ -138,5 +143,38 @@ pub fn del(Ma: MajorNum_T, Mi: MinorNum_T) DevErr_T!void {
             if(devicesBunch[bunch].alloc != 0) break :r {};
             break :t parent.?;
         }].part = null;
+    };
+}
+
+pub fn exist(Ma: MajorNum_T, Mi: MinorNum_T) DevErr_T!*const Dev_T {
+    return r: {
+        var localBunch: u4 = Ma & 0x0F;
+        sw: switch(Steps.shot) {
+            .shot => {
+                if(devicesBunch[localBunch].bunch[Mi & 0x0F]) |_| {
+                    if(devicesBunch[localBunch].bunch[Mi & 0x0F].?.minor == Mi) break :r devicesBunch[localBunch].bunch[Mi & 0x0F].?;
+                }
+                if(devicesBunch[localBunch].bunch[(Mi >> 4) & 0x0F]) |_| {
+                    if(devicesBunch[localBunch].bunch[(Mi >> 4) & 0x0F].?.minor == Mi) break :r devicesBunch[localBunch].bunch[Mi & 0x0F];
+                }
+                continue :sw .miss;
+            },
+
+            .rec => {
+                localBunch = if(devicesBunch[localBunch].part) |_| devicesBunch[localBunch].part.? else break :r DevErr_T.NonMinor;
+                continue :sw .shot;
+            },
+
+            .miss => {
+                if(devicesBunch[localBunch].miss == 0) continue :sw .rec;
+                for(0..16) |i| {
+                    if(@bitCast((devicesBunch[localBunch].miss >> i) & 0x01)) {
+                        if(devicesBunch[localBunch].bunch[i].?.minor == Mi) break :r devicesBunch[localBunch].bunch[i].?;
+                    }
+                }
+                continue :sw .rec;
+            },
+        }
+        unreachable;
     };
 }

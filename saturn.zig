@@ -89,7 +89,6 @@ pub const core: type = struct {
 };
 pub const loader: type = @import("kernel/loader.zig");
 pub const modules: type = @import("modules.zig");
-pub const exported: type = @import("kernel/exported/exported.zig");
 pub const memory: type = @import("kernel/memory/memory.zig");
 pub const interfaces: type = struct {
     pub const devices: type = @import("lib/saturn/interfaces/devices.zig");

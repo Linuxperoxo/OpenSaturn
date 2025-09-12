@@ -12,12 +12,12 @@ pub const OpsErr_T: type = error {
 };
 
 pub const DriverErr_T: type = error {
-    MinorRewritten,
+    MajorRewritten,
     InternalError,
     Blocked,
-    NoNFound,
+    NonMajor,
     NullFound,
-    MinorCollision,
+    MajorCollision,
 };
 
 pub const Ops_T: type = struct {

@@ -20,6 +20,8 @@ pub const DevErr_T: type = error {
     OutOfMinor,
     InternalError,
     MinorDoubleFree,
+    NonMinor,
+    MajorReturnError,
 };
 
 pub const DevMajorBunch_T: type = struct {

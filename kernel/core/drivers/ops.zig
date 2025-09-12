@@ -29,18 +29,18 @@ pub fn close(M: MajorNum_T) void {
 
 }
 
-pub fn minor(ma: MajorNum_T, mi: MinorNum_T) DriverErr_T!void {
+pub fn minor(Ma: MajorNum_T, Mi: MinorNum_T) DriverErr_T!void {
 
 }
 
-pub fn read(M: MajorNum_T, offset: usize) []u8 {
+pub fn read(Ma: MajorNum_T, Mi: MinorNum_T, offset: usize) []u8 {
 
 }
 
-pub fn write(M: MajorNum_T, data: []const u8) void {
+pub fn write(Ma: MajorNum_T, Mi: MinorNum_T, data: []const u8) void {
 
 }
 
-pub fn ioctrl(M: MajorNum_T, command: usize, data: usize) OpsErr_T!usize {
+pub fn ioctrl(Ma: MajorNum_T, Mi: MinorNum_T, command: usize, data: usize) OpsErr_T!usize {
 
 }
