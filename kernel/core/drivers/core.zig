@@ -7,93 +7,61 @@ const Driver_T: type = @import("types.zig").Driver_T;
 const DriverErr_T: type = @import("types.zig").DriverErr_T;
 const Ops_T: type = @import("types.zig").Ops_T;
 const OpsErr_T: type = @import("types.zig").OpsErr_T;
-const DriversBunch_T: type = @import("types.zig").DriversBunch_T;
+const Radix: type = @import("radix.zig");
 
 const MajorNum_T: type = @import("types.zig").MajorNum_T;
 
 const Allocator: type = @import("allocator.zig");
 const AllocatorErr_T: type = @import("allocator.zig").AllocatorErr_T;
 
+const config: type = @import("root").config;
+const modules: type = @import("root").modules;
+
 // Por enquanto vou usar tamanho fixo, vou usar um
 // padrao para drivers que ja estao linkados ao kernel
-// logo na compilacao, ele seram armazenados nesse array,
-// para drivers carregado dinamicamente vamos alocar em
-// outro lugar
-var driversBunch = r: {
-    var bunchTmp: [16]DriversBunch_T = undefined;
-    for(0..bunchTmp.len) |i| {
-        for(0..bunchTmp[i].bunch.len) |j| {
-            bunchTmp[i].bunch[j] = null;
-        }
-        bunchTmp[i].flags.full = 0;
-        bunchTmp[i].flags.lock = 0;
-    }
-    break :r struct { bunchs: [16]DriversBunch_T, last: usize } {
-        .bunchs = bunchTmp,
-        .last = 0,
-    };
+// logo na compilacao, ele seram armazenados nesse array.
+// Depois isso sera modificado para permitir mais major
+
+// A ideia de usar arrray por enquanto e para conseguir
+// ter o maximo de desempenho ao tentar procurar um major,
+// ja que aqui e onde acontece todo acesso a um major para
+// alguma operacao. Pretendo melhorar esse algoritmo para
+// ter uma alocacao mais lenta, porem maior, mas a busca
+// precisa ser extremamente rapida
+var majorsLevels: Radix.Level1 = .{
+    .line = .{
+        null
+    } ** 16,
+    .map = 0,
 };
 
+
+
 pub fn add(D: *const Driver_T) DriverErr_T!void {
-    return if(D.major == null or D.ops == null) DriverErr_T.NullFound else r: {
-        var bunch: usize = (D.major.? >> 2) & 0x07;
-        var driver: usize = D.major.? & 0x03;
-        t: {
-            y: {
-                if(driversBunch.bunchs[bunch].bunch[driver] != null) {
-                    if(driversBunch.bunchs[bunch].bunch[driver].?.major.? == D.major.?) break :r DriverErr_T.MinorCollision;
-                    break :y {};
-                }
-                if(!@as(bool, @bitCast(driversBunch.bunchs[bunch].flags.lock))) break :t {};
-            }
-            driversBunch.last = if(driversBunch.last >= driversBunch.bunchs.len) 0 else driversBunch.last;
-            for(driversBunch.last..driversBunch.bunchs.len) |i| {
-                y: {
-                    if(@bitCast(driversBunch.bunchs[i].flags.full) or @bitCast(driversBunch.bunchs[i].flags.lock)) break :y {};
-                    for(0..driversBunch.bunchs[i].bunch.len) |j| {
-                        if(driversBunch.bunchs[i].bunch[j]) |_| continue;
-                        if(driversBunch.bunchs[i].bunch.len - 1 == j) {
-                            driversBunch.bunchs[i].flags.full = 1;
-                            bunch, driver = .{ i, j }; break :t {};
-                        }
-                    }
-                }
-                driversBunch.last += 1;
-            }
-            break :r DriverErr_T.Blocked;
-        }
-        driversBunch.bunchs[bunch].bunch[driver] = @call(.never_inline, &Allocator.alloc, .{}) catch break :r DriverErr_T.InternalError;
-        driversBunch.bunchs[bunch].bunch[driver].?.* = D.*; break :r {};
+    return r: {
+        const bunch: u4 = (D.major >> 2) & 0x0F;
+        const offset: u2 = @intCast(D.major & 0x03);
+        if((bitmap ^ 0xFFFF) == 0) DriverErr_T.OutMajor;
+        if(driversBunch[bunch].bunch[offset]) |_| DriverErr_T.MajorCollision;
+        driversBunch[bunch].bunch[offset] = @call(.never_inline, &Allocator.alloc, .{}) catch break :r DriverErr_T.InternalError;
+        driversBunch[bunch].map |= 0x01 << offset;
+        bitmap |= if((driversBunch[bunch].map ^ 0x03) != 0) (0x01 << bunch) else break :r {};
     };
 }
 
 pub fn del(M: MajorNum_T) DriverErr_T!void {
     return r: {
-        var bunch: usize = (M >> 2) & 0x07;
-        var driver: usize = M & 0x03;
-        t: {
-            y: {
-                if(driversBunch.bunchs[bunch].bunch[driver] == null) break :y {};
-                if(driversBunch.bunchs[bunch].bunch[driver].?.major == null) break :y {};
-                if(driversBunch.bunchs[bunch].bunch[driver].?.major.? != M) break :y {};
-                break :t {};
-            }
-            for(0..driversBunch.bunchs.len) |i| {
-                for(0..driversBunch.bunchs[i].bunch.len) |j| {
-                    if(
-                        driversBunch.bunchs[i].bunch[j] != null and
-                        driversBunch.bunchs[i].bunch[j].?.major != null and
-                        driversBunch.bunchs[i].bunch[j].?.major.? == M
-                    ) {
-                        bunch, driver =  .{ i , j }; break :t {};
-                    }
-                }
-            }
-            break :r DriverErr_T.NoNFound;
-        }
+        const bunch: u4 = @intCast((M >> 2) & 0x0F);
+        const offset: u2 = @intCast(M & 0x03);
         @call(.never_inline, &Allocator.free, .{
-            driversBunch.bunchs[bunch].bunch[driver].?
+            driversBunch[bunch].bunch[offset] orelse break :r DriverErr_T.DoubleFree
         }) catch break :r DriverErr_T.InternalError;
-        driversBunch.bunchs[bunch].flags.full = 0; break :r {};
+        driversBunch[bunch].bunch[offset] = null;
+        driversBunch[bunch].map &= (~(0x01 << offset));
+        bitmap &= if(driversBunch[bunch].map == 0) (~(0x0001 << bunch)) else break :r {};
     };
+}
+
+pub fn search(M: MajorNum_T) DriverErr_T!*Driver_T {
+    return if(driversBunch[(M >> 2) & 0x0F].bunch[M & 0x03]) |_| driversBunch[(M >> 2) & 0x0F].bunch[M & 0x03].? else DriverErr_T.NonFound;
 }
