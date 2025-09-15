@@ -433,11 +433,7 @@ test "SOA Continuos Alloc" {
         const SOAAllocator_T: type = allocators[a];
         var allocator: SOAAllocator_T = .{};
         @import("std").debug.print("== CONTINUOS:\n* optmize: {any}\n* cache: {any}\n==\n", .{
-<<<<<<< HEAD
             SOAAllocator_T.Options.config.optimize , SOAAllocator_T.Options.config.cache
-=======
-            allocators[a].AllocatorOptions.optimize, allocators[a].AllocatorOptions.cache
->>>>>>> 87116aa (SOA Refatoration)
         });
         for(0..quat) |i| {
             const obj = try SOAAllocator_T.alloc(
@@ -468,11 +464,7 @@ test "SOA Fast Alloc" {
         const SOAAllocator_T: type = allocators[a];
         var allocator: SOAAllocator_T = .{};
         @import("std").debug.print("== FAST:\n* optmize: {any}\n* cache: {any}\n==\n", .{
-<<<<<<< HEAD
             SOAAllocator_T.Options.config.optimize , SOAAllocator_T.Options.config.cache
-=======
-            allocators[a].AllocatorOptions.optimize, allocators[a].AllocatorOptions.cache
->>>>>>> 87116aa (SOA Refatoration)
         });
         for(0..quat) |i| {
             const obj = try SOAAllocator_T.alloc(
@@ -500,11 +492,7 @@ test "SOA Auto Alloc" {
         const SOAAllocator_T: type = allocators[a];
         var allocator: SOAAllocator_T = .{};
         @import("std").debug.print("== AUTO:\n* optmize: {any}\n* cache: {any}\n==\n", .{
-<<<<<<< HEAD
             SOAAllocator_T.Options.config.optimize , SOAAllocator_T.Options.config.cache
-=======
-            allocators[a].AllocatorOptions.optimize, allocators[a].AllocatorOptions.cache
->>>>>>> 87116aa (SOA Refatoration)
         });
         for(0..quat) |i| {
             const obj = try SOAAllocator_T.alloc(
