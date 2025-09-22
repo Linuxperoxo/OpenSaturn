@@ -221,7 +221,7 @@ pub fn buildObjAllocator(
         fn auto(self: *Self) InternalErr_T!*T {
             return r: {
                 const init, const end = t: {
-                    if(self.cindex != null and self.cindex.? < self.cache.len - @intFromEnum(optimize.range))
+                    if(self.cindex != null and self.cindex.? + @intFromEnum(optimize.range) < self.cache.len)
                         break :t .{ self.cindex.?, self.cindex.? + @intFromEnum(optimize.range) };
                     break :t .{ 0, @intFromEnum(optimize.range) };
                 };
