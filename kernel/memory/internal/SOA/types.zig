@@ -109,7 +109,6 @@ pub const Cache_T: type = struct {
     };
 
     pub const CacheSync_T: type = enum(u2) {
-        frozen,
         burning,
         chilled = 3,
         heated = 2,
