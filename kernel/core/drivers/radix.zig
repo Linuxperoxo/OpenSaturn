@@ -3,6 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
+const SOA: type = @import("root").memory.SOA;
 const Driver_T: type = @import("types.zig").Driver_T;
 
 pub const Level0_T: type = struct {
@@ -11,125 +12,135 @@ pub const Level0_T: type = struct {
 };
 
 pub const Level1_T: type = struct {
-    pub const Level1Line_T: type = ?*[4]?*Level2_T;
-    line: Level1Line_T,
+    line: ?*Level1Line_T,
     map: u4,
-};
 
-pub const Level2_T: type = struct {
-    pub const Level2Line_T: type = ?*[4]?*Driver_T;
-    line: Level2Line_T,
-    map: u4,
-};
+    const Level1Line_T: type = [4]?*Level2_T;
+    const Self: type = @This();
 
-pub const Allocators: type = struct {
-    pub const Lines: type = struct {
-        const SOA: type = @import("root").memory.SOA;
-        const Allocator_T: type = SOA.buildObjAllocator(
-            [4]?*anyopaque,
+    // Level1 Allocator
+    pub const Level: type = struct {
+        pub const AllocatorErr_T: type = SOAAllocator_T.err_T;
+        const SOAAllocator_T: type = SOA.buildObjAllocator(
+            Self,
+            true,
             64,
-            .huge,
-            null,
-            null,
-            null,
-            .in8,
-            .optimized
-            .PrioritizeHits,
-            .Insistent,
+            .{
+                .alignment = @enumFromInt(@sizeOf(usize)),
+                .range = .large,
+                .type = .linear,
+            },
+            .{}
         );
-        pub const AllocatorErr_T: type = Allocator_T.err_T;
 
-        var allocator = r: {
-            var AllocTmp: Allocator_T = undefined;
-            @call(.compile_time, Allocator_T.init, .{
-                &AllocTmp
-            });
-            break :r AllocTmp;
-        };
+        var allocator: SOAAllocator_T = .{};
 
-        pub fn alloc() AllocatorErr_T!*[4]?*anyopaque {
-            return @alignCast(@ptrCast(@call(.always_inline, Allocator_T.alloc, .{
+        pub fn alloc() AllocatorErr_T!*SOAAllocator_T.Options.Type {
+            return @call(.always_inline, &SOAAllocator_T.alloc, .{
                 &allocator
-            })));
+            });
         }
 
-        pub fn free(obj: anytype) AllocatorErr_T!void {
-            return @call(.always_inline, Allocator_T.free, .{
-                &allocator, ((@intFromPtr(obj) - @intFromPtr(&allocator.objs[0])) / @sizeOf([4]?*anyopaque)),
+        pub fn free(obj: ?*SOAAllocator_T.Options.Type) AllocatorErr_T!void {
+            return if(obj == null) {} else @call(.always_inline, &SOAAllocator_T.free, .{
+                &allocator, obj.?
             });
         }
     };
 
-    pub const Levels: type = struct {
-        const SOA: type = @import("root").memory.SOA;
-        const Allocator_T: type = SOA.buildObjAllocator(
-            struct {
-                ?*[4]?*anyopaque,
-                u4,
-            },
+    // Level1 Line Allocator
+    pub const Line: type = struct {
+        pub const AllocatorErr_T: type = SOAAllocator_T.err_T;
+        const SOAAllocator_T: type = SOA.buildObjAllocator(
+            Self.Level1Line_T,
+            false,
             64,
-            .huge,
-            null,
-            null,
-            null,
-            .in16,
-            .optimized
-            .PrioritizeHits,
-            .Insistent,
+            .{
+                .alignment = @enumFromInt(@sizeOf(usize)),
+                .range = .large,
+                .type = .linear,
+            },
+            .{}
         );
-        pub const AllocatorErr_T: type = Allocator_T.err_T;
 
-        var allocator = r: {
-            var AllocTmp: Allocator_T = undefined;
-            @call(.compile_time, Allocator_T.init, .{
-                &AllocTmp
-            });
-            break :r AllocTmp;
-        };
+        var allocator: SOAAllocator_T = .{};
 
-        fn verify(T: type) void {
-            comptime {
-                if(T != Level1_T or T != Level2_T) {
-                    @compileError(
-                        "radix allocator expect types " ++
-                        @typeName(Level1_T) ++
-                        " or " ++
-                        @typeName(Level2_T)
-                    );
-                }
-            }
-        }
-
-        pub fn alloc(T: type) AllocatorErr_T!*T {
-            @call(.compile_time, verify, .{
-                T
-            });
-            return @alignCast(@ptrCast(@call(.always_inline, Allocator_T.alloc, .{
+        pub fn alloc() AllocatorErr_T!*SOAAllocator_T.Options.Type {
+            return @call(.always_inline, &SOAAllocator_T.alloc, .{
                 &allocator
-            })));
+            });
         }
 
-        pub fn free(obj: anytype) AllocatorErr_T!void {
-            comptime {
-                switch(@typeInfo(@TypeOf(obj))) {
-                    .pointer => |info| {
-                        @call(.compile_time, verify, .{
-                            info.child
-                        });
-                    },
-                    else => @compileError(
-                        "radix free expect pointer of types " ++
-                        @typeName(Level1_T) ++
-                        " or " ++
-                        @typeName(Level2_T)
-                    ),
-                }
-            }
-            return @call(.always_inline, Allocator_T.free, .{
-                &allocator, ((@intFromPtr(obj) - @intFromPtr(&allocator.objs[0])) / @sizeOf(struct {
-                    ?*[4]?*anyopaque,
-                    u4,
-                })),
+        pub fn free(obj: ?*SOAAllocator_T.Options.Type) AllocatorErr_T!void {
+            return if(obj == null) {} else @call(.always_inline, &SOAAllocator_T.free, .{
+                &allocator, obj.?
+            });
+        }
+    };
+};
+
+pub const Level2_T: type = struct {
+    line: ?*Level2Line_T,
+    map: u4,
+
+    const Level2Line_T: type = [4]?*Driver_T;
+    const Self: type = @This();
+
+    // Level2 Allocator
+    pub const Level: type = struct {
+        pub const AllocatorErr_T: type = SOAAllocator_T.err_T;
+        const SOAAllocator_T: type = SOA.buildObjAllocator(
+            Self,
+            true,
+            64,
+            .{
+                .alignment = @enumFromInt(@sizeOf(usize)),
+                .range = .large,
+                .type = .linear,
+            },
+            .{}
+        );
+
+        var allocator: SOAAllocator_T = .{};
+
+        pub fn alloc() AllocatorErr_T!*SOAAllocator_T.Options.Type {
+            return @call(.always_inline, &SOAAllocator_T.alloc, .{
+                &allocator
+            });
+        }
+
+        pub fn free(obj: ?*SOAAllocator_T.Options.Type) AllocatorErr_T!void {
+            return if(obj == null) {} else @call(.always_inline, &SOAAllocator_T.free, .{
+                &allocator, obj.?
+            });
+        }
+    };
+
+    // Level2 Line Allocator
+    pub const Line: type = struct {
+        pub const AllocatorErr_T: type = SOAAllocator_T.err_T;
+        const SOAAllocator_T: type = SOA.buildObjAllocator(
+            Self.Level2Line_T,
+            true,
+            64,
+            .{
+                .alignment = @enumFromInt(@sizeOf(usize)),
+                .range = .large,
+                .type = .linear,
+            },
+            .{}
+        );
+        var allocator: SOAAllocator_T = .{};
+
+        pub fn alloc() AllocatorErr_T!*SOAAllocator_T.Options.Type {
+            return @call(.always_inline, &SOAAllocator_T.alloc, .{
+                &allocator
+            });
+        }
+
+        pub fn free(obj: ?*SOAAllocator_T.Options.Type) AllocatorErr_T!void {
+            return if(obj == null) {} else @call(.always_inline, &SOAAllocator_T.free, .{
+                &allocator, obj.?
             });
         }
     };
