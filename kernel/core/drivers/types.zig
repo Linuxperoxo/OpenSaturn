@@ -3,43 +3,39 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const MajorNum_T: type = if(@sizeOf(usize) > 1) u16 else u8;
+pub const MajorNum_T: type = u6;
+pub const MinorNum_T: type = u8; // TMP
 
 pub const OpsErr_T: type = error {
-    FAILED,
-    NOCMD,
-    UNREACHABLE,
+    NoCMD,
+    Failed,
+    Unreachable,
 };
 
 pub const DriverErr_T: type = error {
-    MinorRewritten,
     InternalError,
     Blocked,
-    NoNFound,
-    NullFound,
+    NonFound,
+    MajorCollision,
+    OutMajor,
+    DoubleFree,
     MinorCollision,
+    UndefinedMajor,
+    UndefinedMinor,
+    Unreachable,
 };
 
 pub const Ops_T: type = struct {
-    open: ?*const fn() DriverErr_T!void,
-    close: ?*const fn() void,
-    minor: ?*const fn(minor: MajorNum_T) DriverErr_T!void,
-    read: *const fn(offset: usize) []u8,
-    write: *const fn([]const u8) void,
-    ioctrl: *const fn(C: usize, D: usize) OpsErr_T!usize,
+    read: *const fn(minor: MinorNum_T, offset: usize) DriverErr_T![]u8,
+    write: *const fn(minor: MinorNum_T, data: []const u8) DriverErr_T!void,
+    ioctrl: *const fn(minor: MinorNum_T, command: usize, data: usize) OpsErr_T!usize,
+    minor: *const fn(minor: MinorNum_T) DriverErr_T!void,
+    open: ?*const fn(minor: MinorNum_T) DriverErr_T!void,
+    close: ?*const fn(minor: MinorNum_T) DriverErr_T!void,
 };
 
-// Usar align para membros que podem ser null
-// garente sua localizacao correta na memoria
 pub const Driver_T: type = struct {
-    major: ?MajorNum_T align(@sizeOf(usize)) = null,
-    ops: ?Ops_T align(@sizeOf(usize)) = null,
+    major: MajorNum_T,
+    ops: Ops_T,
 };
 
-pub const DriversBunch_T: type = struct {
-    bunch: [4]?*Driver_T = .{ null, null, null, null },
-    flags: struct {
-        lock: u1 = 0,
-        full: u1 = 0,
-    },
-};

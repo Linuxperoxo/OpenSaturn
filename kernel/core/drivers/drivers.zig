@@ -10,4 +10,5 @@ pub const types: type = struct {
     pub const Ops_T: type = @import("types.zig").Ops_T;
     pub const OpsErr_T: type = @import("types.zig").OpsErr_T;
     pub const MajorNum_T: type = @import("types.zig").MajorNum_T;
+    pub const MinorNum_T: type = @import("types.zig").MinorNum_T;
 };

@@ -3,49 +3,43 @@
 // │            Author: Linuxperoxo                 │
 // └────────────────────────────────────────────────┘
 
-const SOA: type = @import("root").memory.SOA;
+const memory: type = @import("memory.zig");
 const modules: type = @import("root").modules;
 
-const Align_T: type = SOA.Align_T;
-const Cache_T: type = SOA.Cache_T;
-const CacheSize_T: type = SOA.CacheSize_T;
-const CacheTry_T: type = SOA.CacheTry_T;
-const Hits_T: type = SOA.Hits_T;
+const SOA: type = memory.SOA;
 const Optimize_T: type = SOA.Optimize_T;
+const Cache_T: type = SOA.Cache_T;
 
 const Driver_T: type = @import("types.zig").Driver_T;
 const Ops_T: type = @import("types.zig").Ops_T;
 
-pub const AllocatorErr_T: type = Allocator_T.err_T;
-const Allocator_T: type = SOA.buildObjAllocator(
+pub const AllocatorErr_T: type = SOAAllocator_T.err_T;
+const SOAAllocator_T: type = SOA.buildObjAllocator(
     Driver_T,
-    8, // FIXME: 4 objs
-    .huge,
-    null,
-    null,
-    null,
-    .in16,
-    .optimized,
-    .PrioritizeHits,
-    .Insistent,
+    false,
+    r: {
+        if(memory.totalOfPossibleAllocs <= 4) break :r 4;
+        if((memory.totalOfPossibleAllocs % 2) != 0) break :r memory.totalOfPossibleAllocs + 1;
+        break :r memory.totalOfPossibleAllocs;
+    },
+    .{
+        .alignment = @enumFromInt(@sizeOf(usize)),
+        .range = .large,
+        .type = .linear,
+    },
+    .{}
 );
 
-var Allocator = r: {
-    var AllocTmp: Allocator_T = undefined;
-    @call(.compile_time, Allocator_T.init, .{
-        &AllocTmp
-    });
-    break :r AllocTmp;
-};
+var allocator: SOAAllocator_T = .{};
 
 pub fn alloc() AllocatorErr_T!*Driver_T {
-    return @call(.always_inline, &Allocator_T.alloc, .{
-        &Allocator
+    return @call(.always_inline, &SOAAllocator_T.alloc, .{
+        &allocator
     });
 }
 
-pub fn free(OBJ: *Driver_T) AllocatorErr_T!void {
-    return @call(.always_inline, &Allocator_T.free, .{
-        &Allocator, (@intFromPtr(OBJ) - @intFromPtr(&Allocator.objs[0])) / @sizeOf(Driver_T)
+pub fn free(obj: *Driver_T) AllocatorErr_T!void {
+    return @call(.always_inline, &SOAAllocator_T.free, .{
+        &allocator, obj
     });
 }

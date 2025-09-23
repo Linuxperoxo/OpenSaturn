@@ -83,7 +83,7 @@ pub const core: type = struct {
     pub const module: type = @import("kernel/core/module/module.zig");
     pub const paging: type = @import("kernel/core/paging/paging.zig");
     pub const vfs: type = @import("kernel/core/vfs/vfs.zig");
-    pub const devices: type =@import("kernel/core/devices/devices.zig");
+    pub const devices: type = @import("kernel/core/devices/devices.zig");
     pub const fs: type = @import("kernel/core/fs/fs.zig");
     pub const drivers: type = @import("kernel/core/drivers/drivers.zig");
 };
@@ -103,6 +103,7 @@ pub const supervisor: type = @import("kernel/supervisor/supervisor.zig");
 pub const lib: type = struct {
     pub const kernel: type = SelectedArch.lib.kernel;
     pub const userspace: type = SelectedArch.lib.userspace;
+    pub const utils: type = @import("lib/saturn/utils/utils.zig");
 };
 pub const config: type = struct {
     pub const modules: type = @import("config/modules/config.zig");
