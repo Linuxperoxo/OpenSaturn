@@ -14,6 +14,7 @@ pub const interfaces: type = saturn.interfaces;
 pub const supervisor: type = saturn.supervisor;
 pub const kernel: type = saturn.lib.kernel;
 pub const userspace: type = saturn.lib.userspace;
+pub const utils: type = saturn.lib.utils;
 pub const config: type = saturn.config;
 pub const modules: type = saturn.modules;
 

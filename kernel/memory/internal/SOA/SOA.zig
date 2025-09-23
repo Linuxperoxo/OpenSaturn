@@ -10,7 +10,7 @@
 pub const Optimize_T: type = @import("types.zig").Optimize_T;
 pub const Cache_T: type = @import("types.zig").Cache_T;
 
-pub const zero = if(!@import("builtin").is_test) @import("root").utils.zero else struct {
+pub const zero = if(!@import("builtin").is_test) @import("root").utils.mem.zero else struct {
     const Self: type = @This();
     pub fn zero(comptime T: type) T {
         @setEvalBranchQuota(4294967295);

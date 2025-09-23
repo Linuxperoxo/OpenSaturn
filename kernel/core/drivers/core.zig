@@ -131,6 +131,8 @@ pub fn add(D: *const Drivers.Driver_T) Drivers.DriverErr_T!void {
 }
 
 pub fn del(M: Drivers.MajorNum_T) Drivers.DriverErr_T!void {
+    if(!@import("builtin").is_test)
+        if(comptime @import("root").modules.countModOfType(.driver) == 0) return;
     return if(!@call(.never_inline, &valid_path, .{
         @as(u4, @intCast((M >> 4) & 0x0F)),
         @as(u2, @intCast((M >> 2) & 0x03)),

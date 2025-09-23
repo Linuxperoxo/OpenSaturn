@@ -161,8 +161,7 @@ pub fn SaturnModules() void {
                 .dinamic => {},
                 .unlinkable => {},
                 .linkable => {
-                    // comptime nao necessario, mas preciso ter certeza que ele vai resolver em
-                    // compilacao, por mais que tenha o @compileError
+                    // comptime apenas para deixar explicito
                     comptime {
                         if(config.modules.options.UseMenuconfigAsRef) {
                             if(!@hasField(config.modules.menuconfig.Menuconfig_T, M.__SaturnModuleDescription__.name)) {

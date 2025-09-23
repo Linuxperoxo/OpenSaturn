@@ -3,9 +3,10 @@
 // │            Author: Linuxperoxo                 │
 // └────────────────────────────────────────────────┘
 
-const SOA: type = @import("memory.zig").SOA;
+const memory: type = @import("memory.zig");
 const modules: type = @import("root").modules;
 
+const SOA: type = memory.SOA;
 const Optimize_T: type = SOA.Optimize_T;
 const Cache_T: type = SOA.Cache_T;
 
@@ -16,7 +17,11 @@ pub const AllocatorErr_T: type = SOAAllocator_T.err_T;
 const SOAAllocator_T: type = SOA.buildObjAllocator(
     Driver_T,
     false,
-    64,
+    r: {
+        if(memory.totalOfPossibleAllocs <= 4) break :r 4;
+        if((memory.totalOfPossibleAllocs % 2) != 0) break :r memory.totalOfPossibleAllocs + 1;
+        break :r memory.totalOfPossibleAllocs;
+    },
     .{
         .alignment = @enumFromInt(@sizeOf(usize)),
         .range = .large,
