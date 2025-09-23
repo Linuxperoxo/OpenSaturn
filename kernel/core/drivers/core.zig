@@ -14,17 +14,15 @@ const Drivers: type = struct {
     const Allocator: type = @import("allocator.zig");
 };
 
-// Por enquanto vou usar tamanho fixo, vou usar um
-// padrao para drivers que ja estao linkados ao kernel
-// logo na compilacao, ele seram armazenados nesse array.
-// Depois isso sera modificado para permitir mais major
+// A ideia de usar o radix e justamente pensando em
+// otimizar acesso a um major, que deve ser extremamente
+// eficiente, mas tambem precisamos permitir um tamanho dinamico
+//
+// Aqui temos um add e um del mais robusto, mas temos uma busca
+// por major extremamente veloz, com praticamente 0 overhead, o
+// maximo de overhead que vamos ter e ver se o caminho e valido
+// mas todos os acessos a busca e sempre certeiro
 
-// A ideia de usar arrray por enquanto e para conseguir
-// ter o maximo de desempenho ao tentar procurar um major,
-// ja que aqui e onde acontece todo acesso a um major para
-// alguma operacao. Pretendo melhorar esse algoritmo para
-// ter uma alocacao mais lenta, porem maior, mas a busca
-// precisa ser extremamente rapida
 var majorsLevels: Radix.Level0_T = .{
     .line = .{
         null
@@ -196,6 +194,7 @@ pub fn search(M: Drivers.MajorNum_T) Drivers.DriverErr_T!*Drivers.Driver_T {
 }
 
 // == Saturn Radix Major Test ==
+
 const TestErr_T: type = error {
     UndefinedAction,
     UnreachableCode,
@@ -207,7 +206,7 @@ var majorTester: Drivers.Driver_T = .{
         .open = null,
         .close = null,
         .read = &struct {
-            pub fn read(_: Drivers.MinorNum_T, _: usize) []u8 {
+            pub fn read(_: Drivers.MinorNum_T, _: usize) Drivers.DriverErr_T![]u8 {
                 return @constCast("Hello, World!");
             }
         }.read,
@@ -222,8 +221,8 @@ var majorTester: Drivers.Driver_T = .{
             }
         }.minor,
         .ioctrl = &struct {
-            fn minor(_: Drivers.MinorNum_T) Drivers.DriverErr_T!void {
-
+            fn minor(_: Drivers.MinorNum_T, _: usize, _: usize) Drivers.OpsErr_T!usize {
+                return 0xAABB;
             }
         }.minor,
     }
@@ -261,11 +260,24 @@ test "Major Recursive Del" {
             Drivers.DriverErr_T.DoubleFree => {},
             else => return TestErr_T.UnreachableCode,
         };
-        search(majorTester.major) catch |err| switch(err) {
+        _ = search(majorTester.major) catch |err| switch(err) {
             Drivers.DriverErr_T.NonFound => {},
             else => return TestErr_T.UnreachableCode,
         };
         majorTester.major += 1;
+    }
+}
+
+test "Major Search With 0 Major" {
+    majorTester.major = 0;
+    for(0..MaxMajorNum) |_| {
+        _ = search(majorTester.major) catch |err| switch(err) {
+            Drivers.DriverErr_T.NonFound => {
+                majorTester.major += 1; continue;
+            },
+            else => return TestErr_T.UndefinedAction,
+        };
+        return TestErr_T.UnreachableCode;
     }
 }
 

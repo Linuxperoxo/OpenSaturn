@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const SOA: type = @import("root").memory.SOA;
+const SOA: type = @import("memory.zig").SOA;
 const Driver_T: type = @import("types.zig").Driver_T;
 
 pub const Level0_T: type = struct {

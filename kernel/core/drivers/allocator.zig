@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo                 │
 // └────────────────────────────────────────────────┘
 
-const SOA: type = @import("root").memory.SOA;
+const SOA: type = @import("memory.zig").SOA;
 const modules: type = @import("root").modules;
 
 const Optimize_T: type = SOA.Optimize_T;
