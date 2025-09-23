@@ -69,19 +69,16 @@ pub fn buildObjAllocator(
         pool: [num]T = if(zero_init) zero([num]T) else undefined,
         allocs: BitMaxIPool = 0,
         bitmap: [r: {
-            break :r ((num % BitMap_T.MapSize) + num) / BitMap_T.MapSize;
+            break :r (num / BitMap_T.MapSize) + if((num % BitMap_T.MapSize) != 0) 1 else 0;
             // essa calculo garante que tenha a quantidade certa
-            // de bitmap para objetos caso seja nao seja multiplo
-            // do MapSize. Poderiamos fazer um if para ver se sobrou
-            // resto, caso tenha sobrado, iriamos adicionar mais
-            // um indice para o bitmap
+            // de bitmap para objetos caso nao seja multiplo do MapSize.
         }]BitMap_T = [_]BitMap_T {
             BitMap_T {
                 .map = [_]BitMap_T.Map_T {
                     .free,
                 } ** BitMap_T.MapSize,
             },
-        } ** (((num % BitMap_T.MapSize) + num) / BitMap_T.MapSize),
+        } ** ((num / BitMap_T.MapSize) + if((num % BitMap_T.MapSize) != 0) 1 else 0),
         lindex: ?BitMaxIPool = null,
         cindex: CindexType_T = if(CindexType_T == void) {} else null,
         cmiss: CmissType_T = if(CmissType_T == void) {} else 0,
