@@ -3,178 +3,249 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const Dev_T: type = @import("types.zig").Dev_T;
-const DevErr_T: type = @import("types.zig").DevErr_T;
-const DevMajorBunch_T: type = @import("types.zig").DevMajorBunch_T;
-const MinorNum_T: type = @import("types.zig").MinorNum_T;
-const MajorNum_T: type = @import("root").interfaces.drivers.types.MajorNum_T;
-
 const Allocator: type = @import("allocator.zig");
-
-var devicesBunch= [_]DevMajorBunch_T {.{
-    DevMajorBunch_T {
-        .bunch = .{
-            null
-        } ** 16,
-        .part = null,
-        .regs = 0,
-        .busy = 0,
-    },
-}} ** 16;
-
-// O algoritmo usado aqui nao vem de nenhum livro ou outros projetos,
-// e um algoritmo desenhado exclusivamente para o saturn.
-
-const Steps: type = enum {
-    shot,
-    rec,
-    miss,
-    new
+const Extern: type = struct {
+    pub const Dev_T: type = @import("types.zig").Dev_T;
+    pub const DevErr_T: type = @import("types.zig").DevErr_T;
+    pub const MinorNum_T: type = @import("types.zig").MinorNum_T;
+    pub const MajorNum_T: type = @import("types.zig").MajorNum_T;
+};
+const Internal: type = struct {
+    pub const DevicesInodeLevel0: type = @import("types.zig").DevicesInodeLevel0;
+    pub const DevicesInodeLevel1: type = @import("types.zig").DevicesInodeLevel1;
+    pub const DevicesInodeLevel2: type = @import("types.zig").DevicesInodeLevel2;
+    pub const Steps: type = enum {
+        Level0O,
+        Level1B,
+        Level1O,
+        Level2B,
+        Level2O,
+    };
 };
 
-pub fn add(D: *const Dev_T) DevErr_T!void {
-    return r: {
-        const bunch: u4, const device: u4 = t: {
-            var localBunch = D.major & 0x0F;
-            sw: switch(Steps.shot) {
-                .shot => {
-                    if(devicesBunch[localBunch].bunch[D.minor & 0x0F] == null) break :t .{ localBunch, D.minor & 0x0F };
-                    if(devicesBunch[localBunch].bunch[D.minor & 0x0F].?.minor == D.minor) break :r DevErr_T.MinorCollision;
-                    if(devicesBunch[localBunch].bunch[(D.minor >> 4) & 0x0F] == null) break :t .{ localBunch, (D.minor >> 4) & 0x0F };
-                    if(devicesBunch[localBunch].bunch[(D.minor >> 4) & 0x0F].?.minor == D.minor) break :r DevErr_T.MinorCollision;
-                    continue :sw .miss;
-                },
+// A implementacao dos virtual devices e bem parecida com o de drivers.
+// Uma coisa que precisamos ter em mente e que os dispositivos virtuais
+// so fazem sentido com um devfs, ou seja, aqui vamos armazenar um minor
+// com um inode, que deve ser um endereco unico para aquele minor, ja os
+// major/drivers usamos apenas o proprio numero de major para armazena-lo
+//
+// Aqui nao vamos ter uma validacao de colisao de minor em majors, por enquanto,
+// vamos passar essa responsabilidade para o proprio driver, ele deve ser responsavel
+// por gerenciar os seus minors
+//
+// OBS: Talvez isso seja mudado no futuro
 
-                .rec => {
-                    localBunch = if(devicesBunch[localBunch].part) |_| devicesBunch[localBunch].part.? else continue :sw .new;
-                    continue :sw .shot;
-                },
+var virtual_devices: Internal.DevicesInodeLevel0 = .{
+    .base = [_]?*Internal.DevicesInodeLevel1 {
+        null
+    } ** @typeInfo(Internal.DevicesInodeLevel0.Base_T).array.len,
+};
 
-                .miss => {
-                    // verificando se todos os slots de minor estao
-                    // sendo usados
-                    //
-                    // digamos que temos 4 slots e estamos usamando os
-                    // slots 0...2, os bits estariam assim 0111, ou seja,
-                    // temos ainda um slot, entao  fazemos um xor 0111 ^ 1111
-                    // se isso retornar algo diferente de 0, e pq temos slots
-                    // ainda, funcionaria comparar o .alloc com 2^16, mas assim
-                    // simplificamos
-                    if((devicesBunch[localBunch].alloc ^ 0xFFFF) == 0) continue :sw .rec;
-                    const localDevice = y: {
-                        for(0..16) |i| {
-                            // o bitcast nesse caso faz casting para bool, como queremos
-                            // capturar algum bit que e 0 usamos um xor para comparar
-                            if(@bitCast((devicesBunch[localBunch].alloc >> i) ^ 0x01)) break :y i;
-                            if(devicesBunch[localBunch].bunch[i].?.minor == D.minor) break :r DevErr_T.MinorCollision;
-                        }
-                        continue :sw .new;
-                    };
-                    devicesBunch[localBunch].miss |= 0x01 << localDevice; break :t .{ localBunch, localDevice };
-                },
-
-                .new => {
-                    const bunchChild = y: {
-                        for(0..devicesBunch.len) |i| {
-                            if(devicesBunch[i].alloc == 0) break :y i;
-                        }
-                        break :r DevErr_T.OutOfMinor;
-                    };
-                    // parent bunch to child link
-                    devicesBunch[localBunch].part = bunchChild; break :t .{ bunchChild, D.minor & 0x0F }; // D.minor & 0x0F is default
-                },
-            }
-        };
-        devicesBunch[bunch].bunch[device] = @call(.never_inline, &Allocator.alloc, .{}) catch DevErr_T.InternalError;
-        devicesBunch[bunch].bunch[device].?.* = D.*;
-        devicesBunch[bunch].part = if(bunch != (D.major & 0x0F)) bunch else devicesBunch[bunch].part;
-        devicesBunch[bunch].alloc |= 0x01 << device;
+pub fn inodePartBits(inode: Extern.MinorNum_T) struct { u4, u2, u2 } {
+    return .{
+        @intCast((inode >> 4) & 0x0F),
+        @intCast((inode >> 2) & 0x03),
+        @intCast(inode & 0x03),
     };
 }
 
-pub fn del(Ma: MajorNum_T, Mi: MinorNum_T) DevErr_T!void {
-    return r: {
-        const bunch: u4, const device: u4, const parent: ?u4 = t: {
-            var localBunch: u4 = Ma & 0x0F;
-            var localParent: ?u4 = null;
-            sw: switch(Steps.shot) {
-                .shot => {
-                    if(devicesBunch[localBunch].bunch[Mi & 0x0F]) |_| {
-                        if(devicesBunch[localBunch].bunch[Mi & 0x0F].?.minor == Mi) break :t .{ localBunch, Mi & 0x0F, null };
-                    }
-                    if(devicesBunch[localBunch].bunch[(Mi >> 4) & 0x0F]) |_| {
-                        if(devicesBunch[localBunch].bunch[(Mi >> 4) & 0x0F].?.minor == Mi) break :t .{ localBunch, (Mi >> 4) & 0x0F, null };
-                    }
-                    continue :sw .miss;
-                },
-
-                .rec => {
-                    localBunch, localParent = y: {
-                        break :y .{
-                            if(devicesBunch[localBunch].part) |_| devicesBunch[localBunch].part.? else break :sw {},
-                            devicesBunch[localBunch].part.?,
-                        };
-                    };
-                    continue :sw .shot;
-                },
-
-                .miss => {
-                    if(devicesBunch[localBunch].miss == 0 or devicesBunch[localBunch].alloc == 0) continue :sw .rec;
-                    const localDevice = y: {
-                        for(0..16) |i| {
-                            if(@bitCast((devicesBunch[localBunch].miss >> i) & 0x01)) {
-                                if(devicesBunch[localBunch].bunch[i].?.minor == Mi) break :y i;
-                            }
-                        }
-                        continue :sw .rec;
-                    };
-                    devicesBunch[localBunch].miss &= (~(0x01 << localDevice)); break :t .{ localBunch, localDevice, localParent };
-                },
-            }
-            break :r DevErr_T.MinorDoubleFree;
+pub fn valid_path(inode: Extern.MinorNum_T) struct { broken: ?Internal.Steps, result: bool } {
+    const high: u4, const mid: u2, const low: u2 = @call(.always_inline, &inodePartBits, .{
+        inode
+    });
+    return if(virtual_devices.base[high] == null) .{ .broken = Internal.Steps.Level0O, .result = false } else r: {
+        const types = [_]type {
+            ?*Internal.DevicesInodeLevel1,
+            ?*Internal.DevicesInodeLevel2,
         };
-        @call(.never_inline, &Allocator.free, .{
-            devicesBunch[bunch].bunch[device].?
+        const offset = [_]u2 {
+            mid,
+            low,
+        };
+        var level: *anyopaque = virtual_devices.base[high].?;
+        inline for(0..types.len) |i| {
+            const casting: types[i] = @alignCast(@ptrCast(level));
+            if(casting.?.base == null) {
+                break :r .{
+                    .broken = @enumFromInt(i + i + 1),
+                    .result = false,
+                };
+            }
+            if(casting.?.base.?[offset[i]] == null) {
+                break :r .{
+                    .broken = @enumFromInt(i + i + 2),
+                    .result = false,
+                };
+            }
+            level = casting.?.base.?[offset[i]].?;
+        }
+        break :r .{
+            .broken = null,
+            .result = true,
+        };
+    };
+}
+
+// As funcoes de add e del poderiam ser menor, mas preferi deixar assim por motivos de visualizacao
+// de partes isoladas, ela nao tem um impacto de desempenho por ser longa, por sinal, acredito
+// que seja ate a melhor escolha nesse caso
+
+pub fn add(inode: Extern.MinorNum_T, device: *const Extern.Dev_T) Extern.DevErr_T!void {
+    const path = @call(.always_inline, &valid_path, .{
+        inode
+    });
+    return if(path.result) Extern.DevErr_T.MinorInodeCollision else r: {
+        const high: u4, const mid: u2, const low: u2 = @call(.always_inline, &inodePartBits, .{
+            inode
         });
-        devicesBunch[bunch].bunch[device] = null;
-        devicesBunch[bunch].alloc &= (~(0x01 << device));
-        devicesBunch[t: {
-            if(parent == null) break :r {};
-            if(devicesBunch[bunch].alloc != 0) break :r {};
-            break :t parent.?;
-        }].part = null;
-    };
-}
-
-pub fn exist(Ma: MajorNum_T, Mi: MinorNum_T) DevErr_T!*const Dev_T {
-    return r: {
-        var localBunch: u4 = Ma & 0x0F;
-        sw: switch(Steps.shot) {
-            .shot => {
-                if(devicesBunch[localBunch].bunch[Mi & 0x0F]) |_| {
-                    if(devicesBunch[localBunch].bunch[Mi & 0x0F].?.minor == Mi) break :r devicesBunch[localBunch].bunch[Mi & 0x0F].?;
-                }
-                if(devicesBunch[localBunch].bunch[(Mi >> 4) & 0x0F]) |_| {
-                    if(devicesBunch[localBunch].bunch[(Mi >> 4) & 0x0F].?.minor == Mi) break :r devicesBunch[localBunch].bunch[Mi & 0x0F];
-                }
-                continue :sw .miss;
+        sw: switch(path.broken.?) {
+            Internal.Steps.Level0O => {
+                virtual_devices.base[high] = @call(.never_inline, &Internal.DevicesInodeLevel1.Allocator.Level.alloc, .{})
+                catch |err| switch(err) {
+                    Internal.DevicesInodeLevel1.Allocator.Level.AllocatorErr_T.OutOfMemory => break :r Extern.DevErr_T.OutOfMinor,
+                    else => break :r Extern.DevErr_T.InternalError,
+                };
+                virtual_devices.map |= (@as(@TypeOf(virtual_devices.map), 0x01) << high);
+                continue :sw .Level1B;
             },
 
-            .rec => {
-                localBunch = if(devicesBunch[localBunch].part) |_| devicesBunch[localBunch].part.? else break :r DevErr_T.NonMinor;
-                continue :sw .shot;
+            Internal.Steps.Level1B => {
+                virtual_devices.base[high].?.base = @call(.never_inline, &Internal.DevicesInodeLevel1.Allocator.Base.alloc, .{})
+                catch |err| switch(err) {
+                    Internal.DevicesInodeLevel1.Allocator.Level.AllocatorErr_T.OutOfMemory => break :r Extern.DevErr_T.OutOfMinor,
+                    else => break :r Extern.DevErr_T.InternalError,
+                };
+                continue :sw .Level1O;
             },
 
-            .miss => {
-                if(devicesBunch[localBunch].miss == 0) continue :sw .rec;
-                for(0..16) |i| {
-                    if(@bitCast((devicesBunch[localBunch].miss >> i) & 0x01)) {
-                        if(devicesBunch[localBunch].bunch[i].?.minor == Mi) break :r devicesBunch[localBunch].bunch[i].?;
-                    }
-                }
-                continue :sw .rec;
+            Internal.Steps.Level1O => {
+                virtual_devices.base[high].?.base.?[mid] = @call(.never_inline, &Internal.DevicesInodeLevel2.Allocator.Level.alloc, .{})
+                catch |err| switch(err) {
+                    Internal.DevicesInodeLevel1.Allocator.Level.AllocatorErr_T.OutOfMemory => break :r Extern.DevErr_T.OutOfMinor,
+                    else => break :r Extern.DevErr_T.InternalError,
+                };
+                virtual_devices.base[high].?.map |= (@as(@TypeOf(virtual_devices.base[high].?.map), 0x01) << mid);
+                continue :sw .Level2B;
+            },
+
+            Internal.Steps.Level2B => {
+                virtual_devices.base[high].?.base.?[mid].?.base = @call(.never_inline, &Internal.DevicesInodeLevel2.Allocator.Base.alloc, .{})
+                catch |err| switch(err) {
+                    Internal.DevicesInodeLevel1.Allocator.Level.AllocatorErr_T.OutOfMemory => break :r Extern.DevErr_T.OutOfMinor,
+                    else => break :r Extern.DevErr_T.InternalError,
+                };
+                continue :sw .Level2B;
+            },
+
+            Internal.Steps.Level2O => {
+                virtual_devices.base[high].?.base.?[mid].?.base.?[low] = @call(.never_inline, &Allocator.alloc, .{})
+                catch |err| switch(err) {
+                    Internal.DevicesInodeLevel1.Allocator.Level.AllocatorErr_T.OutOfMemory => break :r Extern.DevErr_T.OutOfMinor,
+                    else => break :r Extern.DevErr_T.InternalError,
+                };
+                virtual_devices.base[high].?.base.?[mid].?.map |= (@as(@TypeOf(virtual_devices.base[high].?.base.?[mid].?.map), 0x01) << low);
             },
         }
-        unreachable;
+        virtual_devices.base[high].?.base.?[mid].?.base.?[low].?.* = device.*;
     };
+}
+
+pub fn del(inode: Extern.MinorNum_T) Extern.DevErr_T!void {
+    return if(!(@call(.always_inline, &valid_path, .{
+            inode
+        })).result) Extern.DevErr_T.MinorDoubleFree else r: {
+        const high: u4, const mid: u2, const low: u2 = @call(.always_inline, &inodePartBits, .{
+            inode
+        });
+        // TODO: Tratar melhor possivel error no free de level
+        sw: switch(Internal.Steps.Level2O) {
+            Internal.Steps.Level2O => {
+                @call(.never_inline, &Allocator.free, .{
+                    virtual_devices.base[high].?.base.?[mid].?.base.?[low]
+                }) catch Extern.DevErr_T.InternalError;
+                virtual_devices.base[high].?.base.?[mid].?.map &= ~(@as(@TypeOf(virtual_devices.base[high].?.base.?[mid].?.map), 0x01) << low);
+                virtual_devices.base[high].?.base.?[mid].?.base.?[low] = null;
+                if(virtual_devices.base[high].?.base.?[mid].?.map == 0) continue :sw .Level2B;
+                break :r {};
+            },
+
+            Internal.Steps.Level2B => {
+                @call(.never_inline, &Internal.DevicesInodeLevel2.Allocator.Base.free, .{
+                    virtual_devices.base[high].?.base.?[mid].?.base
+                }) catch Extern.DevErr_T.InternalError;
+                virtual_devices.base[high].?.base.?[mid].?.base = null;
+                continue :sw .Level1O;
+            },
+
+            Internal.Steps.Level1O => {
+                @call(.never_inline, &Internal.DevicesInodeLevel2.Allocator.Level.free, .{
+                    virtual_devices.base[high].?.base.?[mid]
+                }) catch Extern.DevErr_T.InternalError;
+                virtual_devices.base[high].?.map &= ~(@as(@TypeOf(virtual_devices.base[high].?.map), 0x01) << low);
+                virtual_devices.base[high].?.base.?[mid] = null;
+                if(virtual_devices.base[high].?.map == 0) continue :sw .Level1B;
+                break :r {};
+            },
+
+            Internal.Steps.Level1B => {
+                @call(.never_inline, &Internal.DevicesInodeLevel1.Allocator.Base.free, .{
+                    virtual_devices.base[high].?.base
+                }) catch Extern.DevErr_T.InternalError;
+                virtual_devices.base[high].?.base = null;
+                continue :sw .Level0O;
+            },
+
+            Internal.Steps.Level0O => {
+                @call(.never_inline, &Internal.DevicesInodeLevel1.Allocator.Level.free, .{
+                    virtual_devices.base[high]
+                }) catch Extern.DevErr_T.InternalError;
+                virtual_devices.map &= ~(@as(@TypeOf(virtual_devices.base[high].?.map), 0x01) << low);
+                virtual_devices.base[high] = null;
+            },
+        }
+    };
+}
+
+pub fn search(inode: Extern.MinorNum_T) Extern.DevErr_T!*Extern.Dev_T {
+    const path = @call(.always_inline, &valid_path, .{
+        inode
+    });
+    return if(!path.result) Extern.DevErr_T.NonMinor else r: {
+        const high: u4, const mid: u2, const low: u2 = @call(.always_inline, &inodePartBits, .{
+            inode
+        });
+        break :r virtual_devices.base[high].?.base.?[mid].?.base.?[low].?;
+    };
+}
+
+// == Saturn Devices Allocs Test ==
+const MaxInodeRange: comptime_int = (
+    @typeInfo(Internal.DevicesInodeLevel0.Base_T).array.len *
+    @typeInfo(Internal.DevicesInodeLevel1.Base_T).array.len *
+    @typeInfo(Internal.DevicesInodeLevel2.Base_T).array.len
+);
+const TestErr_T: type = error {
+    UnreachableCode,
+    UndefinedAction,
+};
+var deviceTester: Extern.Dev_T = .{
+    .major = 0,
+    .minor = 0,
+    .type = .char,
+};
+
+test "Continuos Devices Alloc" {
+    for(0..1) |i| {
+        try add(@intCast(i), &deviceTester);
+        add(@intCast(i), &deviceTester) catch |err| switch(err) {
+            Extern.DevErr_T.MinorInodeCollision => {},
+            else => return TestErr_T.UnreachableCode,
+        };
+        const deviceReturn: *Extern.Dev_T = try search(@intCast(i));
+        if(
+            deviceReturn.major != deviceTester.major or
+            deviceReturn.minor != deviceTester.minor or
+            deviceReturn.type != deviceTester.type
+        ) return TestErr_T.UndefinedAction;
+    }
 }

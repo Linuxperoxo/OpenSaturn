@@ -23,3 +23,7 @@ pub const types: type = struct {
     pub const MajorNum_T: type = @import("types.zig").MajorNum_T;
     pub const MinorNum_T: type = @import("types.zig").MinorNum_T;
 };
+pub const info: type = struct {
+    pub const total = @import("memory.zig").totalOfPossibleAllocs;
+    pub const bits = @import("memory.zig").totalInBits;
+};
