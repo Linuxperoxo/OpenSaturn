@@ -189,7 +189,7 @@ pub fn del(inode: Extern.MinorNum_T) Extern.DevErr_T!void {
                 @call(.never_inline, &Internal.DevicesInodeLevel2.Allocator.Level.free, .{
                     virtual_devices.base[high].?.base.?[mid]
                 }) catch break: r Extern.DevErr_T.InternalError;
-                virtual_devices.base[high].?.map &= ~(@as(@TypeOf(virtual_devices.base[high].?.map), 0x01) << low);
+                virtual_devices.base[high].?.map &= ~(@as(@TypeOf(virtual_devices.base[high].?.map), 0x01) << mid);
                 virtual_devices.base[high].?.base.?[mid] = null;
                 if(virtual_devices.base[high].?.map == 0) continue :sw .Level1B;
                 break :r {};
@@ -207,7 +207,7 @@ pub fn del(inode: Extern.MinorNum_T) Extern.DevErr_T!void {
                 @call(.never_inline, &Internal.DevicesInodeLevel1.Allocator.Level.free, .{
                     virtual_devices.base[high]
                 }) catch break :r Extern.DevErr_T.InternalError;
-                virtual_devices.map &= ~(@as(@TypeOf(virtual_devices.base[high].?.map), 0x01) << low);
+                virtual_devices.map &= ~(@as(@TypeOf(virtual_devices.map), 0x01) << high);
                 virtual_devices.base[high] = null;
             },
         }
@@ -297,8 +297,8 @@ test "Detect Memory Leak" {
     }
     const Allocators = [_]type {
         Allocator,
-        // Internal.DevicesInodeLevel1.Allocator.Base, // FIXME: Memory Leak
-        // Internal.DevicesInodeLevel1.Allocator.Level, // FIXME: Memory Lead
+        Internal.DevicesInodeLevel1.Allocator.Base,
+        Internal.DevicesInodeLevel1.Allocator.Level,
         Internal.DevicesInodeLevel2.Allocator.Base,
         Internal.DevicesInodeLevel2.Allocator.Level,
     };
