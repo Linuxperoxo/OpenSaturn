@@ -50,21 +50,3 @@ pub const ModuleDescription_T: type = struct {
         },
     },
 };
-
-// Internal
-pub const ModMajorStatus_T: type = enum {
-    running,
-    sleeping,
-};
-
-pub const ModMajor_T: type = struct {
-    next: ?*@This(),
-    status: ?ModMajorStatus_T,
-    module: ?Mod_T,
-};
-
-pub const MajorInfo_T: type = struct {
-    majors: ?*ModMajor_T,
-    in: *const fn(*const Mod_T) ModErr_T!void,
-    rm: *const fn(*const Mod_T) ModErr_T!void,
-};
