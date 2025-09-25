@@ -79,55 +79,18 @@ pub const DevicesInodeLevel1: type = struct {
                     &allocator, obj.?
                 });
             }
+
+            pub fn haveAllocs() bool {
+                return if(@import("builtin").is_test) allocator.allocs != 0 else @compileError(
+                    "fn haveAllocs run in test mode only"
+                );
+            }
         };
 
         pub const Base: type = struct {
             pub const AllocatorErr_T: type = SOAAllocator_T.err_T;
             const SOAAllocator_T: type = SOA.buildObjAllocator(
                 Self.Base_T,
-                false,
-                16,
-                .{
-                    .alignment = @enumFromInt(@sizeOf(usize)),
-                    .range = .large,
-                    .type = .linear,
-                },
-                .{}
-            );
-
-            var allocator: SOAAllocator_T = .{};
-
-            pub fn alloc() AllocatorErr_T!*SOAAllocator_T.Options.Type {
-                return @call(.always_inline, &SOAAllocator_T.alloc, .{
-                    &allocator
-                });
-            }
-
-            pub fn free(obj: ?*SOAAllocator_T.Options.Type) AllocatorErr_T!void {
-                return if(obj == null) {} else @call(.always_inline, &SOAAllocator_T.free, .{
-                    &allocator, obj.?
-                });
-            }
-        };
-    };
-};
-
-pub const DevicesInodeLevel2: type = struct {
-    pub const baseSize: comptime_int = (@bitSizeOf(MinorNum_T) / 4) * (@bitSizeOf(MinorNum_T) / 4);
-    pub const Base_T: type = [baseSize]?*Dev_T;
-    base: ?*Base_T,
-    map: switch(baseSize) {
-        4 => u4,
-        8 => u8,
-        else => unreachable,
-    },
-
-    const Self: type = @This();
-    pub const Allocator: type = struct {
-        pub const Level: type = struct {
-            pub const AllocatorErr_T: type = SOAAllocator_T.err_T;
-            const SOAAllocator_T: type = SOA.buildObjAllocator(
-                Self,
                 true,
                 16,
                 .{
@@ -151,14 +114,34 @@ pub const DevicesInodeLevel2: type = struct {
                     &allocator, obj.?
                 });
             }
-        };
 
-        pub const Base: type = struct {
+            pub fn haveAllocs() bool {
+                return if(@import("builtin").is_test) allocator.allocs != 0 else @compileError(
+                    "fn haveAllocs run in test mode only"
+                );
+            }
+        };
+    };
+};
+
+pub const DevicesInodeLevel2: type = struct {
+    pub const baseSize: comptime_int = (@bitSizeOf(MinorNum_T) / 4) * (@bitSizeOf(MinorNum_T) / 4);
+    pub const Base_T: type = [baseSize]?*Dev_T;
+    base: ?*Base_T,
+    map: switch(baseSize) {
+        4 => u4,
+        8 => u8,
+        else => unreachable,
+    },
+
+    const Self: type = @This();
+    pub const Allocator: type = struct {
+        pub const Level: type = struct {
             pub const AllocatorErr_T: type = SOAAllocator_T.err_T;
             const SOAAllocator_T: type = SOA.buildObjAllocator(
-                Self.Base_T,
-                false,
-                16,
+                Self,
+                true,
+                64,
                 .{
                     .alignment = @enumFromInt(@sizeOf(usize)),
                     .range = .large,
@@ -172,20 +155,54 @@ pub const DevicesInodeLevel2: type = struct {
             pub fn alloc() AllocatorErr_T!*SOAAllocator_T.Options.Type {
                 return @call(.always_inline, &SOAAllocator_T.alloc, .{
                     &allocator
-                }) catch {
-                                    const std: type = @import("std");
-                std.debug.print("{d}\n", .{
-                    allocator.allocs
                 });
-                while(true) {}
-
-                };
             }
 
             pub fn free(obj: ?*SOAAllocator_T.Options.Type) AllocatorErr_T!void {
                 return if(obj == null) {} else @call(.always_inline, &SOAAllocator_T.free, .{
                     &allocator, obj.?
                 });
+            }
+
+            pub fn haveAllocs() bool {
+                return if(@import("builtin").is_test) allocator.allocs != 0 else @compileError(
+                    "fn haveAllocs run in test mode only"
+                );
+            }
+        };
+
+        pub const Base: type = struct {
+            pub const AllocatorErr_T: type = SOAAllocator_T.err_T;
+            const SOAAllocator_T: type = SOA.buildObjAllocator(
+                Self.Base_T,
+                true,
+                64,
+                .{
+                    .alignment = @enumFromInt(@sizeOf(usize)),
+                    .range = .large,
+                    .type = .linear,
+                },
+                .{}
+            );
+
+            var allocator: SOAAllocator_T = .{};
+
+            pub fn alloc() AllocatorErr_T!*SOAAllocator_T.Options.Type {
+                return @call(.always_inline, &SOAAllocator_T.alloc, .{
+                    &allocator
+                });
+            }
+
+            pub fn free(obj: ?*SOAAllocator_T.Options.Type) AllocatorErr_T!void {
+                return if(obj == null) {} else @call(.always_inline, &SOAAllocator_T.free, .{
+                    &allocator, obj.?
+                });
+            }
+
+            pub fn haveAllocs() bool {
+                return if(@import("builtin").is_test) allocator.allocs != 0 else @compileError(
+                    "fn haveAllocs run in test mode only"
+                );
             }
         };
     };
