@@ -38,8 +38,14 @@ pub fn alloc() AllocatorErr_T!*Driver_T {
     });
 }
 
-pub fn free(obj: *Driver_T) AllocatorErr_T!void {
-    return @call(.always_inline, &SOAAllocator_T.free, .{
-        &allocator, obj
+pub fn free(obj: ?*Driver_T) AllocatorErr_T!void {
+    return if(obj == null) {} else @call(.always_inline, &SOAAllocator_T.free, .{
+        &allocator, obj.?
     });
+}
+
+pub fn haveAllocs() bool {
+    return if(@import("builtin").is_test) allocator.allocs != 0 else @compileError(
+        "fn haveAllocs run in test mode only"
+    );
 }

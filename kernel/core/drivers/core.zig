@@ -3,18 +3,29 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const Radix: type = @import("radix.zig");
-const Drivers: type = struct {
-    const Driver_T: type = @import("types.zig").Driver_T;
-    const DriverErr_T: type = @import("types.zig").DriverErr_T;
-    const Ops_T: type = @import("types.zig").Ops_T;
-    const OpsErr_T: type = @import("types.zig").OpsErr_T;
-    const MajorNum_T: type = @import("types.zig").MajorNum_T;
-    const MinorNum_T: type = @import("types.zig").MinorNum_T;
-    const Allocator: type = @import("allocator.zig");
+const Allocator: type = @import("allocator.zig");
+const Extern: type = struct {
+    pub const Driver_T: type = @import("types.zig").Driver_T;
+    pub const DriverErr_T: type = @import("types.zig").DriverErr_T;
+    pub const Ops_T: type = @import("types.zig").Ops_T;
+    pub const OpsErr_T: type = @import("types.zig").OpsErr_T;
+    pub const MajorNum_T: type = @import("types.zig").MajorNum_T;
+    pub const MinorNum_T: type = @import("types.zig").MinorNum_T;
+};
+const Internal: type = struct {
+    pub const MajorLevel0: type = @import("types.zig").MajorLevel0;
+    pub const MajorLevel1: type = @import("types.zig").MajorLevel1;
+    pub const MajorLevel2: type = @import("types.zig").MajorLevel2;
+    pub const Steps: type = enum {
+        Level0O,
+        Level1B,
+        Level1O,
+        Level2B,
+        Level2O,
+    };
 };
 
-// A ideia de usar o radix e justamente pensando em
+// A ideia de aplicar esse algoritmo e justamente pensando em
 // otimizar acesso a um major, que deve ser extremamente
 // eficiente, mas tambem precisamos permitir um tamanho dinamico
 //
@@ -23,207 +34,223 @@ const Drivers: type = struct {
 // maximo de overhead que vamos ter e ver se o caminho e valido
 // mas todos os acessos a busca e sempre certeiro
 
-var majorsLevels: Radix.Level0_T = .{
-    .line = .{
+var majorsLevels: Internal.MajorLevel0 = .{
+    .base = .{
         null
     } ** 16,
     .map = 0,
 };
 
-const Steps: type = enum {
-    Level0O,
-    Level1L,
-    Level1O,
-    Level2L,
-    Level2O,
-};
-
-fn valid_path(high: u4, mid: u2, low: u2) bool {
-    return (
-        (majorsLevels.line[high] != null) and
-        (majorsLevels.line[high].?.line != null) and
-        (majorsLevels.line[high].?.line.?[mid] != null) and
-        (majorsLevels.line[high].?.line.?[mid].?.line != null) and
-        (majorsLevels.line[high].?.line.?[mid].?.line.?[low] != null)
-    );
-}
-
-fn obsolete_path(high: u4, mid: u2) Steps {
-    return r: {
-        if(majorsLevels.line[high] == null) break :r .Level0O;
-        if(majorsLevels.line[high].?.line == null) break :r .Level1L;
-        if(majorsLevels.line[high].?.line.?[mid] == null) break :r .Level1O;
-        if(majorsLevels.line[high].?.line.?[mid].?.line == null) break :r .Level2L;
-        break :r Steps.Level2O;
+fn majorPartBits(major: Extern.MajorNum_T) struct { u4, u2, u2 } {
+    return .{
+        @intCast((major >> 4) & 0x0F),
+        @intCast((major >> 2) & 0x03),
+        @intCast(major & 0x03),
     };
 }
 
-pub fn add(D: *const Drivers.Driver_T) Drivers.DriverErr_T!void {
-    return if(@call(.never_inline, &valid_path, .{
-        @as(u4, @intCast((D.major >> 4) & 0x0F)),
-        @as(u2, @intCast((D.major >> 2) & 0x03)),
-        @as(u2, @intCast(D.major & 0x03))
-    })) Drivers.DriverErr_T.MajorCollision else r: {
-        const high: u4 = @intCast((D.major >> 4) & 0x0F);
-        const mid: u2 = @intCast((D.major >> 2) & 0x03);
-        const low: u2 = @intCast(D.major & 0x03);
-        sw: switch(@call(.always_inline, &obsolete_path, .{
-            high, mid
-        })) {
+fn valid_path(major: Extern.MajorNum_T) struct { ?Internal.Steps, bool } {
+    const high, const mid, const low = @call(.always_inline, &majorPartBits, .{
+        major
+    });
+    return if(majorsLevels.base[high] == null) .{ Internal.Steps.Level0O, false } else r: {
+        const Castings = [_]type {
+            Internal.MajorLevel1,
+            Internal.MajorLevel2,
+        };
+        const base_offset = [_]u2 {
+            mid,
+            low,
+        };
+        var ptr: *anyopaque = &majorsLevels.base[high].?.*;
+        inline for(0..Castings.len) |i| {
+            const casting: *Castings[i] = @alignCast(@ptrCast(ptr));
+            if(casting.base == null) {
+                break :r .{
+                    @as(Internal.Steps, @enumFromInt(i + i + 1)),
+                    false,
+                };
+            }
+            if(casting.base.?[base_offset[i]] == null) {
+                break :r .{
+                    @as(Internal.Steps, @enumFromInt(i + i + 2)),
+                    false,
+                };
+            }
+            ptr = casting.base.?[base_offset[i]].?;
+        }
+        break :r .{
+            null,
+            true,
+        };
+    };
+}
+
+pub fn add(driver: *const Extern.Driver_T) Extern.DriverErr_T!void {
+    const broken_level, const result = @call(.never_inline, &valid_path, .{
+        driver.major
+    });
+    return if(result) Extern.DriverErr_T.MajorCollision else r: {
+        const high, const mid, const low = @call(.always_inline, &majorPartBits, .{
+            driver.major
+        });
+        sw: switch(broken_level.?) {
             .Level0O => {
-                majorsLevels.line[high] = @call(.never_inline, &Radix.Level1_T.Level.alloc, .{}) catch |err| switch(err) {
-                    Radix.Level1_T.Level.AllocatorErr_T.OutOfMemory => break :r Drivers.DriverErr_T.OutMajor,
+                majorsLevels.base[high] = @call(.never_inline, &Internal.MajorLevel1.Allocator.Level.alloc, .{}) catch |err| switch(err) {
+                    Internal.MajorLevel1.Allocator.Level.AllocatorErr_T.OutOfMemory => break :r Extern.DriverErr_T.OutMajor,
                     else => {
-                        break :r Drivers.DriverErr_T.InternalError;
+                        break :r Extern.DriverErr_T.InternalError;
                     },
                 };
-                majorsLevels.map |= @as(u16, @intCast(0x01)) << high;
-                continue :sw .Level1L;
+                majorsLevels.map |= @as(@TypeOf(majorsLevels.map), @intCast(0x01)) << high;
+                continue :sw .Level1B;
             },
 
-            .Level1L => {
-                majorsLevels.line[high].?.line = @call(.never_inline, &Radix.Level1_T.Line.alloc, .{}) catch |err| switch(err) {
-                    Radix.Level1_T.Line.AllocatorErr_T.OutOfMemory => break :r Drivers.DriverErr_T.OutMajor,
+            .Level1B => {
+                majorsLevels.base[high].?.base = @call(.never_inline, &Internal.MajorLevel1.Allocator.Base.alloc, .{}) catch |err| switch(err) {
+                    Internal.MajorLevel1.Allocator.Base.AllocatorErr_T.OutOfMemory => break :r Extern.DriverErr_T.OutMajor,
                     else => {
-                        break :r Drivers.DriverErr_T.InternalError;
+                        break :r Extern.DriverErr_T.InternalError;
                     },
-                }; for(0..majorsLevels.line[high].?.line.?.len) |i| {
-                    majorsLevels.line[high].?.line.?[i] = null;
+                }; for(0..majorsLevels.base[high].?.base.?.len) |i| {
+                    majorsLevels.base[high].?.base.?[i] = null;
                 } continue :sw .Level1O;
             },
 
             .Level1O => {
-                majorsLevels.line[high].?.line.?[mid] = @call(.never_inline, &Radix.Level2_T.Level.alloc, .{}) catch |err| switch(err) {
-                    Radix.Level2_T.Level.AllocatorErr_T.OutOfMemory => break :r Drivers.DriverErr_T.OutMajor,
+                majorsLevels.base[high].?.base.?[mid] = @call(.never_inline, &Internal.MajorLevel2.Allocator.Level.alloc, .{}) catch |err| switch(err) {
+                    Internal.MajorLevel2.Allocator.Level.AllocatorErr_T.OutOfMemory => break :r Extern.DriverErr_T.OutMajor,
                     else => {
-                        break :r Drivers.DriverErr_T.InternalError;
+                        break :r Extern.DriverErr_T.InternalError;
                     },
                 };
-                majorsLevels.line[high].?.map |= @as(u4, @intCast(0x01)) << mid;
-                continue :sw .Level2L;
+                majorsLevels.base[high].?.map |= @as(@TypeOf(majorsLevels.base[high].?.map), @intCast(0x01)) << mid;
+                continue :sw .Level2B;
             },
 
-            .Level2L => {
-                majorsLevels.line[high].?.line.?[mid].?.line = @call(.never_inline, &Radix.Level2_T.Line.alloc, .{})
+            .Level2B => {
+                majorsLevels.base[high].?.base.?[mid].?.base = @call(.never_inline, &Internal.MajorLevel2.Allocator.Base.alloc, .{})
                 catch |err| switch(err) {
-                    Radix.Level2_T.Line.AllocatorErr_T.OutOfMemory => break :r Drivers.DriverErr_T.OutMajor,
+                    Internal.MajorLevel2.Allocator.Base.AllocatorErr_T.OutOfMemory => break :r Extern.DriverErr_T.OutMajor,
                     else => {
-                        break :r Drivers.DriverErr_T.InternalError;
+                        break :r Extern.DriverErr_T.InternalError;
                     },
-                }; for(0..majorsLevels.line[high].?.line.?[mid].?.line.?.len) |i| {
-                    majorsLevels.line[high].?.line.?[mid].?.line.?[i] = null;
+                }; for(0..majorsLevels.base[high].?.base.?[mid].?.base.?.len) |i| {
+                    majorsLevels.base[high].?.base.?[mid].?.base.?[i] = null;
                 } continue :sw .Level2O;
             },
 
             .Level2O => {
-                majorsLevels.line[high].?.line.?[mid].?.line.?[low] = @call(.never_inline, &Drivers.Allocator.alloc, .{}) catch |err| switch(err) {
-                    Drivers.Allocator.AllocatorErr_T.OutOfMemory => break :r Drivers.DriverErr_T.OutMajor,
+                majorsLevels.base[high].?.base.?[mid].?.base.?[low] = @call(.never_inline, &Allocator.alloc, .{}) catch |err| switch(err) {
+                    Allocator.AllocatorErr_T.OutOfMemory => break :r Extern.DriverErr_T.OutMajor,
                     else => {
-                        break :r Drivers.DriverErr_T.InternalError;
+                        break :r Extern.DriverErr_T.InternalError;
                     },
                 };
-                majorsLevels.line[high].?.line.?[mid].?.map |= @as(u4, @intCast(0x01)) << low;
+                majorsLevels.base[high].?.base.?[mid].?.map |= @as(@TypeOf(majorsLevels.base[high].?.base.?[mid].?.map), @intCast(0x01)) << low;
             },
         }
-        majorsLevels.line[high].?.line.?[mid].?.line.?[low].?.* = D.*;
+        majorsLevels.base[high].?.base.?[mid].?.base.?[low].?.* = driver.*;
         break :r {};
     };
 }
 
-pub fn del(M: Drivers.MajorNum_T) Drivers.DriverErr_T!void {
+pub fn del(major: Extern.MajorNum_T) Extern.DriverErr_T!void {
     if(!@import("builtin").is_test)
         if(comptime @import("root").modules.countModOfType(.driver) == 0) return;
     return if(!@call(.never_inline, &valid_path, .{
-        @as(u4, @intCast((M >> 4) & 0x0F)),
-        @as(u2, @intCast((M >> 2) & 0x03)),
-        @as(u2, @intCast(M & 0x03))
-    })) Drivers.DriverErr_T.DoubleFree else r: {
-        const high: u4 = @intCast((M >> 4) & 0x0F);
-        const mid: u2 = @intCast((M >> 2) & 0x03);
-        const low: u2 = @intCast(M & 0x03);
-        sw: switch(Steps.Level2O) {
+        major
+    }).@"1") Extern.DriverErr_T.DoubleFree else r: {
+        const high, const mid, const low = @call(.always_inline, &majorPartBits, .{
+            major
+        });
+        sw: switch(Internal.Steps.Level2O) {
             .Level2O => {
-                @call(.never_inline, &Drivers.Allocator.free, .{
-                    majorsLevels.line[high].?.line.?[mid].?.line.?[low].?
-                }) catch {};
-                majorsLevels.line[high].?.line.?[mid].?.line.?[low] = null;
-                majorsLevels.line[high].?.line.?[mid].?.map &= ~(@as(u4, @intCast(0x01)) << low); continue :sw .Level2L;
+                @call(.never_inline, &Allocator.free, .{
+                    majorsLevels.base[high].?.base.?[mid].?.base.?[low].?
+                }) catch break :r Extern.DriverErr_T.InternalError;
+                majorsLevels.base[high].?.base.?[mid].?.base.?[low] = null;
+                majorsLevels.base[high].?.base.?[mid].?.map &= ~(@as(@TypeOf(majorsLevels.base[high].?.base.?[mid].?.map), 0x01) << low);
+                continue :sw .Level2B;
             },
 
-            .Level2L => {
-                if(majorsLevels.line[high].?.line.?[mid].?.map != 0) break :sw {};
-                @call(.never_inline, &Radix.Level2_T.Line.free, .{
-                    majorsLevels.line[high].?.line.?[mid].?.line
-                }) catch {};
-                majorsLevels.line[high].?.line.?[mid].?.line = null; continue :sw .Level1O;
+            .Level2B => {
+                if(majorsLevels.base[high].?.base.?[mid].?.map != 0) break :sw {};
+                @call(.never_inline, &Internal.MajorLevel2.Allocator.Base.free, .{
+                    majorsLevels.base[high].?.base.?[mid].?.base
+                }) catch break :r Extern.DriverErr_T.InternalError;
+                majorsLevels.base[high].?.base.?[mid].?.base = null;
+                continue :sw .Level1O;
             },
 
             .Level1O => {
-                @call(.never_inline, &Radix.Level2_T.Level.free, .{
-                    majorsLevels.line[high].?.line.?[mid]
-                }) catch {};
-                majorsLevels.line[high].?.line.?[mid] = null;
-                majorsLevels.line[high].?.map &= ~(@as(u4, @intCast(0x01)) << mid);
-                continue :sw .Level1L;
+                @call(.never_inline, &Internal.MajorLevel2.Allocator.Level.free, .{
+                    majorsLevels.base[high].?.base.?[mid]
+                }) catch break :r Extern.DriverErr_T.InternalError;
+                majorsLevels.base[high].?.base.?[mid] = null;
+                majorsLevels.base[high].?.map &= ~(@as(@TypeOf(majorsLevels.base[high].?.map), 0x01) << mid);
+                continue :sw .Level1B;
             },
 
-            .Level1L => {
-                if(majorsLevels.line[high].?.map != 0) break :sw {};
-                @call(.never_inline, &Radix.Level1_T.Line.free, .{
-                    majorsLevels.line[high].?.line
-                }) catch {};
-                majorsLevels.line[high].?.line = null; continue :sw .Level0O;
+            .Level1B => {
+                if(majorsLevels.base[high].?.map != 0) break :sw {};
+                @call(.never_inline, &Internal.MajorLevel1.Allocator.Base.free, .{
+                    majorsLevels.base[high].?.base
+                }) catch break :r Extern.DriverErr_T.InternalError;
+                majorsLevels.base[high].?.base = null; continue :sw .Level0O;
             },
 
             .Level0O => {
-                @call(.never_inline, &Radix.Level1_T.Level.free, .{
-                    majorsLevels.line[high]
-                }) catch {};
-                majorsLevels.line[high] = null;
-                majorsLevels.map &= ~(@as(u16, @intCast(0x01)) << high);
+                @call(.never_inline, &Internal.MajorLevel1.Allocator.Level.free, .{
+                    majorsLevels.base[high]
+                }) catch break :r Extern.DriverErr_T.InternalError;
+                majorsLevels.base[high] = null;
+                majorsLevels.map &= ~(@as(@TypeOf(majorsLevels.map), 0x01) << high);
             },
         }
         break :r {};
     };
 }
 
-pub fn search(M: Drivers.MajorNum_T) Drivers.DriverErr_T!*Drivers.Driver_T {
-    return if(@call(.always_inline, &valid_path, .{
-        @as(u4, @intCast((M >> 4) & 0x0F)),
-        @as(u2, @intCast((M >> 2) & 0x03)),
-        @as(u2, @intCast(M & 0x03))
-    })) majorsLevels.line[(M >> 4) & 0x0F].?.line.?[(M >> 2) & 0x03].?.line.?[M & 0x03].? else Drivers.DriverErr_T.NonFound;
+pub fn search(major: Extern.MajorNum_T) Extern.DriverErr_T!*Extern.Driver_T {
+    const high, const mid, const low = @call(.always_inline, &majorPartBits, .{
+        major
+    });
+    return if(!@call(.always_inline, &valid_path, .{
+        major
+    }).@"1") Extern.DriverErr_T.NonFound else majorsLevels.base[high].?.base.?[mid].?.base.?[low].?;
 }
 
-// == Saturn Radix Major Test ==
+// == Saturn Internal Major Test ==
 
 const TestErr_T: type = error {
     UndefinedAction,
     UnreachableCode,
+    MemoryLeakDetected,
 };
-const MaxMajorNum: Drivers.MajorNum_T = 63;
-var majorTester: Drivers.Driver_T = .{
+const MaxMajorNum: Extern.MajorNum_T = 64;
+var majorTester: Extern.Driver_T = .{
     .major = 0,
     .ops = .{
         .open = null,
         .close = null,
         .read = &struct {
-            pub fn read(_: Drivers.MinorNum_T, _: usize) Drivers.DriverErr_T![]u8 {
+            pub fn read(_: Extern.MinorNum_T, _: usize) Extern.DriverErr_T![]u8 {
                 return @constCast("Hello, World!");
             }
         }.read,
         .write = &struct {
-            pub fn write(_: Drivers.MinorNum_T, _: []const u8) Drivers.DriverErr_T!void {
+            pub fn write(_: Extern.MinorNum_T, _: []const u8) Extern.DriverErr_T!void {
 
             }
         }.write,
         .minor = &struct {
-            pub fn minor(_: Drivers.MinorNum_T) Drivers.DriverErr_T!void {
+            pub fn minor(_: Extern.MinorNum_T) Extern.DriverErr_T!void {
 
             }
         }.minor,
         .ioctrl = &struct {
-            fn minor(_: Drivers.MinorNum_T, _: usize, _: usize) Drivers.OpsErr_T!usize {
+            fn minor(_: Extern.MinorNum_T, _: usize, _: usize) Extern.OpsErr_T!usize {
                 return 0xAABB;
             }
         }.minor,
@@ -235,7 +262,7 @@ test "Major Recursive Add" {
     for(0..MaxMajorNum) |_| {
         try add(&majorTester);
         add(&majorTester) catch |err| switch(err) {
-            Drivers.DriverErr_T.MajorCollision => {},
+            Extern.DriverErr_T.MajorCollision => {},
             else => return TestErr_T.UnreachableCode,
         };
         if((try search(majorTester.major)).major != majorTester.major) {
@@ -250,7 +277,7 @@ test "Major Recursive Del" {
     for(0..MaxMajorNum) |_| {
         try del(majorTester.major);
         del(majorTester.major) catch |err| switch(err) {
-            Drivers.DriverErr_T.DoubleFree => {},
+            Extern.DriverErr_T.DoubleFree => {},
             else => return TestErr_T.UnreachableCode,
         };
         try add(&majorTester);
@@ -259,22 +286,26 @@ test "Major Recursive Del" {
         }
         try del(majorTester.major);
         del(majorTester.major) catch |err| switch(err) {
-            Drivers.DriverErr_T.DoubleFree => {},
+            Extern.DriverErr_T.DoubleFree => {},
             else => return TestErr_T.UnreachableCode,
         };
         _ = search(majorTester.major) catch |err| switch(err) {
-            Drivers.DriverErr_T.NonFound => {},
+            Extern.DriverErr_T.NonFound => {},
             else => return TestErr_T.UnreachableCode,
         };
         majorTester.major += 1;
     }
 }
 
+test "Major Memory Leak Detect" {
+
+}
+
 test "Major Search With 0 Major" {
     majorTester.major = 0;
     for(0..MaxMajorNum) |_| {
         _ = search(majorTester.major) catch |err| switch(err) {
-            Drivers.DriverErr_T.NonFound => {
+            Extern.DriverErr_T.NonFound => {
                 majorTester.major += 1; continue;
             },
             else => return TestErr_T.UndefinedAction,
@@ -288,7 +319,7 @@ test "Major Recursive Add Again" {
     for(0..MaxMajorNum) |_| {
         try add(&majorTester);
         add(&majorTester) catch |err| switch(err) {
-            Drivers.DriverErr_T.MajorCollision => {},
+            Extern.DriverErr_T.MajorCollision => {},
             else => return TestErr_T.UnreachableCode,
         };
         if((try search(majorTester.major)).major != majorTester.major) {
@@ -297,3 +328,26 @@ test "Major Recursive Add Again" {
         majorTester.major += 1;
     }
 }
+
+test "Major Memory Leak Detect" {
+    for(0..MaxMajorNum) |i| {
+        try del(@intCast(i));
+    }
+    const Allocators = [_]type {
+        Allocator,
+        Internal.MajorLevel1.Allocator.Base,
+        Internal.MajorLevel1.Allocator.Level,
+        Internal.MajorLevel2.Allocator.Base,
+        Internal.MajorLevel2.Allocator.Level,
+    };
+    inline for(Allocators) |allocator| {
+        if(allocator.haveAllocs()) {
+            const std: type = @import("std");
+            std.debug.print("Memory Leak On Allocator: {s}\n", .{
+                @typeName(allocator)
+            });
+            return TestErr_T.MemoryLeakDetected;
+        }
+    }
+}
+
