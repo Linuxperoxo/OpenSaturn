@@ -125,6 +125,10 @@ pub fn SaturnArch() void {
     }
 }
 
+pub fn SaturnPhysIO() void {
+    
+}
+
 pub fn SaturnModules() void {
     comptime {
         for(modules.__SaturnAllMods__) |M| {
