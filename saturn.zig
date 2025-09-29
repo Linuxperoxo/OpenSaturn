@@ -87,6 +87,7 @@ pub const core: type = struct {
     pub const fs: type = @import("kernel/core/fs/fs.zig");
     pub const drivers: type = @import("kernel/core/drivers/drivers.zig");
 };
+pub const stage: type = @import("kernel/stage/stage.zig");
 pub const loader: type = @import("kernel/loader.zig");
 pub const modules: type = @import("modules.zig");
 pub const memory: type = @import("kernel/memory/memory.zig");
@@ -107,4 +108,5 @@ pub const lib: type = struct {
 pub const config: type = struct {
     pub const modules: type = @import("config/modules/config.zig");
     pub const arch: type = @import("config/arch/config.zig");
+    pub const boot: type = @import("config/boot/config.zig");
 };
