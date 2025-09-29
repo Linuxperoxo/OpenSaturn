@@ -297,10 +297,6 @@ test "Major Recursive Del" {
     }
 }
 
-test "Major Memory Leak Detect" {
-
-}
-
 test "Major Search With 0 Major" {
     majorTester.major = 0;
     for(0..MaxMajorNum) |_| {

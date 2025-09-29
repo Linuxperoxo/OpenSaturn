@@ -28,7 +28,7 @@ pub const Architectures: type = struct {
         pub const entry: type = @import("kernel/entries/x86/entry.zig");
         pub const interrupt: type = @import("kernel/interrupts/x86/x86_interrupts.zig");
         pub const linker: type = @import("linkers/x86/x86-linker.zig");
-        pub const physio: type = @import("kernel/physio/x86/x86_physio.zig");
+        pub const physio: type = @import("kernel/physio/x86/physio_x86.zig");
         pub const lib: type = struct {
             pub const kernel: type = @import("lib/saturn/kernel/x86/lib.zig");
             pub const userspace: type = @import("lib/saturn/userspace/x86/lib.zig");
@@ -79,6 +79,7 @@ pub const Architectures: type = struct {
         };
     };
 };
+pub const physio: type = SelectedArch.physio;
 pub const linker: type = SelectedArch.linker;
 pub const core: type = struct {
     pub const module: type = @import("kernel/core/module/module.zig");

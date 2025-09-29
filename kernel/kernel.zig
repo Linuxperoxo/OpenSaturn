@@ -16,6 +16,7 @@ pub const userspace: type = saturn.lib.userspace;
 pub const utils: type = saturn.lib.utils;
 pub const config: type = saturn.config;
 pub const modules: type = saturn.modules;
+pub const physio: type = saturn.physio;
 
 const loader: type = saturn.loader;
 

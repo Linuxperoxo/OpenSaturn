@@ -1,7 +1,9 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: io.zig       │
+// │  (c) 2025 Linuxperoxo  •  FILE: options.zig  │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const ports: type = @import("ports.zig");
-pub const pci: type = @import("pci/pci.zig");
+pub const VerboseMode: bool = true;
+pub const MultiBootScreen: bool = true;
+pub const SaturnLogo: bool = true;
+pub const RecoveryModeEnable: bool = true;
