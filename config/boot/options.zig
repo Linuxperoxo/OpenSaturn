@@ -3,6 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const UseMenuconfigAsRef: bool = true;
-pub const IgnoreModuleWithArchNotSupported: bool = false;
-pub const AllowDynamicModulesLoad: bool = true;
+pub const VerboseMode: bool = true;
+pub const MultiBootScreen: bool = true;
+pub const SaturnLogo: bool = true;
+pub const RecoveryModeEnable: bool = true;

@@ -1,8 +1,10 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: options.zig  │
+// │  (c) 2025 Linuxperoxo  •  FILE: types.zig    │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const UseMenuconfigAsRef: bool = true;
-pub const IgnoreModuleWithArchNotSupported: bool = false;
-pub const AllowDynamicModulesLoad: bool = true;
+pub const Stage_T: type = enum {
+    boot,
+    init,
+    runtime,
+};

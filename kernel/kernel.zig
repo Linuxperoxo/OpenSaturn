@@ -16,6 +16,9 @@ pub const userspace: type = saturn.lib.userspace;
 pub const utils: type = saturn.lib.utils;
 pub const config: type = saturn.config;
 pub const modules: type = saturn.modules;
+pub const stage: type = struct {
+    pub const get = saturn.stage.stageGet;
+};
 
 const loader: type = saturn.loader;
 
@@ -67,8 +70,14 @@ fn @"saturn.main"() callconv(.c) void {
     // ou usando somente loader.SaturnArch, isso evita de criar um possivel .never_inline
     // implicito
     @call(.always_inline, loader.SaturnArch, .{});
+    @call(.always_inline, saturn.stage.stageSwitch, .{
+        .init
+    });
 
     // Depois da arquitetura resolver todos os seus detalhes, podemos iniciar
     // os modulos linkados ao kernel
     @call(.always_inline, loader.SaturnModules, .{});
+    @call(.always_inline, saturn.stage.stageSwitch, .{
+        .runtime
+    });
 }

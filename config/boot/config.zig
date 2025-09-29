@@ -1,8 +1,6 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: options.zig  │
+// │  (c) 2025 Linuxperoxo  •  FILE: config.zig   │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const UseMenuconfigAsRef: bool = true;
-pub const IgnoreModuleWithArchNotSupported: bool = false;
-pub const AllowDynamicModulesLoad: bool = true;
+pub const options: type = @import("options.zig");
