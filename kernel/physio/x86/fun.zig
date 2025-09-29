@@ -4,16 +4,21 @@
 // └──────────────────────────────────────────────┘
 
 const PhysIo_T: type = @import("types.zig").PhysIo_T;
-
 const ports: type = @import("root").kernel.io.ports;
 const pci: type = @import("root").kernel.io.pci;
-
 const physIoRegister = @import("core.zig").physIoRegister;
+const physIoClassSubClass = @import("class.zig").physIoClassSubClass;
+const physIoVendorName = @import("vendor.zig").physIoVendorName;
+const kprint = @import("root").kernel.io.console.kprint;
 
 pub fn physIoScan() void {
+    // TODO: O log deve ser [PCI] {domain}:{bus}:{device}.{function} {class}: {vendor} {device} (rev {revision})
     // TODO: Documentar
-    // TODO: Fazer o klog, aqui so deve mostrar os dispositivos achados caso
-    // a config de verbose esteja iniciada
+    // OPTIMIZE: Fazer bitwise para distribuir os regs para as classes,
+    // podemos pegar vendorID deviceID em uma unica leitura, mesma coisa
+    // para revision prog subclass e class, cada um desses registradores
+    // tem 1 byte de tamanho, ou seja, podemos pegar os 4 de uma vez, isso
+    // iria acelerar o tempo de busca
     const regsToScan = [_]pci.PCIRegsOffset_T {
         .vendorID,
         .deviceID,
@@ -30,7 +35,7 @@ pub fn physIoScan() void {
         for(0..32) |dev| {
             const deviceExists = @call(.always_inline, &pci.pci_config_read, .{
                 pci.PCIAddress_T {
-                    .register = .vendorID,
+                    .register = .revision,
                     .function = @as(u3, 0),
                     .device = @as(u5, @intCast(dev)),
                     .bus = @as(u8, @intCast(bus)),

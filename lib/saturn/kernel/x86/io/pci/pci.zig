@@ -21,7 +21,7 @@ const PCI_CONFIG_DATA_PORT: u16 = 0xCFC;
 pub const PCIAddress_T: type = @import("types.zig").PCIAddress_T;
 pub const PCIRegsOffset_T: type = @import("types.zig").PCIRegsOffset_T;
 
-pub const PCI_UNDEFINED_RETURN: u16 = 0xFFFF;
+pub const PCI_UNDEFINED_RETURN: u32 = 0xFFFFFFFF;
 
 pub fn pci_config_write(address: PCIAddress_T, data: u32) void {
     address.always0; // Precisa ser alinhado
