@@ -4,7 +4,6 @@
 // └──────────────────────────────────────────────┘
 
 pub const PCIAddress_T: type = packed struct {
-    always0: u2 = 0,
     register: PCIRegsOffset_T,
     function: u3,
     device: u5,
@@ -13,15 +12,11 @@ pub const PCIAddress_T: type = packed struct {
     enable: u1,
 };
 
-pub const PCIRegsOffset_T: type = enum(u6) {
+pub const PCIRegsOffset_T: type = enum(u8) {
     vendorID = 0x00,
-    vendorIDHigh = 0x01,
     deviceID = 0x02,
-    deviceIDHigh = 0x03,
     command = 0x04,
-    commandHigh = 0x05,
     status = 0x06,
-    statusHigh = 0x07,
     revision = 0x08,
     prog = 0x09,
     subclass = 0x0A,
@@ -37,10 +32,8 @@ pub const PCIRegsOffset_T: type = enum(u6) {
     bar4 = 0x20,
     bar5 = 0x24,
     cardbusCISPointer = 0x28,
-    subsystemVendorIDLow = 0x2C,
-    subsystemVendorIDHigh = 0x2D,
-    subsystemIDLow = 0x2E,
-    subsystemIDHigh = 0x2F,
+    subsystemVendorID = 0x2C,
+    subsystemID = 0x2E,
     expansionROMBase = 0x30,
     capabilitiesPointer = 0x34,
     irq_line = 0x3C,
