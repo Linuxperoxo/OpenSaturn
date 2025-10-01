@@ -108,3 +108,4 @@ pub const config: type = struct {
     pub const modules: type = @import("config/modules/config.zig");
     pub const arch: type = @import("config/arch/config.zig");
 };
+pub const step: type = @import("kernel/step/step.zig");
