@@ -4,9 +4,18 @@
 // └─────────────────────────────────────────────────┘
 
 const core: type = @import("core.zig");
+const scan: type = @import("scan.zig");
 
-pub const types: type = @import("types.zig");
+const physIo_T: type = @import("root").interfaces.arch.physIo_T;
+
 pub const fun: type = @import("fun.zig");
+pub const types: type = struct {
+    pub const PhysIo_T: type = @import("types.zig").PhysIo_T;
+    pub const PhysIoErr_T: type = @import("types.zig").PhysIoErr_T;
+};
 
-pub const physIoSync = core.physIoSync;
-pub const physIoGet = core.physIoGet;
+pub const __SaturnPhysIo__: physIo_T = .{
+    .maintainer = "Linuxperoxo",
+    .entry = &scan.physIoScan,
+    .sync = &core.physIoSync,
+};

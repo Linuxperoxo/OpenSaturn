@@ -123,10 +123,10 @@ pub fn SaturnArch() void {
         .raw => @call(.never_inline, &Interrupt.raw.init, .{}), // without supervisor
         .supervisor => @call(.never_inline, &Interrupt.supervisor.init, .{ supervisor.supervisorHandlerPerIsr }), // with supervisor
     }
-}
 
-pub fn SaturnPhysIO() void {
+    // === Arch PhysIo Verify ===
     
+    // =============================
 }
 
 pub fn SaturnModules() void {

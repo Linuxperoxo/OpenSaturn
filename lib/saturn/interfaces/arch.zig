@@ -8,3 +8,4 @@ pub const codeMode_T: type = @import("root").config.arch.types.codeMode_T;
 pub const optimize_T: type = @import("root").config.arch.types.optimize_T;
 pub const arch_T: type = @import("root").config.arch.types.arch_T;
 pub const entry_T: type = @import("root").config.arch.types.entry_T;
+pub const physIo_T: type = @import("root").config.arch.types.physIo_T;

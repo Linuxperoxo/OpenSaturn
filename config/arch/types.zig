@@ -33,3 +33,8 @@ pub const entry_T: type = struct {
     label: []const u8,
     section: []const u8,
 };
+pub const physIo_T: type = struct {
+    maintainer: []const u8,
+    entry: *const fn() void,
+    sync: *const fn() void,
+};
