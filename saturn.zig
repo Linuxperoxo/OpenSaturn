@@ -89,7 +89,18 @@ pub const core: type = struct {
 };
 pub const loader: type = @import("kernel/loader.zig");
 pub const modules: type = @import("modules.zig");
-pub const memory: type = @import("kernel/memory/memory.zig");
+pub const memory: type = struct {
+    pub const kernel: type = struct {
+        pub const page: type = @import("mm/kernel/page/page.zig");
+        pub const soa: type = @import("mm/kernel/soa/soa.zig");
+        pub const sba: type = @import("mm/kernel/sba/sba.zig");
+        pub const spa: type = @import("mm/kernel/spa/sba.zig");
+    };
+    pub const procs: type = struct {
+        pub const heap: type = @import("mm/procs/");
+        pub const stack: type = @import("mm/procs/");
+    };
+};
 pub const interfaces: type = struct {
     pub const devices: type = @import("lib/saturn/interfaces/devices.zig");
     pub const fs: type = @import("lib/saturn/interfaces/fs.zig");
