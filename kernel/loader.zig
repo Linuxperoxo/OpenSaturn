@@ -8,124 +8,42 @@
 // coisa caiu em um @compileError, pode ter certeza que
 // foi nesse arquivo
 
-const cpu: type = @import("root").cpu;
+const arch: type = @import("root").arch;
+const decls: type = @import("root").decls;
 const config: type = @import("root").config;
 const modules: type = @import("root").modules;
 const supervisor: type = @import("root").supervisor;
 const interfaces: type = @import("root").interfaces;
 
-pub fn SaturnArch() void {
-    const Arch: type = cpu.Arch;
-    const Entry: type = cpu.Entry;
-    const Interrupt: type = cpu.Interrupt;
-
-    // === Arch Verify ===
-    comptime {
-        if(!@hasDecl(Arch, "__SaturnArchDescription__")) {
-            @compileError(
-                "expected a declaration __SaturnArchDescription__ for architecture " ++
-                @tagName(config.arch.options.Target)
-            );
-        }
-        if(@TypeOf(Arch.__SaturnArchDescription__) != interfaces.arch.arch_T) {
-            @compileError(
-                "declaration __SaturnArchDescription__ for architecture " ++
-                @tagName(config.arch.options.Target) ++
-                " must be type: " ++
-                @typeName(interfaces.arch.arch_T)
-            );
-        }
-        if(!Arch.__SaturnArchDescription__.usable) {
-            @compileError(
-                "target kernel cpu architecture " ++
-                @tagName(config.arch.options.Target) ++
-                " has no guarantee of functioning by the developer"
-            );
-        }
+pub fn saturn_arch_verify() void {
+    const decl = decls.saturn_especial_decls[
+        @intFromEnum(decls.DeclsOffset_T.arch)
+    ];
+    if(!@hasDecl(arch, decl)) {
+        @compileError("Error");
     }
-    // ===================
-
-    // === Arch Entry Verify ===
-    comptime {
-        if(!@hasDecl(Entry, "__SaturnEntryDescription__")) {
-            @compileError(
-                "expected a declaration __SaturnEntryDescription__ for architecture " ++
-                @tagName(config.arch.options.Target)
-            );
-        }
-        if(@TypeOf(Entry.__SaturnEntryDescription__) != interfaces.arch.entry_T) {
-            @compileError(
-                "declaration __SaturnArchDescription__ for architecture " ++
-                @tagName(config.arch.options.Target) ++
-                " must be type: " ++
-                @typeName(interfaces.arch.entry_T)
-            );
-        }
-        @export(Entry.__SaturnEntryDescription__.entry, .{
-            .name = Entry.__SaturnEntryDescription__.label,
-            .section = Entry.__SaturnEntryDescription__.section,
-        });
+    const decl_type = @TypeOf(arch.__SaturnArhDescription__);
+    const decl_expect_type = decls.saturn_especial_decls_types[
+        @intFromEnum(decls.DeclsOffset_T.arch)
+    ];
+    if(decl_type != decl_expect_type) {
+        @compileError("Error");
     }
-    // =========================
-
-    // Fazendo chamada para o init da arquitetura
-    @call(.never_inline, Arch.__SaturnArchDescription__.init, .{});
-
-    // === Arch Interrupt Verify ===
-    comptime {
-        // TODO: Fazer um type struct para interrupt, para assim ter 3 tipos
-        // para as 3 bases de arquitetura para o kernel
-
-        // Caso a arquitetura queira usar o supervisor, o saturn
-        // precisa que a arquitetura tenha uma funçao para configurar
-        // suas interrupçoes juntamente com o supervisor, caso contrario
-        // o saturn nao pode garantir que as interrupçoes estao funcionando
-        //
-        // O uso do supervisor nao e obrigatorio, por exemplo, para microcontroladores
-        // e desejavel ter maior controle sobre as interrupçoes
-        switch(Arch.__SaturnArchDescription__.interrupt) {
-            .raw => {},
-            .supervisor => {
-                if(!@hasDecl(Interrupt.supervisor, "__SaturnSupervisorTable__")) {
-                    @compileError(
-                        "__SaturnSupervisorTable__ must be defined within the file"
-                    );
-                }
-                switch(@typeInfo(@TypeOf(Interrupt.supervisor.__SaturnSupervisorTable__))) {
-                    .array => |A| {
-                        if(A.child != supervisor.supervisor_T) {
-                            @compileError(
-                                "__SaturnSupervisorTable__ must be an array of " ++
-                                @typeName(supervisor.supervisor_T)
-                            );
-                        }
-                        if(@TypeOf(Interrupt.supervisor.init) != fn([A.len]*const fn() callconv(.c) void) void) {
-                            @compileError(
-                                "supervisor interrupt init function must be an " ++
-                                @typeName(fn([A.len]*const fn() callconv(.c) void) void)
-                            );
-                        }
-                    },
-                    else => {
-                        @compileError(
-                            "__SaturnSupervisorTable__ must be an array of " ++
-                            @typeName(supervisor.supervisor_T)
-                        );
-                    },
-                }
+    const arch_fields = [_][]const u8 {
+        "entry", "init", "interrupts", "mm"
+    };
+    for(arch_fields) |field| {
+        @export(
+            (@field(arch.__SaturnArhDescription__, field)).entry,
+            .{
+                .section = arch.__SaturnArhDescription__.section,
+                .name = (@field(arch.__SaturnArhDescription__, field)).label
             },
-        }
-    }
-    // =============================
-
-    // Fazendo chamada para o init da interrupt da arquitetura
-    switch(comptime Arch.__SaturnArchDescription__.interrupt) {
-        .raw => @call(.never_inline, &Interrupt.raw.init, .{}), // without supervisor
-        .supervisor => @call(.never_inline, &Interrupt.supervisor.init, .{ supervisor.supervisorHandlerPerIsr }), // with supervisor
+        );
     }
 }
 
-pub fn SaturnModules() void {
+pub fn saturn_modules_calling() void {
     comptime {
         for(modules.__SaturnAllMods__) |M| {
             if(!@hasDecl(M, "__SaturnModuleDescription__")) {
@@ -134,6 +52,7 @@ pub fn SaturnModules() void {
                     @typeName(M)
                 );
             }
+            // TODO: Validar tipo da decl
         }
     }
     inline for(modules.__SaturnAllMods__) |M| {

@@ -3,6 +3,10 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const Target_T: type = @import("types.zig").Target_T;
+const types: type = @import("types.zig");
 
-pub const Target: Target_T = .x86;
+const CodeMode_T: type = types.CodeMode_T;
+const OptimizeMode_T: type = types.OptimizeMode_T;
+
+pub const CodeMode: CodeMode_T = .Debug;
+pub const OptimizeMode: OptimizeMode_T = .Small;

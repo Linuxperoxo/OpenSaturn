@@ -3,15 +3,6 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const entry_T: type = @import("root").interfaces.arch.entry_T;
-
-pub const __SaturnEntryDescription__: entry_T = .{
-    .maintainer = "Linuxperoxo",
-    .entry = &entry,
-    .label = "x86_entry",
-    .section = ".text.entry",
-};
-
 // callconv(.naked) não tem prólogo e epílogo automáticos é simplesmente fazer uma função do 0,
 // o compilador não adiciona o código de prólogo/epílogo para salvar/restaurar registradores ou
 // manipular a pilha, como alocações e desalocação.
@@ -21,17 +12,20 @@ pub const __SaturnEntryDescription__: entry_T = .{
 //
 // export serve para deixar o símbolo vísivel no assembly, ou seja, poderiamos usar o asm volatile(\\call Sentry);
 // em qualquer arquivo, já que o símbolo está vísivel em todo o assembly.
-fn entry() callconv(.naked) noreturn {
+pub fn entry() callconv(.naked) noreturn {
     asm volatile(
         \\ cli
         \\ movl $0xF00000, %esp
+        \\ call x86_init
+        \\ call x86_mmu_init
+        \\ call x86_gdt_init
         \\ call saturn.main
         \\ jmp .
     );
 
     // AtlasB Headers
     //
-    // Esse Headers deve ser colocado no inicio do binario, em 
+    // Esse Headers deve ser colocado no inicio do binario, em
     // seus primeiros 17 bytes.
     //
     // * AtlasMagic: Numero magico que fala para o Atlas que e uma imagem valida

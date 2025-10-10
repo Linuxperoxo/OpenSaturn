@@ -22,16 +22,20 @@ const SelectedArch: type = switch(config.arch.options.Target) {
 pub const cpu: type = struct {
     pub const arch: type = SelectedArch.arch;
     pub const entry: type = SelectedArch.entry;
+    pub const init: type = SelectedArch.init;
     pub const interrupt: type = SelectedArch.interrupt;
+    pub const linker: type = SelectedArch.linker;
+    pub const mm: type = SelectedArch.mm;
 };
 pub const Architectures: type = struct {
     // Eu poderia usar usar o @tagName para construir o caminho
     // do arquivo para cada arquitetura, mas assim alem de ficar
-    // mais visivel, abre a possibilidade de modificar os o diretorio
-    // ou os nomes dos arquivos
+    // mais visivel, abre a possibilidade de modificar o diretorio
+    // ou o nome do arquivo
     pub const x86: type = struct {
         pub const arch: type = @import("kernel/arch/x86/x86.zig");
         pub const entry: type = @import("kernel/entries/x86/entry.zig");
+        pub const init: type = @import("kernel/init/x86/init.zig");
         pub const interrupt: type = @import("kernel/interrupts/x86/x86_interrupts.zig");
         pub const linker: type = @import("linkers/x86/x86-linker.zig");
         pub const mm: type = @import("mm/x86/mm.zig");
@@ -89,7 +93,12 @@ pub const Architectures: type = struct {
         };
     };
 };
+pub const arch: type = SelectedArch.arch;
+pub const entry: type = SelectedArch.entry;
+pub const init: type = SelectedArch.init;
+pub const interrupts: type = SelectedArch.interrupts;
 pub const linker: type = SelectedArch.linker;
+pub const mm: type = SelectedArch.mm;
 pub const core: type = struct {
     pub const module: type = @import("kernel/core/module/module.zig");
     pub const paging: type = @import("kernel/core/paging/paging.zig");
@@ -100,7 +109,6 @@ pub const core: type = struct {
 };
 pub const loader: type = @import("kernel/loader.zig");
 pub const modules: type = @import("modules.zig");
-pub const mm: type = SelectedArch.mm;
 pub const interfaces: type = struct {
     pub const devices: type = @import("lib/saturn/interfaces/devices.zig");
     pub const fs: type = @import("lib/saturn/interfaces/fs.zig");
@@ -109,7 +117,7 @@ pub const interfaces: type = struct {
     pub const vfs: type = @import("lib/saturn/interfaces/vfs.zig");
     pub const drivers: type = @import("lib/saturn/interfaces/drivers.zig");
 };
-pub const supervisor: type = @import("kernel/supervisor/supervisor.zig");
+pub const supervisor: type = @import("kernel/supervisor/supervisor.zig"); // NOTE: Tmp Obsolete
 pub const lib: type = struct {
     pub const kernel: type = struct {
         pub const memory: type = @import("lib/saturn/kernel/memory/memory.zig");
@@ -122,4 +130,5 @@ pub const config: type = struct {
     pub const modules: type = @import("config/modules/config.zig");
     pub const arch: type = @import("config/arch/config.zig");
 };
+pub const decls: type = @import("kernel/decls.zig");
 pub const step: type = @import("kernel/step/step.zig");

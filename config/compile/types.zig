@@ -1,8 +1,13 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: options.zig  │
+// │  (c) 2025 Linuxperoxo  •  FILE: types.zig    │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const Target_T: type = @import("types.zig").Target_T;
-
-pub const Target: Target_T = .x86;
+pub const CodeMode_T: type = enum {
+    Debug,
+    Runtime,
+};
+pub const OptimizeMode_T: type = enum {
+    Small,
+    Fast,
+};

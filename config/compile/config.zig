@@ -1,8 +1,7 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: options.zig  │
+// │  (c) 2025 Linuxperoxo  •  FILE: config.zig   │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const Target_T: type = @import("types.zig").Target_T;
+pub const options: type = @import("options.zig");
 
-pub const Target: Target_T = .x86;

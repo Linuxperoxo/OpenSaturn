@@ -6,16 +6,22 @@
 const saturn: type = @import("saturn");
 
 pub const cpu: type = saturn.cpu;
+pub const arch: type = saturn.cpu.arch;
+pub const entry: type = saturn.cpu.entry;
+pub const init: type = saturn.cpu.init;
+pub const interrupts: type = saturn.cpu.interrupts;
+pub const linker: type = saturn.cpu.linker;
+pub const mm: type = saturn.cpu.mm;
 pub const core: type = saturn.core;
 pub const memory: type = saturn.memory;
 pub const interfaces: type = saturn.interfaces;
-//pub const debug: type = saturn.debug;
 pub const supervisor: type = saturn.supervisor;
 pub const kernel: type = saturn.lib.kernel;
 pub const userspace: type = saturn.lib.userspace;
 pub const utils: type = saturn.lib.utils;
 pub const config: type = saturn.config;
 pub const modules: type = saturn.modules;
+pub const decls: type = saturn.decls;
 pub const step: type = struct {
     pub const saturnGetPhase = saturn.step.saturnGetPhase;
 };
@@ -43,8 +49,6 @@ comptime {
     @export(&@"saturn.main", .{
         .name = "saturn.main",
         .section = ".text.saturn",
-        .linkage = .strong,
-        .visibility = .default,
     });
 }
 
