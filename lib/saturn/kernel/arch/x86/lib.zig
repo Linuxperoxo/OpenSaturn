@@ -1,8 +1,6 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: internal.zig │
+// │  (c) 2025 Linuxperoxo  •  FILE: lib.zig      │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const SOA: type = @import("SOA/SOA.zig");
-pub const SBA: type = @import("SBA/SBA.zig");
-pub const SPA: type = @import("SPA/SPA.zig");
+pub const io: type = @import("io/io.zig");

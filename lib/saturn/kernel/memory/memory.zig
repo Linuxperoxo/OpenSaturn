@@ -1,7 +1,11 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: lib.zig      │
+// │  (c) 2025 Linuxperoxo  •  FILE: memory.zig   │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const io: type = @import("io/io.zig");
-pub const mem: type = @import("mem/mem.zig");
+// Esse arquivo contem alocadores de
+// memory independentes, ou seja, nao
+// depende de forma alguma da implementacao
+// mm da arquitetura
+
+pub const soa: type = @import("soa/soa.zig");

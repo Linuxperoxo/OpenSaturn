@@ -8,7 +8,8 @@ pub const target_T: type = enum {
     x86_64,
     arm,
     avr,
-    xtensa
+    xtensa,
+    riscv,
 };
 pub const codeMode_T: type = enum {
     Debug,
@@ -16,7 +17,7 @@ pub const codeMode_T: type = enum {
 };
 pub const optimize_T: type = enum {
     Small,
-    Fast
+    Fast,
 };
 pub const arch_T: type = struct {
     maintainer: []const u8,
