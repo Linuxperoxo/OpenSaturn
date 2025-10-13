@@ -11,7 +11,7 @@ pub const saturn_especial_decls = [_][]const u8 {
 };
 
 pub const saturn_especial_decls_types = [_]type {
-    interfaces.arch.ArchDescription,
+    interfaces.arch.ArchDescription_T,
     interfaces.module.ModuleDescription_T,
 };
 

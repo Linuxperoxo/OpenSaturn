@@ -5,10 +5,10 @@
 
 const types: type = @import("types.zig");
 
-pub const virtual_address_start: usize = 0xC0000000;
-pub const phys_address_start: usize = 0x00100000;
+pub const virtual_address_start: usize = 0xC000_0000;
+pub const phys_address_start: usize = 0x0010_0000;
 
-pub const kernel_page_dir: [1024]types.PageDirEntry_T align(1024) = [_]types.PageDirEntry_T {
+pub var kernel_page_dir: [1024]types.PageDirEntry_T align(1024) = [_]types.PageDirEntry_T {
     types.PageDirEntry_T {
         .present = 0,
         .rw = 0,
@@ -24,7 +24,7 @@ pub const kernel_page_dir: [1024]types.PageDirEntry_T align(1024) = [_]types.Pag
     },
 } ** 1024;
 
-pub const kernel_page_table: [1024]types.PageTableEntry_T align(1024) = [_]types.PageTableEntry_T {
+pub var kernel_page_table: [1024]types.PageTableEntry_T align(1024) = [_]types.PageTableEntry_T {
     types.PageTableEntry_T {
         .present = 0,
         .rw = 0,
@@ -40,7 +40,7 @@ pub fn alloc_page() types.AllocPage_T {
 
 }
 
-pub fn alloc_pages(count: usize) []types.AllocPage_T {
+pub fn alloc_pages(_: usize) []types.AllocPage_T {
 
 }
 
@@ -48,10 +48,10 @@ pub fn alloc_zeroed_page() []types.AllocPage_T {
 
 }
 
-pub fn free_page(page: *types.AllocPage_T) void {
+pub fn free_page(_: *types.AllocPage_T) void {
 
 }
 
-pub fn free_pages(pages: []types.AllocPage_T) void {
+pub fn free_pages(_: []types.AllocPage_T) void {
 
 }

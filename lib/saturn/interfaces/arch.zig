@@ -3,11 +3,10 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const target_T: type = @import("root").config.arch.types.target_T;
-pub const codeMode_T: type = @import("root").config.arch.types.codeMode_T;
-pub const optimize_T: type = @import("root").config.arch.types.optimize_T;
+pub const Target_T: type = @TypeOf(@import("root").config.arch.options.Target);
 pub const ArchDescription_T: type = struct {
     section: []const u8,
+    usable: bool,
     entry: struct {
         maintainer: []const u8,
         label: []const u8,
@@ -16,17 +15,16 @@ pub const ArchDescription_T: type = struct {
     init: struct {
         maintainer: []const u8,
         label: []const u8,
-        entry: *const fn() void,
+        entry: *const fn() callconv(.c) void,
     },
     interrupts: struct {
         maintainer: []const u8,
         label: []const u8,
-        entry: *const fn() void,
+        entry: *const fn() callconv(.c) void,
     },
     mm: struct {
         maintainer: []const u8,
         label: []const u8,
-        entry: *const fn() void,
+        entry: *const fn() callconv(.c) void,
     },
-    usable: bool,
 };

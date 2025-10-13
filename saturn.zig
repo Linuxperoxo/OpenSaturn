@@ -23,7 +23,7 @@ pub const cpu: type = struct {
     pub const arch: type = SelectedArch.arch;
     pub const entry: type = SelectedArch.entry;
     pub const init: type = SelectedArch.init;
-    pub const interrupt: type = SelectedArch.interrupt;
+    pub const interrupts: type = SelectedArch.interrupts;
     pub const linker: type = SelectedArch.linker;
     pub const mm: type = SelectedArch.mm;
 };
@@ -36,11 +36,11 @@ pub const Architectures: type = struct {
         pub const arch: type = @import("kernel/arch/x86/x86.zig");
         pub const entry: type = @import("kernel/entries/x86/entry.zig");
         pub const init: type = @import("kernel/init/x86/init.zig");
-        pub const interrupt: type = @import("kernel/interrupts/x86/x86_interrupts.zig");
+        pub const interrupts: type = @import("kernel/interrupts/x86/x86_interrupts.zig");
         pub const linker: type = @import("linkers/x86/x86-linker.zig");
         pub const mm: type = @import("mm/x86/mm.zig");
         pub const lib: type = struct {
-            pub const kernel: type = @import("lib/saturn/kernel/x86/lib.zig");
+            pub const kernel: type = @import("lib/saturn/kernel/arch/x86/lib.zig");
             pub const userspace: type = @import("lib/saturn/userspace/x86/lib.zig");
         };
     };
@@ -48,11 +48,11 @@ pub const Architectures: type = struct {
     pub const x86_64: type = struct {
         pub const arch: type = @import("kernel/arch/x86_64/x86_64.zig");
         pub const entry: type = @import("kernel/entries/x86_64/entry.zig");
-        pub const interrupt: type = @import("kernel/interrupts/x86_64/x86_64_interrupts.zig");
+        pub const interrupts: type = @import("kernel/interrupts/x86_64/x86_64_interrupts.zig");
         pub const linker: type = @import("linkers/x86_64/x86_64-linker.zig");
         pub const mm: type = @import("mm/x86_64/mm.zig");
         pub const lib: type = struct {
-            pub const kernel: type = @import("lib/saturn/kernel/x86_64/lib.zig");
+            pub const kernel: type = @import("lib/saturn/kernel/arch/x86_64/lib.zig");
             pub const userspace: type = @import("lib/saturn/userspace/x86_64/lib.zig");
         };
     };
@@ -60,11 +60,11 @@ pub const Architectures: type = struct {
     pub const arm: type = struct {
         pub const arch: type = @import("kernel/arch/arm/arm.zig");
         pub const entry: type = @import("kernel/entries/arm/entry.zig");
-        pub const interrupt: type = @import("kernel/interrupts/arm/arm_interrupts.zig");
+        pub const interrupts: type = @import("kernel/interrupts/arm/arm_interrupts.zig");
         pub const linker: type = @import("linkers/arm/arm-linker.zig");
         pub const mm: type = @import("mm/arm/mm.zig");
         pub const lib: type = struct {
-            pub const kernel: type = @import("lib/saturn/kernel/arm/lib.zig");
+            pub const kernel: type = @import("lib/saturn/kernel/arch/arm/lib.zig");
             pub const userspace: type = @import("lib/saturn/userspace/arm/lib.zig");
         };
     };
@@ -72,11 +72,11 @@ pub const Architectures: type = struct {
     pub const avr: type = struct {
         pub const arch: type = @import("kernel/arch/avr/avr.zig");
         pub const entry: type = @import("kernel/entries/avr/entry.zig");
-        pub const interrupt: type = @import("kernel/interrupts/avr/avr_interrupts.zig");
+        pub const interrupts: type = @import("kernel/interrupts/avr/avr_interrupts.zig");
         pub const linker: type = @import("linkers/avr/avr-linker.zig");
         pub const mm: type = @import("mm/avr/mm.zig");
         pub const lib: type = struct {
-            pub const kernel: type = @import("lib/saturn/kernel/avr/lib.zig");
+            pub const kernel: type = @import("lib/saturn/kernel/arch/avr/lib.zig");
             pub const userspace: type = @import("lib/saturn/userspace/avr/lib.zig");
         };
     };
@@ -84,11 +84,11 @@ pub const Architectures: type = struct {
     pub const xtensa: type = struct {
         pub const arch: type = @import("kernel/arch/xtensa/xtensa.zig");
         pub const entry: type = @import("kernel/entries/xtensa/entry.zig");
-        pub const interrupt: type = @import("kernel/interrupts/xtensa/xtensa_interrupts.zig");
+        pub const interrupts: type = @import("kernel/interrupts/xtensa/xtensa_interrupts.zig");
         pub const linker: type = @import("linkers/xtensa/xtensa-linker.zig");
         pub const mm: type = @import("mm/xtensa/mm.zig");
         pub const lib: type = struct {
-            pub const kernel: type = @import("lib/saturn/kernel/xtensa/lib.zig");
+            pub const kernel: type = @import("lib/saturn/kernel/arch/xtensa/lib.zig");
             pub const userspace: type = @import("lib/saturn/userspace/xtensa/lib.zig");
         };
     };

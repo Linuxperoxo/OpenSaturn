@@ -8,7 +8,7 @@ pub const apic: type = @import("apic.zig");
 pub const msr: type = @import("msr.zig");
 //pub const pic: type = @import("pic.zig");
 
-pub fn init() void {
+pub fn init() callconv(.c) void {
     // Este trecho de assembly habilita a FPU e o conjunto de instruções SSE:
     //
     // * Limpa o bit EM (bit 2) do CR0 para permitir instruções de ponto flutuante reais, quanto 1 o processador gera uma interrupção

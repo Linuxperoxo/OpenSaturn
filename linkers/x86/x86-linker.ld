@@ -1,32 +1,58 @@
+/* OUTPUT_FORMAT(elf32-i386) */
 OUTPUT_FORMAT(binary)
 
 SECTIONS {
-  . = 0x1000000;
+  phys_init = 0x1000000;
+  phys_init1 = 0x2000000;
+  virtual_init = 0xC0000000;
 
-  SF = .;
+  . = phys_init;
 
   .opensaturn.atlas : {
     KEEP(*(.opensaturn.data.atlas.header))
-    AtlasImgSize = (EF - SF) - 0x1000000;
   }
 
+  . = ALIGN(64);
+  .opensaturn.arch : {
+    KEEP(*(.x86.arch.text))
+    KEEP(*(.x86.arch.data))
+  }
+
+  end_phys = .;
+
+  /*. = phys_init1; */
+  . = phys_init1;
+
+  . = ALIGN(64);
   .opensaturn.text : {
-    KEEP(*(*.text*))
+    KEEP(*(*.text))
   }
 
+  . = ALIGN(64);
   .opensaturn.data : {
-    . = ALIGN(4);
     KEEP(*(*.data))
-    . = ALIGN(4);
-    KEEP(*(*.bss))
-    . = ALIGN(4);
     KEEP(*(*.rodata))
   }
 
+  . = ALIGN(64);
+  .opensaturn.bss : {
+    KEEP(*(*.bss))
+  }
+
   /DISCARD/ : {
-    *(.commet*)
+    *(.comment*)
     *(.note*)
     *(.gnu*)
   }
-  EF = .;
+
+  end_of_mem = .;
+
+  PROVIDE(
+      AtlasImgSize = SIZEOF(.opensaturn.atlas)
+                 + SIZEOF(.opensaturn.arch)
+                 + SIZEOF(.opensaturn.text)
+                 + SIZEOF(.opensaturn.data)
+                 + SIZEOF(.opensaturn.bss)
+  );
 }
+

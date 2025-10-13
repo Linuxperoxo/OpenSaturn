@@ -22,7 +22,7 @@ pub fn saturn_arch_verify() void {
     if(!@hasDecl(arch, decl)) {
         @compileError("Error");
     }
-    const decl_type = @TypeOf(arch.__SaturnArhDescription__);
+    const decl_type = @TypeOf(arch.__SaturnArchDescription__);
     const decl_expect_type = decls.saturn_especial_decls_types[
         @intFromEnum(decls.DeclsOffset_T.arch)
     ];
@@ -34,10 +34,10 @@ pub fn saturn_arch_verify() void {
     };
     for(arch_fields) |field| {
         @export(
-            (@field(arch.__SaturnArhDescription__, field)).entry,
+            (@field(arch.__SaturnArchDescription__, field)).entry,
             .{
-                .section = arch.__SaturnArhDescription__.section,
-                .name = (@field(arch.__SaturnArhDescription__, field)).label
+                .section = arch.__SaturnArchDescription__.section,
+                .name = (@field(arch.__SaturnArchDescription__, field)).label
             },
         );
     }

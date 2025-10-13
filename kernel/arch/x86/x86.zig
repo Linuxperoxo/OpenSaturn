@@ -11,8 +11,8 @@ const interrupts: type = root.interrupts;
 const mm: type = root.mm;
 const interfaces: type = root.interfaces;
 
-pub const __SaturnArchDescription__: interfaces.arch.ArchDesc_T = .{
-    .section = ".x86.arch.init",
+pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
+    .section = ".x86.arch.text",
     .usable = true,
     .entry = .{
         .maintainer = "Linuxperoxo",
@@ -27,7 +27,8 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDesc_T = .{
     .interrupts = .{
         .maintainer = "Linuxperoxo",
         .label = ".x86.interrupts",
-        .entry = &interrupts.init,
+        //.entry = &interrupts.init,
+        .entry = &init.init,
     },
     .mm = .{
         .maintainer = "Linuxperoxo",

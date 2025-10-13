@@ -12,13 +12,18 @@
 //
 // export serve para deixar o símbolo vísivel no assembly, ou seja, poderiamos usar o asm volatile(\\call Sentry);
 // em qualquer arquivo, já que o símbolo está vísivel em todo o assembly.
-pub fn entry() callconv(.naked) noreturn {
+
+// FIXME: tirar o linksection, atualmente o codigo so funciona com o
+// linksection, por  algum motivo mesmo usando o @export la no loader
+// o codigo do init nao esta sendo carregado na section correta
+pub fn entry() linksection(".x86.arch.text") callconv(.naked) noreturn {
     asm volatile(
         \\ cli
         \\ movl $0xF00000, %esp
-        \\ call x86_init
-        \\ call x86_mmu_init
-        \\ call x86_gdt_init
+        \\ jmp .
+        \\ call .x86.init
+        // \\ call .x86.interrupts
+        \\ call .x86.mm
         \\ call saturn.main
         \\ jmp .
     );
@@ -46,7 +51,7 @@ pub fn entry() callconv(.naked) noreturn {
         \\ AtlasHeaders:
         \\   .word AtlasMagic
         \\   .long AtlasLoadDest
-        \\   .long x86_entry - AtlasLoadDest
+        \\   .long .x86.entry - AtlasLoadDest
         \\   .long AtlasImgSize
         \\   .word AtlasVMode
         \\   .byte AtlasFlags
