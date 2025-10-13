@@ -7,10 +7,10 @@ const SaturnStepPhase_T: type = @import("types.zig").SaturnStepPhase_T;
 
 var saturnCurrentStep: SaturnStepPhase_T = .boot;
 
-pub fn saturnSetPhase(phase: SaturnStepPhase_T) void {
+pub fn saturn_set_phase(phase: SaturnStepPhase_T) void {
     saturnCurrentStep = phase;
 }
 
-pub fn saturnGetPhase() SaturnStepPhase_T {
+pub fn saturn_get_phase() SaturnStepPhase_T {
     return saturnCurrentStep;
 }

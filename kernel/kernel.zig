@@ -23,7 +23,7 @@ pub const config: type = saturn.config;
 pub const modules: type = saturn.modules;
 pub const decls: type = saturn.decls;
 pub const step: type = struct {
-    pub const saturnGetPhase = saturn.step.saturnGetPhase;
+    pub const saturn_get_phase = saturn.step.saturn_get_phase;
 };
 
 const loader: type = saturn.loader;
@@ -74,7 +74,7 @@ fn @"saturn.main"() callconv(.c) void {
     // ou usando somente loader.SaturnArch, isso evita de criar um possivel .never_inline
     // implicito
     @call(.compile_time, loader.saturn_arch_verify, .{});
-    @call(.always_inline, saturn.step.saturnSetPhase, .{
+    @call(.always_inline, saturn.step.saturn_set_phase, .{
         .init
     });
 
@@ -86,8 +86,8 @@ fn @"saturn.main"() callconv(.c) void {
 
     // Depois da arquitetura resolver todos os seus detalhes, podemos iniciar
     // os modulos linkados ao kernel
-//    @call(.always_inline, loader.SaturnModules, .{});
-    @call(.always_inline, saturn.step.saturnSetPhase, .{
+//    @call(.always_inline, loader.saturn_modules_calling, .{});
+    @call(.always_inline, saturn.step.saturn_set_phase, .{
         .runtime
     });
 }

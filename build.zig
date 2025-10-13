@@ -22,9 +22,6 @@ pub const optimize: std.builtin.OptimizeMode = switch(SaturnCompileConfig.option
     .Fast => .ReleaseFast,
 };
 
-pub export fn init() callconv(.c) void {}
-pub export fn main() callconv(.c) void {}
-
 pub fn build(b: *std.Build) void {
     const saturn = b.addExecutable(.{
         .name = "sImage",
@@ -94,6 +91,7 @@ pub fn build(b: *std.Build) void {
             if(SaturnCompileConfig.options.CodeMode == .Debug) {
                 std.debug.print("\x1b[33mWARNING:\x1b[0m Debug Mode Enable\n", .{});
             }
+            std.debug.print("Done!\n", .{});
             return {};
         }
     }.make;
