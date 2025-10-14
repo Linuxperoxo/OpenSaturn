@@ -60,10 +60,6 @@
 //     asm volatile ("lgdt [%0]" :: "r" (&GDTPointer) : "memory");
 //
 //
-var GDTPointer: packed struct {
-    Limit: u16 = 0,
-    First: u32 = 0,
-} = undefined;
 
 // === ESTRUTURA GDTEntry ===
 //
@@ -136,7 +132,13 @@ var GDTPointer: packed struct {
 //     - Parte superior do limite total do segmento
 //     - É concatenado com SegLimitLow para formar o valor final
 //
-pub const GDTEntry: type = packed struct {
+
+const arch: type = @import("init.zig");
+
+const arch_section_text_loader = arch.arch_section_text_loader;
+const arch_section_data_loader = arch.arch_section_data_loader;
+
+const GDTEntry: type = packed struct {
     SegLimitLow: u16,
     BaseLow: u16,
     BaseMid: u8,
@@ -146,74 +148,94 @@ pub const GDTEntry: type = packed struct {
     BaseHigh: u8,
 };
 
-pub const GDTSegments: type = enum(u8) {
-    @"kernelcode" = 0x08,
-    @"kerneldata" = 0x10,
-    @"usercode" = 0x18,
-    @"userdata" = 0x20,
+const GDTSegments: type = enum(u8) {
+    kernelcode = 0x08,
+    kerneldata = 0x10,
+    usercode = 0x18,
+    userdata = 0x20,
 };
 
-pub const GDT: type = struct {
-    Entries: []GDTEntry,
-
-    pub fn setEntry(
-        This: *GDT,
-        Entry: GDTSegments,
-        Base: u32,
-        Limit: u32,
-        Gran: u8,
-        Access: u8
-    ) void {
-        if((Entry >> 3) > This.Entries.len) {
-            return;
-        }
-
-        This.Entries[(@intFromEnum(Entry) >> 3) - 1] {
-            .BaseLow = @intCast((Base & 0xFFFF)),
-            .BaseMid = @intCast((Base >> 16) & 0xFF),
-            .BaseHigh = @intCast((Base >> 24) & 0xFF),
-            .SegLimitLow = @intCast(Limit & 0xFFFF),
-            .SegLimitHigh = @intCast((Limit >> 16) & 0xF),
-            .Access = Access,
-            .Gran = @intCast(Gran & 0x0F) 
-        };
-    }
-
-    pub fn load(This: *GDT) void {
-        GDTPointer.Limit = @intCast(This.Entries.len * @sizeOf(GDTEntry) - 1);
-        GDTPointer.First = @intFromPtr(&This.Entries[0]);
-
-        asm volatile(
-            \\ lgdt (%[GDT])
-
-            \\ movw %[kerneldata], %ax
-            \\ movw %ax, %ds
-            \\ movw %ax, %ss
-            \\ movw %ax, %fs
-            \\ movw %ax, %gs
-            \\ movw %ax, %es
-
-            \\ ljmp %[kernelcode], $1f
-
-            \\ 1:
-
-            :
-            :[GDT] "{eax}" (&GDTPointer),
-             [kernelcode] "i" (GDTSegments.@"kernelcode"),
-             [kerneldata] "i" (GDTSegments.@"kerneldata")
-            : .{}
-        );
-    }
-
-    pub fn newEntry(Base: u32, Limit: u32, Gran: u8, Access: u8) GDTEntry {
-        return GDTEntry {
-            .BaseLow = @intCast((Base & 0xFFFF)),
-            .BaseMid = @intCast((Base >> 16) & 0xFF),
-            .BaseHigh = @intCast((Base >> 24) & 0xFF),
-            .SegLimitLow = @intCast(Limit & 0xFFFF),
-            .SegLimitHigh = @intCast((Limit >> 16) & 0xF),
-            .Access = Access,
-            .Gran = @intCast(Gran & 0x0F)
-        };
-    }
+const gdt_entries = [_]GDTEntry {
+    create_gdt_entry_comptime(
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+    ),
+    create_gdt_entry_comptime(
+        0x00,
+        0xFFFF,
+        0x0C,
+        0x9A,
+    ),
+    create_gdt_entry_comptime(
+        0x00,
+        0xFFFF,
+        0x0C,
+        0x92,
+    ),
+    create_gdt_entry_comptime(
+        0x00,
+        0xFFFF,
+        0x0C,
+        0xEA,
+    ),
+    create_gdt_entry_comptime(
+        0x00,
+        0xFFFF,
+        0x0C,
+        0xE2,
+    ),
 };
+
+// Precisamos alinhar para poder fazer o remap
+// no mmu_init para um endereco virtual apontar
+// para esse gdt
+const gdt_ready: [6]u8 align(1024) = [_]u8 {
+    0
+} ** 6;
+
+comptime {
+    @export(&gdt_entries, .{
+        .section = arch_section_data_loader,
+        .name = "gdt_entries",
+    });
+    @export(&gdt_ready, .{
+        .section = arch_section_data_loader,
+        .name = "gdt_struct",
+    });
+}
+
+pub fn gdt_config() void {
+    asm volatile(
+        \\ movl $gdt_struct, %edi
+        \\ movl %eax, 2(%edi)
+        \\ movw %bx, (%edi)
+        \\ lgdt gdt_struct
+        \\ movw %[kernel_data_seg], %ax
+        \\ movw %ax, %ds
+        \\ movw %ax, %ss
+        \\ movw %ax, %fs
+        \\ movw %ax, %gs
+        \\ movw %ax, %es
+        \\ ljmp %[kernel_code_seg], $1f
+        \\ 1:
+        :
+        :[kernel_code_seg] "i" (GDTSegments.kernelcode),
+         [kernel_data_seg] "i" (GDTSegments.kerneldata),
+         [_] "{bx}" (gdt_entries.len * @sizeOf(GDTEntry) - 1),
+         [_] "{eax}" (&gdt_entries[0])
+    );
+}
+
+fn create_gdt_entry_comptime(comptime base: u32, comptime limit: u32, comptime gran: u8, comptime access: u8) GDTEntry {
+    return GDTEntry {
+        .BaseLow = @intCast((base & 0xFFFF)),
+        .BaseMid = @intCast((base >> 16) & 0xFF),
+        .BaseHigh = @intCast((base >> 24) & 0xFF),
+        .SegLimitLow = @intCast(limit & 0xFFFF),
+        .SegLimitHigh = @intCast((limit >> 16) & 0xF),
+        .Access = access,
+        .Gran = @intCast(gran & 0x0F)
+    };
+}

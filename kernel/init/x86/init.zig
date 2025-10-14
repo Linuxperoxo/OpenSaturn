@@ -3,12 +3,17 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
+const arch: type = @import("root").arch;
+
 pub const gdt: type = @import("gdt.zig");
 pub const apic: type = @import("apic.zig");
 pub const msr: type = @import("msr.zig");
 //pub const pic: type = @import("pic.zig");
 
-pub fn init() linksection(".x86.arch.text") callconv(.c) void {
+pub const arch_section_text_loader = arch.arch_section_text_loader;
+pub const arch_section_data_loader = arch.arch_section_data_loader;
+
+pub fn init() linksection(arch_section_text_loader) callconv(.c) void {
     // Este trecho de assembly habilita a FPU e o conjunto de instruções SSE:
     //
     // * Limpa o bit EM (bit 2) do CR0 para permitir instruções de ponto flutuante reais, quanto 1 o processador gera uma interrupção
@@ -47,69 +52,11 @@ pub fn init() linksection(".x86.arch.text") callconv(.c) void {
         \\ movl %eax, %cr4
         :
         :
-        : .{}
     );
-
-    @call(.always_inline, &gdt.GDT.load, .{@constCast(&gdt.GDT {
-        .Entries = @constCast(&[_]gdt.GDTEntry {
-            @call(.compile_time, &gdt.GDT.newEntry, .{
-                0x00,
-                0x00,
-                0x00,
-                0x00,
-            }),
-            @call(.compile_time, &gdt.GDT.newEntry, .{
-                0x00,
-                0xFFFF,
-                0x0C,
-                0x9A,
-            }),
-            @call(.compile_time, &gdt.GDT.newEntry, .{
-                0x00,
-                0xFFFF,
-                0x0C,
-                0x92,
-            }),
-        }),
-    })});
-
-    @call(.always_inline, &apic.lapic.enableLAPIC, .{});
-
-    // Usamos primeiro o assert para entrar no reset junto do LevelTriggered. Depois usamos o Deassert para
-    // o core sair do reset e ficar pronto para receber um SIPI
-
-    // Imagine sendo um botão, quando apertamos(assert), o processador entra em reset. Quando você
-    // solta, o processador sai do reset, como eles são cores secundários, eles não executar o código de cara
-    // como o BSP que executa a BIOS logo de cara, ele apenas fica esperando um SIPI. O Level só é relevante no comando
-    // .Init, todos os outros não usa esse bit. Segundo a intel usar o TriggerMode como Edge, o bit Level é completamente
-    // ignorado, e o comando simplesmente não vai funcionar
-    @call(.always_inline, &apic.lapic.sendIPI, .{
-        apic.lapic.ICRLow {
-            .IDTEntry = 0,
-            .DeliveryMode = .Init,
-            .DestMode = .Physical,
-            .Level = .Assert,
-            .TriggerMode = .LevelTriggered,
-            .DestinationShorthand = .ALLExceptCurrent,
-        },
-
-        apic.lapic.ICRHigh {
-            .LAPICid = 1,
-        }
-    });
-
-    @call(.always_inline, &apic.lapic.sendIPI, .{
-        apic.lapic.ICRLow {
-            .IDTEntry = 0,
-            .DeliveryMode = .Init,
-            .DestMode = .Physical,
-            .Level = .Deassert,
-            .TriggerMode = .LevelTriggered,
-            .DestinationShorthand = .ALLExceptCurrent,
-        },
-
-        apic.lapic.ICRHigh {
-            .LAPICid = 1,
-        }
-    });
+    // Aqui deixamos tudo inline para evitar o uso de linksection para outras funcoes
+    // a ideia e que todas as funcoes de entry da arch devem ser 4 funcoes e cada uma
+    // com um assembly gigante, assim evitando problemas de endereco virtual e endereco
+    // fisico
+    @call(.always_inline, gdt.gdt_config, .{});
+    @call(.always_inline, apic.apic_config, .{});
 }

@@ -5,7 +5,8 @@
 
 pub const Target_T: type = @TypeOf(@import("root").config.arch.options.Target);
 pub const ArchDescription_T: type = struct {
-    section: []const u8,
+    text: []const u8,
+    data: []const u8,
     usable: bool,
     entry: struct {
         maintainer: []const u8,

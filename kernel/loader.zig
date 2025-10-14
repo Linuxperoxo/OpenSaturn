@@ -36,7 +36,7 @@ pub fn saturn_arch_verify() void {
         @export(
             (@field(arch.__SaturnArchDescription__, field)).entry,
             .{
-                .section = arch.__SaturnArchDescription__.section,
+                .section = arch.__SaturnArchDescription__.text,
                 .name = (@field(arch.__SaturnArchDescription__, field)).label
             },
         );

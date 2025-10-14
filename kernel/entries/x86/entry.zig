@@ -3,6 +3,11 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
+const arch: type = @import("root").arch;
+
+const arch_section_text_loader = arch.arch_section_text_loader;
+const arch_section_data_loader = arch.arch_section_data_loader;
+
 // callconv(.naked) não tem prólogo e epílogo automáticos é simplesmente fazer uma função do 0,
 // o compilador não adiciona o código de prólogo/epílogo para salvar/restaurar registradores ou
 // manipular a pilha, como alocações e desalocação.
@@ -16,11 +21,10 @@
 // FIXME: tirar o linksection, atualmente o codigo so funciona com o
 // linksection, por  algum motivo mesmo usando o @export la no loader
 // o codigo do init nao esta sendo carregado na section correta
-pub fn entry() linksection(".x86.arch.text") callconv(.naked) noreturn {
+pub fn entry() linksection(arch_section_text_loader) callconv(.naked) noreturn {
     asm volatile(
         \\ cli
         \\ movl $0xF00000, %esp
-        \\ jmp .
         \\ call .x86.init
         // \\ call .x86.interrupts
         \\ call .x86.mm
