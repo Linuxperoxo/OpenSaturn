@@ -4,6 +4,7 @@
 // └──────────────────────────────────────────────┘
 
 const arch: type = @import("root").arch;
+const config: type = @import("root").config;
 
 const arch_section_text_loader = arch.arch_section_text_loader;
 const arch_section_data_loader = arch.arch_section_data_loader;
@@ -24,12 +25,17 @@ const arch_section_data_loader = arch.arch_section_data_loader;
 pub fn entry() linksection(arch_section_text_loader) callconv(.naked) noreturn {
     asm volatile(
         \\ cli
-        \\ movl $0xF00000, %esp
+        \\ movl %[phys_stack], %esp
         \\ call .x86.init
         // \\ call .x86.interrupts
         \\ call .x86.mm
+        \\ jmp .
         \\ call saturn.main
         \\ jmp .
+        :
+        :[phys_stack] "i" (
+            comptime (config.kernel.options.kernel_stack_base_phys_address + config.kernel.options.kernel_stack_size)
+        )
     );
 
     // AtlasB Headers

@@ -129,6 +129,10 @@ pub const lib: type = struct {
 pub const config: type = struct {
     pub const modules: type = @import("config/modules/config.zig");
     pub const arch: type = @import("config/arch/config.zig");
+    pub const compile: type = @import("config/compile/config.zig");
+    pub const kernel: type = if(!@hasDecl(SelectedArch, "config")) @import("config/kernel/config.zig") else
+        SelectedArch.config
+    ;
 };
 pub const decls: type = @import("kernel/decls.zig");
 pub const step: type = @import("kernel/step/step.zig");

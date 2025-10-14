@@ -191,18 +191,21 @@ const gdt_entries = [_]GDTEntry {
 // Precisamos alinhar para poder fazer o remap
 // no mmu_init para um endereco virtual apontar
 // para esse gdt
-const gdt_ready: [6]u8 align(1024) = [_]u8 {
-    0
-} ** 6;
+
+comptime {
+    asm(
+        \\  .section .x86.arch.data
+        \\  .align 16
+        \\ gdt_struct:
+        \\  .word
+        \\  .long
+    );
+}
 
 comptime {
     @export(&gdt_entries, .{
         .section = arch_section_data_loader,
         .name = "gdt_entries",
-    });
-    @export(&gdt_ready, .{
-        .section = arch_section_data_loader,
-        .name = "gdt_struct",
     });
 }
 

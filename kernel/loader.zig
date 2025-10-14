@@ -43,7 +43,43 @@ pub fn saturn_arch_verify() void {
     }
 }
 
-pub fn saturn_modules_calling() void {
+pub fn saturn_kernel_config_maker() void {
+    const fmt: type = opaque {
+        fn numSize(comptime num: usize) usize {
+            var context: usize = num;
+            var size: usize = 0;
+            while(context != 0) : (context /= 10) {
+                size += 1;
+            }
+            return size;
+        }
+
+        pub fn intFromSlice(comptime num: usize) [r: {
+            if(num == 0) break :r 1;
+            break :r numSize(num);
+        }]u8 {
+            const size = numSize(num);
+            var context: usize = num;
+            var result = [_]u8 {
+                0
+            } ** size;
+            context = num;
+            for(0..size) |i| {
+                result[(size - 1) - i] = (context % 10) + '0';
+                context /= 10;
+            }
+            return result;
+        }
+    };
+    asm volatile(
+        ".set opensaturn_phys_address, " ++ fmt.intFromSlice(config.kernel.options.kernel_phys_address) ++ "\n" ++
+        ".set opensaturn_virtual_address, " ++ fmt.intFromSlice(config.kernel.options.kernel_virtual_address) ++ "\n" ++
+        ".globl opensaturn_phys_address" ++ "\n" ++
+        ".globl opensaturn_virtual_address"
+    );
+}
+
+pub fn saturn_modules_loader() void {
     comptime {
         for(modules.__SaturnAllMods__) |M| {
             if(!@hasDecl(M, "__SaturnModuleDescription__")) {
@@ -52,7 +88,9 @@ pub fn saturn_modules_calling() void {
                     @typeName(M)
                 );
             }
-            // TODO: Validar tipo da decl
+            if(@TypeOf(M.__SaturnModuleDescription__) != interfaces.module.ModuleDescription_T) {
+                // ERROR
+            }
         }
     }
     inline for(modules.__SaturnAllMods__) |M| {

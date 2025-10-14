@@ -73,7 +73,8 @@ fn @"saturn.main"() callconv(.c) void {
     // exported symbol collision, como resolver isso então? Simplemente usando o .never_inline
     // ou usando somente loader.SaturnArch, isso evita de criar um possivel .never_inline
     // implicito
-    @call(.compile_time, loader.saturn_arch_verify, .{});
+    @call(.compile_time, loader.saturn_arch_verify, .{}); // verificamos a arch e exportamos suas labels
+    @call(.always_inline, loader.saturn_kernel_config_maker, .{});
     @call(.always_inline, saturn.step.saturn_set_phase, .{
         .init
     });
@@ -86,7 +87,7 @@ fn @"saturn.main"() callconv(.c) void {
 
     // Depois da arquitetura resolver todos os seus detalhes, podemos iniciar
     // os modulos linkados ao kernel
-//    @call(.always_inline, loader.saturn_modules_calling, .{});
+//    @call(.always_inline, loader.saturn_modules_loader, .{});
     @call(.always_inline, saturn.step.saturn_set_phase, .{
         .runtime
     });
