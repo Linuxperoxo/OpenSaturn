@@ -56,6 +56,9 @@ SECTIONS {
 
   . = ALIGN(4096);
 
+  opensaturn_sections_total_of_size = LOADADDR(.opensaturn.bss) - LOADADDR(.opensaturn.text);
+  opensaturn_arch_sections_total_of_size = phys_arch_end - phys_arch_start;
+
   PROVIDE(
     phys_address_opensaturn_end = LOADADDR(.opensaturn.bss) + SIZEOF(.opensaturn.bss)
   );
@@ -68,10 +71,6 @@ SECTIONS {
   }
 
   PROVIDE(
-    AtlasImgSize = SIZEOF(.opensaturn.atlas)
-      + SIZEOF(.opensaturn.arch)
-      + SIZEOF(.opensaturn.text)
-      + SIZEOF(.opensaturn.data)
-      + SIZEOF(.opensaturn.bss)
+    AtlasImgSize = opensaturn_sections_total_of_size + opensaturn_arch_sections_total_of_size
   );
 }

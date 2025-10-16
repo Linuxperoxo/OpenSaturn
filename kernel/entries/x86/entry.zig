@@ -29,7 +29,6 @@ pub fn entry() linksection(arch_section_text_loader) callconv(.naked) noreturn {
         \\ call .x86.init
         // \\ call .x86.interrupts
         \\ call .x86.mm
-        \\ jmp .
         \\ call saturn.main
         \\ jmp .
         :
