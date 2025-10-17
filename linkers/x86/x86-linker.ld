@@ -9,6 +9,8 @@ SECTIONS {
   phys_init = opensaturn_phys_address;
   virtual_init = opensaturn_virtual_address;
 
+  phys_init_atlas_header = phys_init;
+
   . = phys_init;
 
   .opensaturn.atlas : {
@@ -54,10 +56,8 @@ SECTIONS {
       *(COMMON)
   }
 
-  . = ALIGN(4096);
-
-  opensaturn_sections_total_of_size = LOADADDR(.opensaturn.bss) - LOADADDR(.opensaturn.text);
-  opensaturn_arch_sections_total_of_size = phys_arch_end - phys_arch_start;
+  opensaturn_sections_total_of_size = ABSOLUTE(. - virtual_init);
+  opensaturn_arch_sections_total_of_size = ABSOLUTE(phys_arch_end - phys_init);
 
   PROVIDE(
     phys_address_opensaturn_end = LOADADDR(.opensaturn.bss) + SIZEOF(.opensaturn.bss)
@@ -71,6 +71,6 @@ SECTIONS {
   }
 
   PROVIDE(
-    AtlasImgSize = opensaturn_sections_total_of_size + opensaturn_arch_sections_total_of_size
+    AtlasImgSize = opensaturn_sections_total_of_size + opensaturn_arch_sections_total_of_size + SIZEOF(.opensaturn.atlas)
   );
 }

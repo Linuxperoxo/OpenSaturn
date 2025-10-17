@@ -83,22 +83,18 @@ pub fn mmu_init() linksection(arch_section_text_loader) callconv(.c) void {
         total_of_pages_stack, kernel_stack_base_virtual_address, kernel_stack_base_phys_addres
     });
 
-    // TODO: ver para qual o endereco fisico o 0xC0000000 ta apontando
-
     asm volatile(
-        \\ movl 0x01002000, %edi
         \\ andl $0x00000FFF, %esp
         \\ orl %edx, %esp
         \\ movl %eax, %cr3
         \\ movl %cr0, %eax
         \\ orl %[cr0_paging_bit], %eax
         \\ movl %eax, %cr0
-        \\ movl 0xC0000000, %esi
-        \\ jmp .
         :
         :[_] "{eax}" (&page.kernel_page_dir),
          [_] "{edx}" (kernel_stack_base_virtual_address),
-         [cr0_paging_bit] "i" (cr0_paging_bit)
+         [cr0_paging_bit] "i" (cr0_paging_bit),
+         [opensaturn_phys] "{edi}" (phys_address_opensaturn_start)
         : .{
             .ecx = true,
             .edi = true,

@@ -53,6 +53,11 @@ comptime {
 }
 
 fn @"saturn.main"() callconv(.c) void {
+    asm volatile(
+        \\ jmp .
+        :
+        :[_] "{eax}" (0xFFFF)
+    );
     // SaturnArch e resposavel por chamar a fn init da arquitetura alvo,
     // ela e responsavel tambem por resolver o tipo de interrupcao usada
     // pela arquitetura, a chamada da fn init para a interrupcao tambem
@@ -78,12 +83,6 @@ fn @"saturn.main"() callconv(.c) void {
     @call(.always_inline, saturn.step.saturn_set_phase, .{
         .init
     });
-
-    asm volatile(
-        \\ jmp .
-        :
-        :[_] "{eax}" (0xFFFF)
-    );
 
     // Depois da arquitetura resolver todos os seus detalhes, podemos iniciar
     // os modulos linkados ao kernel
