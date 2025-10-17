@@ -158,3 +158,7 @@ pub fn saturn_modules_loader() void {
         }
     }
 }
+
+pub fn saturn_running() noreturn {
+    while(true) {}
+}

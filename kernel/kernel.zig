@@ -46,23 +46,13 @@ const loader: type = saturn.loader;
 //    chamar a fn main do kernel, feito isso, o kernel vai fazer o resto
 
 comptime {
-    @export(&@"saturn.main", .{
+    @export(&saturn_main, .{
         .name = "saturn.main",
         .section = ".text.saturn",
     });
 }
 
-fn @"saturn.main"() callconv(.c) void {
-    asm volatile(
-        \\ jmp .
-        :
-        :[_] "{eax}" (0xFFFF)
-    );
-    // SaturnArch e resposavel por chamar a fn init da arquitetura alvo,
-    // ela e responsavel tambem por resolver o tipo de interrupcao usada
-    // pela arquitetura, a chamada da fn init para a interrupcao tambem
-    // e feita aqui
-
+fn saturn_main() callconv(.c) noreturn {
     // Aqui existe um pequeno detalhe, bem interessante por sinal.
     // Quando passamos um ponteiro para uma funcao conhecida em tempo
     // de compilacao para o @call, o compilador precisa considerar que
@@ -90,4 +80,5 @@ fn @"saturn.main"() callconv(.c) void {
     @call(.always_inline, saturn.step.saturn_set_phase, .{
         .runtime
     });
+    @call(.always_inline, loader.saturn_running, .{}); // noreturn fn
 }

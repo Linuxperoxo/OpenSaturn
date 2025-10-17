@@ -16,10 +16,15 @@
 
 // configuracoes default do kernel, pensado para arch como (i364, x64, ARM)
 
+// phys
 pub const kernel_phys_address: comptime_int = 0x0100_0000;
-pub const kernel_virtual_address: comptime_int = 0xC000_0000;
-pub const kernel_page_size: comptime_int = 0x1000;
-pub const kernel_arch_virtual_address: comptime_int = 0xF000_0000;
-pub const kernel_stack_base_virtual_address: comptime_int = 0xE00F_0000;
 pub const kernel_stack_base_phys_address: comptime_int = 0x00F0_0000;
+
+// virtual
+pub const kernel_virtual_address: comptime_int = 0xC000_0000;
+pub const kernel_stack_base_virtual_address: comptime_int = 0xFD10_0000;
+pub const kernel_arch_virtual_address: comptime_int = 0xF000_0000;
+
+// extra
+pub const kernel_page_size: comptime_int = 0x1000;
 pub const kernel_stack_size: comptime_int = kernel_page_size * 1;

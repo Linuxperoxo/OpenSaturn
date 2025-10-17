@@ -19,24 +19,7 @@ const arch_section_data_loader = arch.arch_section_data_loader;
 // export serve para deixar o símbolo vísivel no assembly, ou seja, poderiamos usar o asm volatile(\\call Sentry);
 // em qualquer arquivo, já que o símbolo está vísivel em todo o assembly.
 
-// FIXME: tirar o linksection, atualmente o codigo so funciona com o
-// linksection, por  algum motivo mesmo usando o @export la no loader
-// o codigo do init nao esta sendo carregado na section correta
-pub fn entry() linksection(arch_section_text_loader) callconv(.naked) noreturn {
-    asm volatile(
-        \\ cli
-        \\ movl %[phys_stack], %esp
-        \\ call .x86.init
-        // \\ call .x86.interrupts
-        \\ call .x86.mm
-        \\ call saturn.main
-        \\ jmp .
-        :
-        :[phys_stack] "i" (
-            comptime (config.kernel.options.kernel_stack_base_phys_address + config.kernel.options.kernel_stack_size)
-        )
-    );
-
+comptime {
     // AtlasB Headers
     //
     // Esse Headers deve ser colocado no inicio do binario, em
@@ -49,7 +32,7 @@ pub fn entry() linksection(arch_section_text_loader) callconv(.naked) noreturn {
     // * AtlasVMode: Modo de video que deve ser colocado
     // * AtlasFlags: Flags gerais para o Atlas, consulte a documentaçao no fonte do atlas
     //    NOTE: https://github.com/Linuxperoxo/AtlasB/blob/master/src/atlas.s
-    asm volatile(
+    asm(
         \\  .equ AtlasMagic, 0xAB00
         \\  .equ AtlasLoadDest, 0x1000000
         \\  .weak AtlasImgSize
@@ -64,6 +47,21 @@ pub fn entry() linksection(arch_section_text_loader) callconv(.naked) noreturn {
         \\   .long AtlasImgSize
         \\   .word AtlasVMode
         \\   .byte AtlasFlags
+    );
+}
+
+pub fn entry() linksection(arch_section_text_loader) callconv(.naked) noreturn {
+    asm volatile(
+        \\ cli
+        \\ movl %[phys_stack], %esp
+        \\ call .x86.init
+        // \\ call .x86.interrupts
+        \\ call .x86.mm
+        \\ jmp saturn.main
+        :
+        :[phys_stack] "i" (
+            comptime (config.kernel.options.kernel_stack_base_phys_address + config.kernel.options.kernel_stack_size)
+        )
     );
 }
 

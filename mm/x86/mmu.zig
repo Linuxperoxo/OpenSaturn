@@ -7,6 +7,7 @@ const arch: type = @import("root").arch;
 const config: type = @import("root").config;
 const page: type = @import("page.zig");
 const types: type = @import("types.zig");
+const linker: type = @import("root").arch.linker;
 
 // sections []const u8
 const arch_section_text_loader = arch.arch_section_text_loader;
@@ -22,13 +23,13 @@ const kernel_stack_base_phys_addres = config.kernel.options.kernel_stack_base_ph
 const kernel_stack_size = config.kernel.options.kernel_stack_size;
 
 // opensaturn real code start/end
-const phys_address_opensaturn_start = page.phys_address_opensaturn_start; // in linker
-const phys_address_opensaturn_end = page.phys_address_opensaturn_end; // in linker
+const phys_address_opensaturn_start = linker.phys_address_opensaturn_start; // in linker
+const phys_address_opensaturn_end = linker.phys_address_opensaturn_end; // in linker
 
 // linker
-const phys_arch_start = page.phys_arch_start;
-const phys_arch_data_start = page.phys_arch_data_start;
-const phys_arch_end = page.phys_arch_end;
+const phys_arch_start = linker.phys_i386_start;
+const phys_arch_data_start = linker.phys_i386_data_start;
+const phys_arch_end = linker.phys_i386_end;
 
 // cr0 paging bit
 const cr0_paging_bit: u32 = 0x01 << 31;
@@ -144,7 +145,7 @@ fn resolve_num_of_pages(dif: u32) u32 {
 
 
 fn map_arch_section_data_to_virtual() void {
-    
+
 }
 
 fn map_kernel_section_to_virtual() void {

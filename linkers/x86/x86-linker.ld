@@ -18,46 +18,78 @@ SECTIONS {
   }
 
   PROVIDE(
-    phys_arch_start = .
+    phys_i386_start = .
   );
 
   .opensaturn.arch : {
+      /* .text expurgated after jmp to kernel */
       KEEP(*(.x86.arch.text)) /* free page for kernel after arch init */
-      KEEP(*(.x86.arch.tmp.data))
       . = ALIGN(4096);
       PROVIDE(
-        phys_arch_data_start = .
+        phys_i386_data_start = .
       );
       /* arch persistent data */
       KEEP(*(.x86.arch.data)) /* IDT GDT MMU STRUCTS WHERE */
+      PROVIDE(
+        phys_i386_data_end = .
+      );
   }
 
   . = ALIGN(4096);
 
-  phys_arch_end = .;
+  PROVIDE(
+    phys_i386_end = .
+  );
 
   PROVIDE(
-    phys_address_opensaturn_start = phys_arch_end
+    phys_address_opensaturn_start = phys_i386_end
   );
 
   . = virtual_init;
 
-  .opensaturn.text : AT(phys_arch_end) {
+  PROVIDE(
+    phys_address_opensaturn_text_start = phys_i386_end
+  );
+
+  .opensaturn.text : AT(phys_address_opensaturn_text_start) {
       *(.text*)
   }
 
-  .opensaturn.data : AT(LOADADDR(.opensaturn.text) + SIZEOF(.opensaturn.text)) {
+  PROVIDE(
+    phys_address_opensaturn_text_end = LOADADDR(.opensaturn.text) + SIZEOF(.opensaturn.text)
+  );
+
+  PROVIDE(
+    phys_address_opensaturn_data_start = phys_address_opensaturn_text_end
+  );
+
+  .opensaturn.data : AT(phys_address_opensaturn_data_start) {
       *(.data*)
-      *(.rodata*)
   }
 
+  PROVIDE(
+    phys_address_opensaturn_data_end = LOADADDR(.opensaturn.data) + SIZEOF(.opensaturn.data)
+  );
+
+  PROVIDE(
+    phys_address_opensaturn_rodata_start = phys_address_opensaturn_data_end
+  );
+
+  .opensaturn.rodata : AT(phys_address_opensaturn_rodata_start) {
+    *(.rodata*)
+  }
+
+  PROVIDE(
+    phys_address_opensaturn_rodata_end = LOADADDR(.opensaturn.rodata) + SIZEOF(.opensaturn.rodata)
+  );
+
   .opensaturn.bss (NOLOAD) : {
-      *(.bss*)
-      *(COMMON)
+    *(.bss*)
   }
 
   opensaturn_sections_total_of_size = ABSOLUTE(. - virtual_init);
-  opensaturn_arch_sections_total_of_size = ABSOLUTE(phys_arch_end - phys_init);
+  opensaturn_arch_sections_total_of_size = ABSOLUTE(phys_i386_end - phys_i386_start);
+  opensaturn_atlas_section_total_of_size = SIZEOF(.opensaturn.atlas);
 
   PROVIDE(
     phys_address_opensaturn_end = LOADADDR(.opensaturn.bss) + SIZEOF(.opensaturn.bss)
@@ -71,6 +103,9 @@ SECTIONS {
   }
 
   PROVIDE(
-    AtlasImgSize = opensaturn_sections_total_of_size + opensaturn_arch_sections_total_of_size + SIZEOF(.opensaturn.atlas)
+    AtlasImgSize =
+      opensaturn_sections_total_of_size +
+      opensaturn_arch_sections_total_of_size +
+      opensaturn_atlas_section_total_of_size
   );
 }

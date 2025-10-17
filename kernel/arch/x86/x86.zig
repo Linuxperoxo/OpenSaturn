@@ -11,6 +11,8 @@ const interrupts: type = root.interrupts;
 const mm: type = root.mm;
 const interfaces: type = root.interfaces;
 
+pub const linker: type = @import("linker.zig");
+
 pub const arch_section_text_loader: []const u8 = ".x86.arch.text";
 pub const arch_section_data_loader: []const u8 = ".x86.arch.data";
 
