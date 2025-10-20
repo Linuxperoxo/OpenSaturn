@@ -30,7 +30,7 @@ pub const PageDirEntry_T: type = packed struct {
     page_size: u1,
     ignored: u1,
     avail: u3,
-    table_addr: u20,
+    table_phys: u20,
 };
 
 pub const PageTableEntry_T: type = packed struct {

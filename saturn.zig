@@ -26,6 +26,7 @@ pub const cpu: type = struct {
     pub const interrupts: type = SelectedArch.interrupts;
     pub const linker: type = SelectedArch.linker;
     pub const mm: type = SelectedArch.mm;
+    pub const custom: bool = @hasDecl(SelectedArch, "config");
 };
 pub const Architectures: type = struct {
     // Eu poderia usar usar o @tagName para construir o caminho

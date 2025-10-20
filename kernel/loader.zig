@@ -4,16 +4,49 @@
 // └──────────────────────────────────────────────┘
 
 // Esse arquivo e responsavel por 2 coisas, carregar
-// recursos do kernel, e fazer verificacoes, se alguma
-// coisa caiu em um @compileError, pode ter certeza que
-// foi nesse arquivo
+// recursos do kernel, e fazer verificacoes de compilacao,
+// se alguma coisa caiu em um @compileError, pode ter certeza
+// que foi nesse arquivo
 
+const cpu: type = @import("root").cpu;
 const arch: type = @import("root").arch;
 const decls: type = @import("root").decls;
+const kernel: type = @import("root").kernel;
 const config: type = @import("root").config;
 const modules: type = @import("root").modules;
 const supervisor: type = @import("root").supervisor;
 const interfaces: type = @import("root").interfaces;
+
+comptime {
+    // NOTE: usar assembly inline dentro do nucleo de um kernel e totalmente desencorajado, ja
+    // que aquele codigo so funciona apenas para uma arquitetura, ou seja, vamos precisar
+    // ter um codigo assembly naquela parte para cada arquitetura, nesse caso, nao tem problema
+    // nenhum em usar assembly inline aqui, ja que usamos diretivas, nao instrucoes, isso funciona
+    // para assembly de qualquer arquitetura suportada pelo GAS
+
+    // isso aqui realmente precisa ser feito, nao funcionaria colocar um 'pub export const' para cada um
+    // la na proprio config, ja que pode acontecer de alguma nao ser usada diretamente no codigo, mas ser
+    // usada dentro de um linker ou assembly, isso iria dar um erro de simbolo nao encontrado, ja que como
+    // nao foi usada dentro do proprio codigo zig, o compilador so iria ignorar e nem colocar o export nela
+    const aux: type = opaque {
+        pub fn make_asm_set(comptime name: []const u8, comptime value: u32) []const u8 {
+            return ".set " ++ name ++ ", " ++ kernel.utils.fmt.intFromArray(value) ++ "\n"
+                ++ ".globl " ++ name ++ "\n";
+        }
+    };
+    if(!cpu.custom) asm(
+        aux.make_asm_set("kernel_phys_address", config.kernel.options.kernel_phys_address) ++
+        aux.make_asm_set("kernel_virtual_address", config.kernel.options.kernel_virtual_address) ++
+        aux.make_asm_set("kernel_arch_virtual", config.kernel.options.kernel_arch_virtual) ++
+        aux.make_asm_set("kernel_text_virtual", config.kernel.options.kernel_text_virtual) ++
+        aux.make_asm_set("kernel_vmem_virtual", config.kernel.options.kernel_vmem_virtual) ++
+        aux.make_asm_set("kernel_page_td_virtual", config.kernel.options.kernel_page_td_virtual) ++
+        aux.make_asm_set("kernel_stack_base_virtual", config.kernel.options.kernel_stack_base_virtual) ++
+        aux.make_asm_set("kernel_data_virtual", config.kernel.options.kernel_data_virtual) ++
+        aux.make_asm_set("kernel_paged_memory_virtual", config.kernel.options.kernel_paged_memory_virtual) ++
+        aux.make_asm_set("kernel_mmio_virtual", config.kernel.options.kernel_mmio_virtual)
+    );
+}
 
 pub fn saturn_arch_verify() void {
     const decl = decls.saturn_especial_decls[
@@ -41,42 +74,6 @@ pub fn saturn_arch_verify() void {
             },
         );
     }
-}
-
-pub fn saturn_kernel_config_maker() void {
-    const fmt: type = opaque {
-        fn numSize(comptime num: usize) usize {
-            var context: usize = num;
-            var size: usize = 0;
-            while(context != 0) : (context /= 10) {
-                size += 1;
-            }
-            return size;
-        }
-
-        pub fn intFromSlice(comptime num: usize) [r: {
-            if(num == 0) break :r 1;
-            break :r numSize(num);
-        }]u8 {
-            const size = numSize(num);
-            var context: usize = num;
-            var result = [_]u8 {
-                0
-            } ** size;
-            context = num;
-            for(0..size) |i| {
-                result[(size - 1) - i] = (context % 10) + '0';
-                context /= 10;
-            }
-            return result;
-        }
-    };
-    asm volatile(
-        ".set opensaturn_phys_address, " ++ fmt.intFromSlice(config.kernel.options.kernel_phys_address) ++ "\n" ++
-        ".set opensaturn_virtual_address, " ++ fmt.intFromSlice(config.kernel.options.kernel_virtual_address) ++ "\n" ++
-        ".globl opensaturn_phys_address" ++ "\n" ++
-        ".globl opensaturn_virtual_address"
-    );
 }
 
 pub fn saturn_modules_loader() void {
@@ -137,6 +134,7 @@ pub fn saturn_modules_loader() void {
                         }
                     }
                     @call(.never_inline, M.__SaturnModuleDescription__.init, .{}) catch {
+                        // klog error
                     };
                 },
             }

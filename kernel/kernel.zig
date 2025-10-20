@@ -18,7 +18,6 @@ pub const interfaces: type = saturn.interfaces;
 pub const supervisor: type = saturn.supervisor;
 pub const kernel: type = saturn.lib.kernel;
 pub const userspace: type = saturn.lib.userspace;
-pub const utils: type = saturn.lib.utils;
 pub const config: type = saturn.config;
 pub const modules: type = saturn.modules;
 pub const decls: type = saturn.decls;
@@ -69,7 +68,6 @@ fn saturn_main() callconv(.c) noreturn {
     // ou usando somente loader.SaturnArch, isso evita de criar um possivel .never_inline
     // implicito
     @call(.compile_time, loader.saturn_arch_verify, .{}); // verificamos a arch e exportamos suas labels
-    @call(.always_inline, loader.saturn_kernel_config_maker, .{});
     @call(.always_inline, saturn.step.saturn_set_phase, .{
         .init
     });

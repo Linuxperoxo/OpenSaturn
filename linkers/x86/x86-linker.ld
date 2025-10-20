@@ -6,8 +6,8 @@ SECTIONS {
    * opensaturn_phys_address: difined in kernel/loader.zig
    * opensaturn_virtual_address: difined in kernel/loader.zig
   */
-  phys_init = opensaturn_phys_address;
-  virtual_init = opensaturn_virtual_address;
+  phys_init = kernel_phys_address;
+  virtual_init = kernel_virtual_address;
 
   phys_init_atlas_header = phys_init;
 
@@ -60,11 +60,13 @@ SECTIONS {
   );
 
   PROVIDE(
-    phys_address_opensaturn_data_start = phys_address_opensaturn_text_end
+    phys_address_opensaturn_data_start = ALIGN(phys_address_opensaturn_text_end, 4096)
   );
 
+  . = kernel_data_virtual;
+
   .opensaturn.data : AT(phys_address_opensaturn_data_start) {
-      *(.data*)
+    *(.data*)
   }
 
   PROVIDE(
@@ -72,7 +74,7 @@ SECTIONS {
   );
 
   PROVIDE(
-    phys_address_opensaturn_rodata_start = phys_address_opensaturn_data_end
+    phys_address_opensaturn_rodata_start = ALIGN(phys_address_opensaturn_data_end, 4096)
   );
 
   .opensaturn.rodata : AT(phys_address_opensaturn_rodata_start) {

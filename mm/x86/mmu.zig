@@ -18,18 +18,20 @@ const kernel_phys_address = config.kernel.options.kernel_phys_address;
 const kernel_virtual_address = config.kernel.options.kernel_virtual_address;
 const kernel_arch_virtual_address = config.kernel.options.kernel_arch_virtual_address;
 const kernel_page_size = config.kernel.options.kernel_page_size;
-const kernel_stack_base_virtual_address = config.kernel.options.kernel_stack_base_virtual_address;
+const kernel_stack_base_virtual = config.kernel.options.kernel_stack_base_virtual;
 const kernel_stack_base_phys_addres = config.kernel.options.kernel_stack_base_phys_address;
 const kernel_stack_size = config.kernel.options.kernel_stack_size;
 
 // opensaturn real code start/end
-const phys_address_opensaturn_start = linker.phys_address_opensaturn_start; // in linker
-const phys_address_opensaturn_end = linker.phys_address_opensaturn_end; // in linker
+const phys_address_opensaturn_text_start = linker.phys_address_opensaturn_text_start; // in linker
+const phys_address_opensaturn_text_end = linker.phys_address_opensaturn_text_end; // in linker
+const phys_address_opensaturn_data_start = linker.phys_address_opensaturn_data_start;
+const phys_address_opensaturn_data_end = linker.phys_address_opensaturn_data_end;
 
 // linker
-const phys_arch_start = linker.phys_i386_start;
-const phys_arch_data_start = linker.phys_i386_data_start;
-const phys_arch_end = linker.phys_i386_end;
+const phys_i386_start = linker.phys_i386_start;
+const phys_i386_data_start = linker.phys_i386_data_start;
+const phys_i386_end = linker.phys_i386_end;
 
 // cr0 paging bit
 const cr0_paging_bit: u32 = 0x01 << 31;
@@ -46,62 +48,104 @@ comptime {
 // * precimo mapear endereco fisico para o mesmo endereco virtual
 // por causa do eip por exemplo, mesma coisa para stack, mas isso
 // vai ser temporario, depois que passa configurar isso podemos mudar
-// tutalmente para usar endereco virtual
+// totalmente para usar endereco virtual
 
 pub fn mmu_init() linksection(arch_section_text_loader) callconv(.c) void {
-    const total_of_pages_arch_sections: u32 = @call(.always_inline, resolve_num_of_pages, .{
-        @intFromPtr(phys_arch_end) - @intFromPtr(phys_arch_start)
-    });
-    const total_of_pages_opensaturn_sections: u32 = @call(.always_inline, resolve_num_of_pages, .{
-        @intFromPtr(phys_address_opensaturn_end) - @intFromPtr(phys_address_opensaturn_start)
-    });
-    const total_of_pages_stack: u32 = @call(.always_inline, resolve_num_of_pages, .{
-        kernel_stack_size
-    });
-    const aux: type = opaque {
-        pub fn map(total_pages: u32, base: u32, phys: ?u32) void {
-            for(0..total_pages) |i|  {
-                const dir, const table, _ = @call(.always_inline, page.mmu_decode_virtual, .{
-                    base + (kernel_page_size * i)
-                });
-                page.kernel_page_dir[dir].present = 1;
-                page.kernel_page_dir[dir].rw = 1;
-                page.kernel_page_dir[dir].table_addr = @intCast(@intFromPtr(&page.kernel_page_table) >> 12);
-
-                page.kernel_page_table[table].present = 1;
-                page.kernel_page_table[table].rw = 1;
-                page.kernel_page_table[table].phys = @intCast((phys orelse base + (kernel_page_size * i)) >> 12);
-            }
-        }
-    };
-    @call(.always_inline, aux.map, .{
-        total_of_pages_arch_sections, @intFromPtr(phys_arch_start), null
-    });
-    @call(.always_inline, aux.map, .{
-        total_of_pages_opensaturn_sections, kernel_virtual_address, @intFromPtr(phys_address_opensaturn_start)
-    });
-    @call(.always_inline, aux.map, .{
-        total_of_pages_stack, kernel_stack_base_virtual_address, kernel_stack_base_phys_addres
-    });
-
+    @call(.always_inline, configure_bootstrap, .{}); // done!
+    @call(.always_inline, configure_kernel_text, .{}); // done!
+    @call(.always_inline, configure_kernel_data, .{}); // done?
+    @call(.always_inline, configure_kernel_stack, .{}); // done!
+    // TODO: gdt idt devem ir para .data do kernel, ja que a page_table de bootstrap
+    // vai ser anulada apos memoria virtual estar configurada, ou seja, a primeira coisa
+    // que vamos executar vai ser o init, mm, depois vamos configurar o gdt e o idt ja usando
+    // memoria virtual
     asm volatile(
+        // \\ movl $0xFFFF, (%esp) | debug
+        // \\ movl (%esp), %edi | debug
         \\ andl $0x00000FFF, %esp
         \\ orl %edx, %esp
         \\ movl %eax, %cr3
         \\ movl %cr0, %eax
         \\ orl %[cr0_paging_bit], %eax
         \\ movl %eax, %cr0
+        // \\ movl (%esp), %esi | debug
+        // \\ movb $0xFF, 4095(%edx) | debug
         :
         :[_] "{eax}" (&page.kernel_page_dir),
-         [_] "{edx}" (kernel_stack_base_virtual_address),
+         [_] "{edx}" (kernel_stack_base_virtual),
          [cr0_paging_bit] "i" (cr0_paging_bit),
-         [opensaturn_phys] "{edi}" (phys_address_opensaturn_start)
         : .{
             .ecx = true,
-            .edi = true,
-            .esi = true,
         }
     );
+}
+
+fn configure_bootstrap() void {
+    const total_of_pages_arch_sections: u32 = @call(.always_inline, resolve_num_of_pages, .{
+        @intFromPtr(phys_i386_end) - @intFromPtr(phys_i386_start)
+    });
+    const bootstrap_page_dir_entry: *types.PageDirEntry_T = &page.kernel_page_dir[
+        config.kernel.options.kernel_phys_address >> 22
+    ];
+    const bootstrap_page_table: *[1024]types.PageTableEntry_T = &page.bootstrap_page_table;
+    bootstrap_page_dir_entry.present = 1;
+    bootstrap_page_dir_entry.rw = 1;
+    bootstrap_page_dir_entry.table_phys = @intCast(@intFromPtr(bootstrap_page_table) >> 12);
+    for(0..total_of_pages_arch_sections) |i| {
+        bootstrap_page_table[i].present = 1;
+        bootstrap_page_table[i].rw = 1;
+        bootstrap_page_table[i].phys = @intCast((@intFromPtr(phys_i386_start) + kernel_page_size * i) >> 12);
+    }
+}
+
+fn configure_kernel_text() void {
+    @call(.always_inline, kernel_map, .{
+        @intFromPtr(phys_address_opensaturn_text_start),
+        page.KernelPageIndex.text,
+        @call(.always_inline, resolve_num_of_pages, .{
+            @intFromPtr(phys_address_opensaturn_text_end) - @intFromPtr(phys_address_opensaturn_text_start)
+        }),
+        0
+    });
+}
+
+fn configure_kernel_stack() void {
+    @call(.always_inline, kernel_map, .{
+        kernel_stack_base_phys_addres,
+        page.KernelPageIndex.stack,
+        @call(.always_inline, resolve_num_of_pages, .{
+            (kernel_stack_base_phys_addres + kernel_stack_size) - kernel_stack_base_phys_addres
+        }),
+        1
+    });
+}
+
+fn configure_kernel_data() void {
+    @call(.always_inline, kernel_map, .{
+        @intFromPtr(phys_address_opensaturn_data_start),
+        page.KernelPageIndex.data,
+        @call(.always_inline, resolve_num_of_pages, .{
+            @intFromPtr(phys_address_opensaturn_data_end) - @intFromPtr(phys_address_opensaturn_data_start)
+        }),
+        1
+    });
+}
+
+fn kernel_map(phys: u32, index: page.KernelPageIndex, pages: u32, rw: u1) void {
+    const page_dir: *types.PageDirEntry_T = &page.kernel_page_dir[
+        page.kernel_index[@intFromEnum(index)]
+    ];
+    const page_table: *[1024]types.PageTableEntry_T = &page.kernel_page_table[
+        @as(u4, page_dir.avail) | (@as(u4, page_dir.reserved) << 3)
+    ];
+    page_dir.rw = rw;
+    page_dir.present = 1;
+    page_dir.table_phys = @intCast(@intFromPtr(page_table) >> 12);
+    for(0..pages) |i| {
+        page_table[i].rw = rw;
+        page_table[i].present = 1;
+        page_table[i].phys = @intCast((phys + kernel_page_size * i) >> 12);
+    }
 }
 
 fn resolve_num_of_pages(dif: u32) u32 {
@@ -118,66 +162,5 @@ fn resolve_num_of_pages(dif: u32) u32 {
         : .{
             .edx = true,
         }
-    );
-}
-
-//pub fn mmu_init() linksection(arch_section_text_loader) callconv(.c) void {
-    // TODO: Mandar IDT GDT para o endereco 0xF000_0000
-
-    //@call(.always_inline, gdt_remap_to_virtual, .{});
-    //@call(.always_inline, idt_remap_to_virtual, .{});
-
-    //@call(.always_inline, map_arch_section_data_to_virtual, .{});
-    //@call(.always_inline, map_kernel_section_to_virtual, .{});
-
-    //asm volatile(
-    //    \\ movl %eax, %cr3
-    //    \\ movl %cr0, %eax
-    //    \\ orl %[paging_bit], %eax
-    //    \\ movl %eax, %cr0
-    //    :
-    //    :[_] "{eax}" (&page.kernel_page_dir),
-    //     [_] "{ebx}" (&page.kernel_page_table),
-    //     [_] "{ecx}" (page.phys_address_opensaturn_start),
-    //     [paging_bit] "i" (cr0_paging_bit)
-    //);
-//}
-
-
-fn map_arch_section_data_to_virtual() void {
-
-}
-
-fn map_kernel_section_to_virtual() void {
-
-}
-
-fn gdt_remap_to_virtual() void {
-    const gdt_struct_phys_address: u32 = @intFromPtr(@extern(*anyopaque, .{
-        .name = "gdt_struct"
-    }));
-    const offset: u12 = @intCast(
-        gdt_struct_phys_address & 0xFFF
-    );
-    _ = offset;
-    asm volatile(
-        \\ 
-        :
-        :
-    );
-}
-
-fn idt_remap_to_virtual() void {
-    const idt_struct_phys_address = @extern(*anyopaque, .{
-        .name = "idt_struct"
-    });
-    const offset: u12 = @intCast(
-        idt_struct_phys_address & 0xFFF
-    );
-    _ = offset;
-    asm volatile(
-        \\
-        :
-        :
     );
 }

@@ -44,7 +44,8 @@ comptime {
         \\   .word AtlasMagic
         \\   .long AtlasLoadDest
         \\   .long .x86.entry - AtlasLoadDest
-        \\   .long AtlasImgSize
+        // FIXME: linker AtlasImgSize
+        \\   .long 0xB005
         \\   .word AtlasVMode
         \\   .byte AtlasFlags
     );
@@ -61,6 +62,9 @@ pub fn entry() linksection(arch_section_text_loader) callconv(.naked) noreturn {
         :
         :[phys_stack] "i" (
             comptime (config.kernel.options.kernel_stack_base_phys_address + config.kernel.options.kernel_stack_size)
+        ),
+         [_] "{edi}" (
+            arch.linker.phys_address_opensaturn_data_start
         )
     );
 }
