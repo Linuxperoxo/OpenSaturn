@@ -12,12 +12,12 @@
 // desse arquivo ficar dificil para a estrutura dos codigos fique
 // organizada
 const SelectedArch: type = switch(config.arch.options.Target) {
-    .x86 => Architectures.x86,
-    .x86_64 => Architectures.x86_64,
+    .i386 => Architectures.i386,
+    .amd64 => Architectures.amd64,
     .arm => Architectures.arm,
     .avr => Architectures.avr,
     .xtensa => Architectures.xtensa,
-    .riscv => unreachable, // TODO:
+    .riscv64 => unreachable, // TODO:
 };
 pub const cpu: type = struct {
     pub const arch: type = SelectedArch.arch;
@@ -26,35 +26,35 @@ pub const cpu: type = struct {
     pub const interrupts: type = SelectedArch.interrupts;
     pub const linker: type = SelectedArch.linker;
     pub const mm: type = SelectedArch.mm;
-    pub const custom: bool = @hasDecl(SelectedArch, "config");
+    pub const custom: bool = @hasDecl(SelectedArch, "segments");
 };
 pub const Architectures: type = struct {
     // Eu poderia usar usar o @tagName para construir o caminho
     // do arquivo para cada arquitetura, mas assim alem de ficar
     // mais visivel, abre a possibilidade de modificar o diretorio
     // ou o nome do arquivo
-    pub const x86: type = struct {
+    pub const @"i386": type = struct {
         pub const arch: type = @import("kernel/arch/x86/x86.zig");
         pub const entry: type = @import("kernel/entries/x86/entry.zig");
         pub const init: type = @import("kernel/init/x86/init.zig");
         pub const interrupts: type = @import("kernel/interrupts/x86/interrupts.zig");
-        pub const linker: type = @import("linkers/x86/x86-linker.zig");
-        pub const mm: type = @import("mm/x86/mm.zig");
+        pub const linker: type = @import("linkers/i386/linker.zig");
+        pub const mm: type = @import("mm/i386/mm.zig");
         pub const lib: type = struct {
-            pub const kernel: type = @import("lib/saturn/kernel/arch/x86/lib.zig");
-            pub const userspace: type = @import("lib/saturn/userspace/x86/lib.zig");
+            pub const kernel: type = @import("lib/saturn/kernel/arch/i386/lib.zig");
+            pub const userspace: type = @import("lib/saturn/userspace/i386/lib.zig");
         };
     };
 
-    pub const x86_64: type = struct {
+    pub const amd64: type = struct {
         pub const arch: type = @import("kernel/arch/x86_64/x86_64.zig");
         pub const entry: type = @import("kernel/entries/x86_64/entry.zig");
         pub const interrupts: type = @import("kernel/interrupts/x86_64/x86_64_interrupts.zig");
-        pub const linker: type = @import("linkers/x86_64/x86_64-linker.zig");
-        pub const mm: type = @import("mm/x86_64/mm.zig");
+        pub const linker: type = @import("linkers/amd64/linker.zig");
+        pub const mm: type = @import("mm/amd64/mm.zig");
         pub const lib: type = struct {
-            pub const kernel: type = @import("lib/saturn/kernel/arch/x86_64/lib.zig");
-            pub const userspace: type = @import("lib/saturn/userspace/x86_64/lib.zig");
+            pub const kernel: type = @import("lib/saturn/kernel/arch/amd64/lib.zig");
+            pub const userspace: type = @import("lib/saturn/userspace/amd64/lib.zig");
         };
     };
 
@@ -131,9 +131,12 @@ pub const config: type = struct {
     pub const modules: type = @import("config/modules/config.zig");
     pub const arch: type = @import("config/arch/config.zig");
     pub const compile: type = @import("config/compile/config.zig");
-    pub const kernel: type = if(!@hasDecl(SelectedArch, "config")) @import("config/kernel/config.zig") else
-        SelectedArch.config
-    ;
+    pub const kernel: type = struct {
+        pub const options: type = @import("config/kernel/options.zig");
+        pub const mem: type = if(!cpu.custom) @import("config/kernel/segments.zig") else
+            SelectedArch.arch.segments
+        ;
+    };
 };
 pub const decls: type = @import("kernel/decls.zig");
 pub const step: type = @import("kernel/step/step.zig");

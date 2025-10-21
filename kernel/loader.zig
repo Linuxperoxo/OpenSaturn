@@ -31,20 +31,18 @@ comptime {
     const aux: type = opaque {
         pub fn make_asm_set(comptime name: []const u8, comptime value: u32) []const u8 {
             return ".set " ++ name ++ ", " ++ kernel.utils.fmt.intFromArray(value) ++ "\n"
-                ++ ".globl " ++ name ++ "\n";
+                ++ ".globl " ++ name ++ "\n"
+            ;
         }
     };
     if(!cpu.custom) asm(
-        aux.make_asm_set("kernel_phys_address", config.kernel.options.kernel_phys_address) ++
-        aux.make_asm_set("kernel_virtual_address", config.kernel.options.kernel_virtual_address) ++
-        aux.make_asm_set("kernel_arch_virtual", config.kernel.options.kernel_arch_virtual) ++
-        aux.make_asm_set("kernel_text_virtual", config.kernel.options.kernel_text_virtual) ++
-        aux.make_asm_set("kernel_vmem_virtual", config.kernel.options.kernel_vmem_virtual) ++
-        aux.make_asm_set("kernel_page_td_virtual", config.kernel.options.kernel_page_td_virtual) ++
-        aux.make_asm_set("kernel_stack_base_virtual", config.kernel.options.kernel_stack_base_virtual) ++
-        aux.make_asm_set("kernel_data_virtual", config.kernel.options.kernel_data_virtual) ++
-        aux.make_asm_set("kernel_paged_memory_virtual", config.kernel.options.kernel_paged_memory_virtual) ++
-        aux.make_asm_set("kernel_mmio_virtual", config.kernel.options.kernel_mmio_virtual)
+        aux.make_asm_set("kernel_phys_address", config.kernel.mem.phys.kernel_phys) ++
+        aux.make_asm_set("kernel_virtual_address", config.kernel.mem.virtual.kernel_text) ++
+        aux.make_asm_set("kernel_text_virtual", config.kernel.mem.virtual.kernel_text) ++
+        aux.make_asm_set("kernel_stack_base_virtual", config.kernel.mem.virtual.kernel_stack_base) ++
+        aux.make_asm_set("kernel_data_virtual", config.kernel.mem.virtual.kernel_data) ++
+        aux.make_asm_set("kernel_paged_memory_virtual", config.kernel.mem.virtual.kernel_paged_memory) ++
+        aux.make_asm_set("kernel_mmio_virtual", config.kernel.mem.virtual.kernel_mmio)
     );
 }
 

@@ -47,7 +47,6 @@ const loader: type = saturn.loader;
 comptime {
     @export(&saturn_main, .{
         .name = "saturn.main",
-        .section = ".text.saturn",
     });
 }
 

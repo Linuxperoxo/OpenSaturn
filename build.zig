@@ -9,12 +9,12 @@ const SaturnArchConfig: type = @import("config/arch/config.zig");
 const SaturnCompileConfig: type = @import("config/compile/config.zig");
 
 pub const target: std.Target.Cpu.Arch = switch(SaturnArchConfig.options.Target) {
-    .x86 => .x86,
-    .x86_64 => .x86_64,
+    .i386 => .x86,
+    .amd64 => .x86_64,
     .arm => .arm,
     .avr => .avr,
     .xtensa => .xtensa,
-    .riscv => .riscv,
+    .riscv64 => .riscv,
 };
 
 pub const optimize: std.builtin.OptimizeMode = switch(SaturnCompileConfig.options.OptimizeMode) {

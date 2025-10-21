@@ -13,30 +13,20 @@ const section_data_loader = arch.sections.section_data_loader;
 const phys_address_start: u32 = config.kernel.options.kernel_phys_address;
 const virtual_address_start: u32 = config.kernel.options.kernel_virtual_address;
 
-// Antes de conseguir adicionar todos os os segmentos do kernel
-// o bootloader precisa ser arrumado, ja que arquivos grandes
-// ele nao consegue carregar por completo, causando uma falha
-// no carregamento completo
-pub const kernel_index = [_]u10 {
-    @intCast(config.kernel.options.kernel_text_virtual >> 22), // .text
-    @intCast(config.kernel.options.kernel_vmem_virtual >> 22), // tmp allocs
-    @intCast(config.kernel.options.kernel_page_td_virtual >> 22), // kernel page_table and page_directory
-    @intCast(config.kernel.options.kernel_stack_base_virtual >> 22), // kernel stack
-    @intCast(config.kernel.options.kernel_data_virtual >> 22), // .data, .rodata
-    @intCast(config.kernel.options.kernel_paged_memory_virtual >> 22), // 
-    @intCast(config.kernel.options.kernel_mmio_virtual >> 22), // kernel mmio
+pub const kernel_index = [_]u32 {
+    config.kernel.mem.virtual.kernel_text, // .text
+    config.kernel.mem.virtual.kernel_stack_base, // kernel stack
+    config.kernel.mem.virtual.kernel_data, // .data, .rodata
+    config.kernel.mem.virtual.kernel_paged_memory,
+    config.kernel.mem.virtual.kernel_mmio, // kernel mmio
 };
 
-// NOTE: Finalizar map de memoria para o restante
-
-pub const KernelPageIndex: type = enum(u8) {
-    text = 0,
-    vmem = 1,
-    td = 2,
-    stack = 3,
-    data = 4,
-    paged = 5,
-    mmio = 6,
+pub const KernelPageIndex: type = enum {
+    text,
+    stack,
+    data,
+    paged,
+    mmio,
 };
 
 pub var kernel_page_dir: [1024]types.PageDirEntry_T align(4) = r: {
@@ -56,8 +46,8 @@ pub var kernel_page_dir: [1024]types.PageDirEntry_T align(4) = r: {
         },
     } ** 1024;
     for(0..kernel_index.len) |i| {
-        page_dir[kernel_index[i]].avail = @intCast(0b0111 & i); // index to kernel_page_table;
-        page_dir[kernel_index[i]].reserved = @intCast((i >> 3) & 0b0001); // index to kernel_page_table bit most sig
+        page_dir[kernel_index[i] >> 22].avail = @intCast(0b0111 & i); // index to kernel_page_table;
+        page_dir[kernel_index[i] >> 22].reserved = @intCast((i >> 3) & 0b0001); // index to kernel_page_table bit most sig
     }
     break :r page_dir;
 };

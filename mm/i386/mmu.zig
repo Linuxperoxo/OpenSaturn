@@ -13,13 +13,16 @@ const linker: type = @import("root").arch.linker;
 const section_text_loader = arch.sections.section_text_loader;
 const section_data_loader = arch.sections.section_data_loader;
 
-// opensaturn config
-const kernel_phys_address = config.kernel.options.kernel_phys_address;
-const kernel_virtual_address = config.kernel.options.kernel_virtual_address;
-const kernel_arch_virtual_address = config.kernel.options.kernel_arch_virtual_address;
+// opensaturn mem phys config
+const kernel_phys_address = config.kernel.mem.phys.kernel_phys;
+const kernel_stack_base_phys_address = config.kernel.mem.phys.kernel_stack_base;
+
+// opensauturn mem virtual config
+const kernel_virtual_address = config.kernel.mem.virtual.kernel_text;
+const kernel_stack_base_virtual = config.kernel.mem.virtual.kernel_stack_base;
+
+// opensaturn options config
 const kernel_page_size = config.kernel.options.kernel_page_size;
-const kernel_stack_base_virtual = config.kernel.options.kernel_stack_base_virtual;
-const kernel_stack_base_phys_addres = config.kernel.options.kernel_stack_base_phys_address;
 const kernel_stack_size = config.kernel.options.kernel_stack_size;
 
 // opensaturn real code start/end
@@ -42,34 +45,47 @@ comptime {
             "x86 expects page sizes to be 0x1000 bytes"
         );
     }
+    // isso evita um overflow de pagina, como so temos apenas 1 page dir e 1
+    // page table para o bootstrap identity mapping, nao pode ocorrer um overflow,
+    // ou seja, usarmos o entry 1023 + 1 da page table, isso causa um overflow, e pode
+    // ocorrer uma sobreescrita das paginas ja mapeadas
+    if((1024 - ((kernel_phys_address >> 12) & 0x3FF)) <= 8) {
+        @compileError(
+            "kernel physical address too close to 4 MiB boundary — bootstrap identity mapping may overflow the page table"
+        );
+    }
+    for(0..page.kernel_index.len) |i| {
+        if(((page.kernel_index[i] >> 12) & 0x3FF) != 0) {
+            @compileError(
+                "kernel virtual regions must be aligned to 4MiB (page table index bits must be zero)"
+            );
+        }
+        for(i..page.kernel_index.len - 1) |j| {
+            if((page.kernel_index[i] >> 22 ) == (page.kernel_index[j + 1] >> 22)) {
+                @compileError(
+                    "there was an overprovision of virtual addresses in kernel_page_dir, check ur mem layout"
+                );
+            }
+        }
+    }
 }
 
-// preciso mapear tudo antes de dar jmp
-// * precimo mapear endereco fisico para o mesmo endereco virtual
-// por causa do eip por exemplo, mesma coisa para stack, mas isso
-// vai ser temporario, depois que passa configurar isso podemos mudar
-// totalmente para usar endereco virtual
-
 pub fn mmu_init() linksection(section_text_loader) callconv(.c) void {
-    @call(.always_inline, configure_bootstrap, .{}); // done!
-    @call(.always_inline, configure_kernel_text, .{}); // done!
-    @call(.always_inline, configure_kernel_data, .{}); // done?
-    @call(.always_inline, configure_kernel_stack, .{}); // done!
-    // TODO: gdt idt devem ir para .data do kernel, ja que a page_table de bootstrap
-    // vai ser anulada apos memoria virtual estar configurada, ou seja, a primeira coisa
-    // que vamos executar vai ser o init, mm, depois vamos configurar o gdt e o idt ja usando
-    // memoria virtual
+    @call(.always_inline, configure_bootstrap, .{});
+    @call(.always_inline, configure_kernel_text, .{});
+    @call(.always_inline, configure_kernel_data, .{});
+    @call(.always_inline, configure_kernel_stack, .{});
     asm volatile(
-        // \\ movl $0xFFFF, (%esp) | debug
-        // \\ movl (%esp), %edi | debug
+        //\\ movl $0xFFFF, (%esp)
+        //\\ movl (%esp), %edi
         \\ andl $0x00000FFF, %esp
         \\ orl %edx, %esp
         \\ movl %eax, %cr3
         \\ movl %cr0, %eax
         \\ orl %[cr0_paging_bit], %eax
         \\ movl %eax, %cr0
-        // \\ movl (%esp), %esi | debug
-        // \\ movb $0xFF, 4095(%edx) | debug
+        //\\ movl (%esp), %esi
+        //\\ movb $0xFF, 4095(%edx)
         :
         :[_] "{eax}" (&page.kernel_page_dir),
          [_] "{edx}" (kernel_stack_base_virtual),
@@ -81,21 +97,27 @@ pub fn mmu_init() linksection(section_text_loader) callconv(.c) void {
 }
 
 fn configure_bootstrap() void {
+    // NOTE: phys_i386_start == config.kernel.mem.phys.kernel_phys
     const total_of_pages_arch_sections: u32 = @call(.always_inline, resolve_num_of_pages, .{
         @intFromPtr(phys_i386_end) - @intFromPtr(phys_i386_start)
     });
     const bootstrap_page_dir_entry: *types.PageDirEntry_T = &page.kernel_page_dir[
-        config.kernel.options.kernel_phys_address >> 22
+        // apenas 1 entry deve ser usada para o bootstrap, caso contrario, vai ter
+        // sobreescrita da bootstrap_page_table, quanto menor os 10 bits para o
+        // bootstrap_page_table melhor
+        config.kernel.mem.phys.kernel_phys >> 22
     ];
     const bootstrap_page_table: *[1024]types.PageTableEntry_T = &page.bootstrap_page_table;
+    var page_table_i: u32 = ((config.kernel.mem.phys.kernel_phys >> 12) & 0x3FF);
+    for(0..total_of_pages_arch_sections) |_| {
+        bootstrap_page_table[page_table_i].present = 1;
+        bootstrap_page_table[page_table_i].rw = 1;
+        bootstrap_page_table[page_table_i].phys = @intCast(((config.kernel.mem.phys.kernel_phys >> 12) & ~(@as(u16, 0x3FF))) | page_table_i);
+        page_table_i += 1;
+    }
     bootstrap_page_dir_entry.present = 1;
     bootstrap_page_dir_entry.rw = 1;
     bootstrap_page_dir_entry.table_phys = @intCast(@intFromPtr(bootstrap_page_table) >> 12);
-    for(0..total_of_pages_arch_sections) |i| {
-        bootstrap_page_table[i].present = 1;
-        bootstrap_page_table[i].rw = 1;
-        bootstrap_page_table[i].phys = @intCast((@intFromPtr(phys_i386_start) + kernel_page_size * i) >> 12);
-    }
 }
 
 fn configure_kernel_text() void {
@@ -111,10 +133,10 @@ fn configure_kernel_text() void {
 
 fn configure_kernel_stack() void {
     @call(.always_inline, kernel_map, .{
-        kernel_stack_base_phys_addres,
+        kernel_stack_base_phys_address,
         page.KernelPageIndex.stack,
         @call(.always_inline, resolve_num_of_pages, .{
-            (kernel_stack_base_phys_addres + kernel_stack_size) - kernel_stack_base_phys_addres
+            (kernel_stack_base_phys_address + kernel_stack_size) - kernel_stack_base_phys_address
         }),
         1
     });
@@ -132,20 +154,22 @@ fn configure_kernel_data() void {
 }
 
 fn kernel_map(phys: u32, index: page.KernelPageIndex, pages: u32, rw: u1) void {
+    // funcao espera que os enderecoes virtuais do kernel sejam alinhados a
+    // 4Mib
     const page_dir: *types.PageDirEntry_T = &page.kernel_page_dir[
-        page.kernel_index[@intFromEnum(index)]
+        page.kernel_index[@intFromEnum(index)] >> 22
     ];
     const page_table: *[1024]types.PageTableEntry_T = &page.kernel_page_table[
         @as(u4, page_dir.avail) | (@as(u4, page_dir.reserved) << 3)
     ];
-    page_dir.rw = rw;
-    page_dir.present = 1;
-    page_dir.table_phys = @intCast(@intFromPtr(page_table) >> 12);
     for(0..pages) |i| {
         page_table[i].rw = rw;
         page_table[i].present = 1;
         page_table[i].phys = @intCast((phys + kernel_page_size * i) >> 12);
     }
+    page_dir.rw = rw;
+    page_dir.present = 1;
+    page_dir.table_phys = @intCast(@intFromPtr(page_table) >> 12);
 }
 
 fn resolve_num_of_pages(dif: u32) u32 {

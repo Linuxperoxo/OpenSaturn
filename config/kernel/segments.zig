@@ -1,8 +1,7 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: options.zig  │
+// │  (c) 2025 Linuxperoxo  •  FILE: segments.zig │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const Target_T: type = @import("types.zig").Target_T;
-
-pub const Target: Target_T = .i386;
+pub const phys: type = @import("mem/phys.zig");
+pub const virtual: type = @import("mem/virtual.zig");

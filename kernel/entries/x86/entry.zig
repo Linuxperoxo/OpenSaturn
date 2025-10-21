@@ -5,6 +5,8 @@
 
 const arch: type = @import("root").arch;
 const config: type = @import("root").config;
+const kernel: type = @import("root").kernel;
+const atlas: type = @import("atlas.zig");
 
 const section_text_loader = arch.sections.section_text_loader;
 const section_data_loader = arch.sections.section_data_loader;
@@ -21,6 +23,11 @@ const section_data_persist = arch.sections.section_data_persist;
 // em qualquer arquivo, já que o símbolo está vísivel em todo o assembly.
 
 comptime {
+    const aux: type = opaque {
+        pub fn make_asm_set(comptime name: []const u8, comptime value: u32) []const u8 {
+            return ".set " ++ name ++ ", " ++ kernel.utils.fmt.intFromArray(value) ++ "\n";
+        }
+    };
     // AtlasB Headers
     //
     // Esse Headers deve ser colocado no inicio do binario, em
@@ -34,11 +41,11 @@ comptime {
     // * AtlasFlags: Flags gerais para o Atlas, consulte a documentaçao no fonte do atlas
     //    NOTE: https://github.com/Linuxperoxo/AtlasB/blob/master/src/atlas.s
     asm(
-        \\  .equ AtlasMagic, 0xAB00
-        \\  .equ AtlasLoadDest, 0x1000000
+        aux.make_asm_set("AtlasLoadDest", atlas.atlas_load_dest) ++
+        aux.make_asm_set("AtlasVMode", atlas.atlas_vmode) ++
+        aux.make_asm_set("AtlasFlags", atlas.atlas_flags) ++
+        \\  .set AtlasMagic, 0xAB00
         \\  .weak AtlasImgSize
-        \\  .equ AtlasVMode, 0x1000
-        \\  .equ AtlasFlags, 0b00000001
         \\  .section .opensaturn.data.atlas.header,"a",@progbits
         \\  .type AtlasHeaders,@object
         \\ AtlasHeaders:
@@ -62,7 +69,7 @@ pub fn entry() linksection(section_text_loader) callconv(.naked) noreturn {
         \\ jmp saturn.main
         :
         :[phys_stack] "i" (
-            comptime (config.kernel.options.kernel_stack_base_phys_address + config.kernel.options.kernel_stack_size)
+            comptime (config.kernel.mem.phys.kernel_stack_base + config.kernel.options.kernel_stack_size)
         ),
          [_] "{edi}" (
             arch.linker.phys_address_opensaturn_data_start
