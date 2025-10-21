@@ -10,10 +10,22 @@ pub const apic: type = @import("apic.zig");
 pub const msr: type = @import("msr.zig");
 //pub const pic: type = @import("pic.zig");
 
-pub const arch_section_text_loader = arch.arch_section_text_loader;
-pub const arch_section_data_loader = arch.arch_section_data_loader;
+const section_text_loader = arch.sections.section_text_loader;
+const section_data_loader = arch.sections.section_data_loader;
+const section_data_persist = arch.sections.section_data_persist;
 
-pub fn init() linksection(arch_section_text_loader) callconv(.c) void {
+// NOTE: Deixo o comptime nesse arquivo para garantir que o
+// bloco comptime vai ser executado, deixa-lo dentro de gdt
+// vai fazer ele nao ser executado, ja que nunca usamos nenhuma
+// referencia contida nele, isso faz o compilador nao resolver
+// seus comptimes
+comptime {
+    @export(&gdt.gdt_config, .{
+        .name = ".x86.init.gdt",
+    });
+}
+
+pub fn init() linksection(section_text_loader) callconv(.c) void {
     // Este trecho de assembly habilita a FPU e o conjunto de instruções SSE:
     //
     // * Limpa o bit EM (bit 2) do CR0 para permitir instruções de ponto flutuante reais, quanto 1 o processador gera uma interrupção
@@ -57,6 +69,5 @@ pub fn init() linksection(arch_section_text_loader) callconv(.c) void {
     // a ideia e que todas as funcoes de entry da arch devem ser 4 funcoes e cada uma
     // com um assembly gigante, assim evitando problemas de endereco virtual e endereco
     // fisico
-    @call(.always_inline, gdt.gdt_config, .{});
     @call(.always_inline, apic.apic_config, .{});
 }

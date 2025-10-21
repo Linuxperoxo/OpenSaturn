@@ -6,8 +6,9 @@
 const arch: type = @import("root").arch;
 const config: type = @import("root").config;
 
-const arch_section_text_loader = arch.arch_section_text_loader;
-const arch_section_data_loader = arch.arch_section_data_loader;
+const section_text_loader = arch.sections.section_text_loader;
+const section_data_loader = arch.sections.section_data_loader;
+const section_data_persist = arch.sections.section_data_persist;
 
 // callconv(.naked) não tem prólogo e epílogo automáticos é simplesmente fazer uma função do 0,
 // o compilador não adiciona o código de prólogo/epílogo para salvar/restaurar registradores ou
@@ -44,20 +45,20 @@ comptime {
         \\   .word AtlasMagic
         \\   .long AtlasLoadDest
         \\   .long .x86.entry - AtlasLoadDest
-        // FIXME: linker AtlasImgSize
-        \\   .long 0xB005
+        \\   .long AtlasImgSize
         \\   .word AtlasVMode
         \\   .byte AtlasFlags
     );
 }
 
-pub fn entry() linksection(arch_section_text_loader) callconv(.naked) noreturn {
+pub fn entry() linksection(section_text_loader) callconv(.naked) noreturn {
     asm volatile(
         \\ cli
         \\ movl %[phys_stack], %esp
-        \\ call .x86.init
-        // \\ call .x86.interrupts
-        \\ call .x86.mm
+        \\ calll .x86.init
+        \\ calll .x86.mm
+        \\ calll .x86.init.gdt
+        \\ calll .x86.interrupts
         \\ jmp saturn.main
         :
         :[phys_stack] "i" (

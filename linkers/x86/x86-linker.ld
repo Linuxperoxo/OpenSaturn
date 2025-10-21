@@ -7,7 +7,9 @@ SECTIONS {
    * opensaturn_virtual_address: difined in kernel/loader.zig
   */
   phys_init = kernel_phys_address;
-  virtual_init = kernel_virtual_address;
+
+  opensaturn_text_virtual = kernel_text_virtual;
+  opensaturn_data_virtual = kernel_data_virtual;
 
   phys_init_atlas_header = phys_init;
 
@@ -23,13 +25,13 @@ SECTIONS {
 
   .opensaturn.arch : {
       /* .text expurgated after jmp to kernel */
-      KEEP(*(.x86.arch.text)) /* free page for kernel after arch init */
+      KEEP(*(.x86.text)) /* free page for kernel after arch init */
       . = ALIGN(4096);
       PROVIDE(
         phys_i386_data_start = .
       );
       /* arch persistent data */
-      KEEP(*(.x86.arch.data)) /* IDT GDT MMU STRUCTS WHERE */
+      KEEP(*(.x86.data)) /* IDT GDT MMU STRUCTS WHERE */
       PROVIDE(
         phys_i386_data_end = .
       );
@@ -45,7 +47,7 @@ SECTIONS {
     phys_address_opensaturn_start = phys_i386_end
   );
 
-  . = virtual_init;
+  . = opensaturn_text_virtual;
 
   PROVIDE(
     phys_address_opensaturn_text_start = phys_i386_end
@@ -63,10 +65,11 @@ SECTIONS {
     phys_address_opensaturn_data_start = ALIGN(phys_address_opensaturn_text_end, 4096)
   );
 
-  . = kernel_data_virtual;
+  . = opensaturn_data_virtual;
 
   .opensaturn.data : AT(phys_address_opensaturn_data_start) {
     *(.data*)
+    *(.x86.opensaturn.data)
   }
 
   PROVIDE(
@@ -85,13 +88,17 @@ SECTIONS {
     phys_address_opensaturn_rodata_end = LOADADDR(.opensaturn.rodata) + SIZEOF(.opensaturn.rodata)
   );
 
+  /*
+   * NOTE: Apenas para facilitar a vida do bootloader
+   */
+  .image_padding : AT(phys_address_opensaturn_rodata_end) {
+      FILL(0x00);
+      . = ALIGN(4096);
+  }
+
   .opensaturn.bss (NOLOAD) : {
     *(.bss*)
   }
-
-  opensaturn_sections_total_of_size = ABSOLUTE(. - virtual_init);
-  opensaturn_arch_sections_total_of_size = ABSOLUTE(phys_i386_end - phys_i386_start);
-  opensaturn_atlas_section_total_of_size = SIZEOF(.opensaturn.atlas);
 
   PROVIDE(
     phys_address_opensaturn_end = LOADADDR(.opensaturn.bss) + SIZEOF(.opensaturn.bss)
@@ -105,9 +112,6 @@ SECTIONS {
   }
 
   PROVIDE(
-    AtlasImgSize =
-      opensaturn_sections_total_of_size +
-      opensaturn_arch_sections_total_of_size +
-      opensaturn_atlas_section_total_of_size
+    AtlasImgSize = (LOADADDR(.image_padding) + SIZEOF(.image_padding)) - phys_init
   );
 }

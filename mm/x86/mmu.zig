@@ -10,8 +10,8 @@ const types: type = @import("types.zig");
 const linker: type = @import("root").arch.linker;
 
 // sections []const u8
-const arch_section_text_loader = arch.arch_section_text_loader;
-const arch_section_data_loader = arch.arch_section_data_loader;
+const section_text_loader = arch.sections.section_text_loader;
+const section_data_loader = arch.sections.section_data_loader;
 
 // opensaturn config
 const kernel_phys_address = config.kernel.options.kernel_phys_address;
@@ -50,7 +50,7 @@ comptime {
 // vai ser temporario, depois que passa configurar isso podemos mudar
 // totalmente para usar endereco virtual
 
-pub fn mmu_init() linksection(arch_section_text_loader) callconv(.c) void {
+pub fn mmu_init() linksection(section_text_loader) callconv(.c) void {
     @call(.always_inline, configure_bootstrap, .{}); // done!
     @call(.always_inline, configure_kernel_text, .{}); // done!
     @call(.always_inline, configure_kernel_data, .{}); // done?

@@ -7,10 +7,11 @@ const arch: type = @import("root").arch;
 const config: type = @import("root").config;
 const types: type = @import("types.zig");
 
+const section_text_loader = arch.sections.section_text_loader;
+const section_data_loader = arch.sections.section_data_loader;
+
 const phys_address_start: u32 = config.kernel.options.kernel_phys_address;
 const virtual_address_start: u32 = config.kernel.options.kernel_virtual_address;
-const arch_section_text_loader = arch.arch_section_text_loader;
-const arch_section_data_loader = arch.arch_section_data_loader;
 
 // Antes de conseguir adicionar todos os os segmentos do kernel
 // o bootloader precisa ser arrumado, ja que arquivos grandes
@@ -20,11 +21,13 @@ pub const kernel_index = [_]u10 {
     @intCast(config.kernel.options.kernel_text_virtual >> 22), // .text
     @intCast(config.kernel.options.kernel_vmem_virtual >> 22), // tmp allocs
     @intCast(config.kernel.options.kernel_page_td_virtual >> 22), // kernel page_table and page_directory
-    @intCast(config.kernel.options.kernel_stack_base_virtual >> 22),
-    @intCast(config.kernel.options.kernel_data_virtual >> 22),
-    @intCast(config.kernel.options.kernel_paged_memory_virtual >> 22),
-    @intCast(config.kernel.options.kernel_mmio_virtual >> 22),
+    @intCast(config.kernel.options.kernel_stack_base_virtual >> 22), // kernel stack
+    @intCast(config.kernel.options.kernel_data_virtual >> 22), // .data, .rodata
+    @intCast(config.kernel.options.kernel_paged_memory_virtual >> 22), // 
+    @intCast(config.kernel.options.kernel_mmio_virtual >> 22), // kernel mmio
 };
+
+// NOTE: Finalizar map de memoria para o restante
 
 pub const KernelPageIndex: type = enum(u8) {
     text = 0,
@@ -36,7 +39,7 @@ pub const KernelPageIndex: type = enum(u8) {
     mmio = 6,
 };
 
-pub var kernel_page_dir: [1024]types.PageDirEntry_T align(1024) = r: {
+pub var kernel_page_dir: [1024]types.PageDirEntry_T align(4) = r: {
     var page_dir = [_]types.PageDirEntry_T {
         types.PageDirEntry_T {
             .present = 0,
@@ -92,15 +95,15 @@ pub var bootstrap_page_table: [1024]types.PageTableEntry_T align(4096) = [_]type
 comptime {
     @export(&kernel_page_dir, .{
         .name = "kernel_page_dir",
-        .section = arch_section_data_loader,
+        .section = section_data_loader,
     });
     @export(&kernel_page_table, .{
         .name = "kernel_page_table",
-        .section = arch_section_data_loader,
+        .section = section_data_loader,
     });
     @export(&bootstrap_page_table, .{
         .name = "bootstrap_page_table",
-        .section = arch_section_data_loader,
+        .section = section_data_loader,
     });
 }
 

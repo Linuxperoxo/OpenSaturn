@@ -133,12 +133,13 @@
 //     - É concatenado com SegLimitLow para formar o valor final
 //
 
-const arch: type = @import("init.zig");
+const arch: type = @import("root").arch;
 
-const arch_section_text_loader = arch.arch_section_text_loader;
-const arch_section_data_loader = arch.arch_section_data_loader;
+const section_text_loader = arch.sections.section_text_loader;
+const section_data_loader = arch.sections.section_data_loader;
+const section_data_persist = arch.sections.section_data_persist;
 
-const GDTEntry: type = packed struct {
+const GDTEntry_T: type = packed struct {
     SegLimitLow: u16,
     BaseLow: u16,
     BaseMid: u8,
@@ -148,14 +149,20 @@ const GDTEntry: type = packed struct {
     BaseHigh: u8,
 };
 
-const GDTSegments: type = enum(u8) {
+// Forca alinhamento correto para a struct
+const GDTStruct_T: type = struct {
+    entries: u32 align(1),
+    limit: u16 align(1),
+};
+
+const GDTSegments_T: type = enum(u8) {
     kernelcode = 0x08,
     kerneldata = 0x10,
     usercode = 0x18,
     userdata = 0x20,
 };
 
-const gdt_entries = [_]GDTEntry {
+const gdt_entries = [_]GDTEntry_T {
     create_gdt_entry_comptime(
         0x00,
         0x00,
@@ -188,29 +195,27 @@ const gdt_entries = [_]GDTEntry {
     ),
 };
 
-// Precisamos alinhar para poder fazer o remap
-// no mmu_init para um endereco virtual apontar
-// para esse gdt
+// [0 - 1]: limit: .word -> sizeof max offset byte
+// [2 - 5]: entires: .long -> ptr to entries
 
-comptime {
-    asm(
-        \\  .section .x86.arch.data
-        \\  .align 16
-        \\ gdt_struct:
-        \\  .word
-        \\  .long
-    );
-}
+var gdt_struct: [6]u8 align(4) = .{
+    0
+} ** @sizeOf(GDTStruct_T);
 
 comptime {
     @export(&gdt_entries, .{
-        .section = arch_section_data_loader,
+        .section = section_data_persist,
         .name = "gdt_entries",
+    });
+    @export(&gdt_struct, .{
+        .section = section_data_persist,
+        .name = "gdt_struct",
     });
 }
 
-pub fn gdt_config() void {
+pub fn gdt_config() linksection(section_text_loader) callconv(.naked) void {
     asm volatile(
+        \\ movl $gdt_entries, %eax
         \\ movl $gdt_struct, %edi
         \\ movl %eax, 2(%edi)
         \\ movw %bx, (%edi)
@@ -223,16 +228,20 @@ pub fn gdt_config() void {
         \\ movw %ax, %es
         \\ ljmp %[kernel_code_seg], $1f
         \\ 1:
+        \\ ret
         :
-        :[kernel_code_seg] "i" (GDTSegments.kernelcode),
-         [kernel_data_seg] "i" (GDTSegments.kerneldata),
-         [_] "{bx}" (gdt_entries.len * @sizeOf(GDTEntry) - 1),
-         [_] "{eax}" (&gdt_entries[0])
+        :[kernel_code_seg] "i" (GDTSegments_T.kernelcode),
+         [kernel_data_seg] "i" (GDTSegments_T.kerneldata),
+         [_] "{bx}" (gdt_entries.len * @sizeOf(GDTEntry_T) - 1),
+        : .{
+            .eax = true,
+            .edi = true,
+        }
     );
 }
 
-fn create_gdt_entry_comptime(comptime base: u32, comptime limit: u32, comptime gran: u8, comptime access: u8) GDTEntry {
-    return GDTEntry {
+fn create_gdt_entry_comptime(comptime base: u32, comptime limit: u32, comptime gran: u8, comptime access: u8) GDTEntry_T {
+    return GDTEntry_T {
         .BaseLow = @intCast((base & 0xFFFF)),
         .BaseMid = @intCast((base >> 16) & 0xFF),
         .BaseHigh = @intCast((base >> 24) & 0xFF),

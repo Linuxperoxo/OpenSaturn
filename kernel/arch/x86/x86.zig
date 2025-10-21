@@ -12,13 +12,9 @@ const mm: type = root.mm;
 const interfaces: type = root.interfaces;
 
 pub const linker: type = @import("linker.zig");
-
-pub const arch_section_text_loader: []const u8 = ".x86.arch.text";
-pub const arch_section_data_loader: []const u8 = ".x86.arch.data";
+pub const sections: type = @import("sections.zig");
 
 pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
-    .text = arch_section_text_loader,
-    .data = arch_section_data_loader,
     .usable = true,
     .entry = .{
         .maintainer = "Linuxperoxo",
@@ -33,13 +29,18 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
     .interrupts = .{
         .maintainer = "Linuxperoxo",
         .label = ".x86.interrupts",
-        //.entry = &interrupts.init,
-        .entry = &init.init,
+        .entry = &interrupts.idt_init,
     },
     .mm = .{
         .maintainer = "Linuxperoxo",
         .label = ".x86.mm",
         .entry = &mm.mmu_init,
     },
+    // TODO:
+    //
+    //.userspace = .{
+    //    .maintainer = "Linuxperoxo",
+    //    .entry = &userspace.switch_kernel_to_user,
+    //}
 };
 
