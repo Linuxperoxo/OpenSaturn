@@ -28,10 +28,12 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
         }
     },
     .arch = &[_]ModuleDescriptionTarget_T {
-        .x86,
-        .x86_64,
+        .i386,
+        .amd64,
         .arm,
         .avr,
+        .riscv64,
+        .xtensa,
     },
 };
 

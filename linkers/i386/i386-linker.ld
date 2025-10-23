@@ -25,13 +25,12 @@ SECTIONS {
 
   .opensaturn.arch : {
       /* .text expurgated after jmp to kernel */
-      KEEP(*(.x86.text)) /* free page for kernel after arch init */
+      KEEP(*(.i386.text)) /* free page for kernel after arch init */
       . = ALIGN(4096);
       PROVIDE(
         phys_i386_data_start = .
       );
-      /* arch persistent data */
-      KEEP(*(.x86.data)) /* IDT GDT MMU STRUCTS WHERE */
+      KEEP(*(.i386.data)) /* TMP DATA */
       PROVIDE(
         phys_i386_data_end = .
       );
@@ -69,29 +68,28 @@ SECTIONS {
 
   .opensaturn.data : AT(phys_address_opensaturn_data_start) {
     *(.data*)
-    *(.x86.opensaturn.data)
+    /* TODO: criar uma section separada para .rodata com paginas rw = 0 */
+    *(.rodata*)
+    *(.i386.opensaturn.data)
   }
 
   PROVIDE(
     phys_address_opensaturn_data_end = LOADADDR(.opensaturn.data) + SIZEOF(.opensaturn.data)
   );
 
-  PROVIDE(
-    phys_address_opensaturn_rodata_start = ALIGN(phys_address_opensaturn_data_end, 4096)
-  );
+  . = ALIGN(phys_address_opensaturn_data_end, 4096);
 
-  .opensaturn.rodata : AT(phys_address_opensaturn_rodata_start) {
-    *(.rodata*)
+  .opensaturn.mmu : AT(ALIGN(phys_address_opensaturn_data_end, 4096)) {
+    . = ALIGN(8);
+    *(.i386.opensaturn.pagedir)
+    . = ALIGN(4096);
+    *(.i386.opensaturn.pagetable)
   }
-
-  PROVIDE(
-    phys_address_opensaturn_rodata_end = LOADADDR(.opensaturn.rodata) + SIZEOF(.opensaturn.rodata)
-  );
 
   /*
    * NOTE: Apenas para facilitar a vida do bootloader
    */
-  .image_padding : AT(phys_address_opensaturn_rodata_end) {
+  .image_padding : AT(LOADADDR(.opensaturn.mmu) + SIZEOF(.opensaturn.mmu)) {
       FILL(0x00);
       . = ALIGN(4096);
   }

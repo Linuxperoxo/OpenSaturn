@@ -14,6 +14,19 @@ pub const AllocPage_T: type = struct {
     },
 };
 
+pub const Zone_T: type = struct {
+    base: u32,
+    limit: ?u32,
+    pages: u32,
+    free: u32,
+    last: ?u32,
+    flags: struct {
+        active: u1,
+        mutex: u1,
+        alloc: u1,
+    },
+};
+
 pub const AllocPageErr_T: type = error {
     OutPage,
     DoubleFree

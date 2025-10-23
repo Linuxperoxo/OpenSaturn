@@ -1,5 +1,5 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: x86.zig      │
+// │  (c) 2025 Linuxperoxo  •  FILE: i386.zig     │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
@@ -18,22 +18,22 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
     .usable = true,
     .entry = .{
         .maintainer = "Linuxperoxo",
-        .label = ".x86.entry",
+        .label = ".i386.entry",
         .entry = &entry.entry,
     },
     .init = .{
         .maintainer = "Linuxperoxo",
-        .label = ".x86.init",
+        .label = ".i386.init",
         .entry = &init.init,
     },
     .interrupts = .{
         .maintainer = "Linuxperoxo",
-        .label = ".x86.interrupts",
+        .label = ".i386.interrupts",
         .entry = &interrupts.idt_init,
     },
     .mm = .{
         .maintainer = "Linuxperoxo",
-        .label = ".x86.mm",
+        .label = ".i386.mm",
         .entry = &mm.mmu_init,
     },
     // TODO:

@@ -26,7 +26,7 @@ pub const cpu: type = struct {
     pub const interrupts: type = SelectedArch.interrupts;
     pub const linker: type = SelectedArch.linker;
     pub const mm: type = SelectedArch.mm;
-    pub const custom: bool = @hasDecl(SelectedArch, "segments");
+    pub const segments: type = if(@hasDecl(SelectedArch, "segments")) SelectedArch.arch.segments else void;
 };
 pub const Architectures: type = struct {
     // Eu poderia usar usar o @tagName para construir o caminho
@@ -34,10 +34,10 @@ pub const Architectures: type = struct {
     // mais visivel, abre a possibilidade de modificar o diretorio
     // ou o nome do arquivo
     pub const @"i386": type = struct {
-        pub const arch: type = @import("kernel/arch/x86/x86.zig");
-        pub const entry: type = @import("kernel/entries/x86/entry.zig");
-        pub const init: type = @import("kernel/init/x86/init.zig");
-        pub const interrupts: type = @import("kernel/interrupts/x86/interrupts.zig");
+        pub const arch: type = @import("kernel/arch/i386/i386.zig");
+        pub const entry: type = @import("kernel/entries/i386/entry.zig");
+        pub const init: type = @import("kernel/init/i386/init.zig");
+        pub const interrupts: type = @import("kernel/interrupts/i386/interrupts.zig");
         pub const linker: type = @import("linkers/i386/linker.zig");
         pub const mm: type = @import("mm/i386/mm.zig");
         pub const lib: type = struct {
@@ -47,9 +47,9 @@ pub const Architectures: type = struct {
     };
 
     pub const amd64: type = struct {
-        pub const arch: type = @import("kernel/arch/x86_64/x86_64.zig");
-        pub const entry: type = @import("kernel/entries/x86_64/entry.zig");
-        pub const interrupts: type = @import("kernel/interrupts/x86_64/x86_64_interrupts.zig");
+        pub const arch: type = @import("kernel/arch/amd64/amd64.zig");
+        pub const entry: type = @import("kernel/entries/amd64/entry.zig");
+        pub const interrupts: type = @import("kernel/interrupts/amd64/interrupts.zig");
         pub const linker: type = @import("linkers/amd64/linker.zig");
         pub const mm: type = @import("mm/amd64/mm.zig");
         pub const lib: type = struct {
@@ -119,6 +119,8 @@ pub const interfaces: type = struct {
     pub const drivers: type = @import("lib/saturn/interfaces/drivers.zig");
 };
 pub const supervisor: type = @import("kernel/supervisor/supervisor.zig"); // NOTE: Tmp Obsolete
+pub const decls: type = @import("kernel/decls.zig");
+pub const step: type = @import("kernel/step/step.zig");
 pub const lib: type = struct {
     pub const kernel: type = struct {
         pub const memory: type = @import("lib/saturn/kernel/memory/memory.zig");
@@ -133,10 +135,8 @@ pub const config: type = struct {
     pub const compile: type = @import("config/compile/config.zig");
     pub const kernel: type = struct {
         pub const options: type = @import("config/kernel/options.zig");
-        pub const mem: type = if(!cpu.custom) @import("config/kernel/segments.zig") else
+        pub const mem: type = if(cpu.segments == void) @import("config/kernel/segments.zig") else
             SelectedArch.arch.segments
         ;
     };
 };
-pub const decls: type = @import("kernel/decls.zig");
-pub const step: type = @import("kernel/step/step.zig");

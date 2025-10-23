@@ -51,7 +51,7 @@ comptime {
         \\ AtlasHeaders:
         \\   .word AtlasMagic
         \\   .long AtlasLoadDest
-        \\   .long .x86.entry - AtlasLoadDest
+        \\   .long .i386.entry - AtlasLoadDest
         \\   .long AtlasImgSize
         \\   .word AtlasVMode
         \\   .byte AtlasFlags
@@ -62,10 +62,10 @@ pub fn entry() linksection(section_text_loader) callconv(.naked) noreturn {
     asm volatile(
         \\ cli
         \\ movl %[phys_stack], %esp
-        \\ calll .x86.init
-        \\ calll .x86.mm
-        \\ calll .x86.init.gdt
-        \\ calll .x86.interrupts
+        \\ calll .i386.init
+        \\ calll .i386.mm
+        \\ calll .i386.init.gdt
+        \\ calll .i386.interrupts
         \\ jmp saturn.main
         :
         :[phys_stack] "i" (

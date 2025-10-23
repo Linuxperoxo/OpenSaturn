@@ -30,6 +30,8 @@ const phys_address_opensaturn_text_start = linker.phys_address_opensaturn_text_s
 const phys_address_opensaturn_text_end = linker.phys_address_opensaturn_text_end; // in linker
 const phys_address_opensaturn_data_start = linker.phys_address_opensaturn_data_start;
 const phys_address_opensaturn_data_end = linker.phys_address_opensaturn_data_end;
+const phys_address_opensaturn_main_pagedir = linker.phys_address_opensaturn_main_pagedir;
+const phys_address_opensaturn_main_pagetable = linker.phys_address_opensaturn_main_pagetable;
 
 // linker
 const phys_i386_start = linker.phys_i386_start;

@@ -15,8 +15,8 @@ pub const saturn_especial_decls_types = [_]type {
     interfaces.module.ModuleDescription_T,
 };
 
-pub const DeclsOffset_T: type = enum(u1) {
-    arch = 0,
-    module = 1,
+pub const DeclsOffset_T: type = enum {
+    arch,
+    module,
 };
 

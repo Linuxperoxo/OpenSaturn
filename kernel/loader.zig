@@ -17,6 +17,8 @@ const modules: type = @import("root").modules;
 const supervisor: type = @import("root").supervisor;
 const interfaces: type = @import("root").interfaces;
 
+const sla = @import("std").builtin.Type;
+
 comptime {
     // NOTE: usar assembly inline dentro do nucleo de um kernel e totalmente desencorajado, ja
     // que aquele codigo so funciona apenas para uma arquitetura, ou seja, vamos precisar
@@ -35,7 +37,8 @@ comptime {
             ;
         }
     };
-    if(!cpu.custom) asm(
+    // caso a arquitetura nao use uma configuracao default, fica por conta dela mesmo fazer isso
+    if(cpu.segments == void) asm(
         aux.make_asm_set("kernel_phys_address", config.kernel.mem.phys.kernel_phys) ++
         aux.make_asm_set("kernel_virtual_address", config.kernel.mem.virtual.kernel_text) ++
         aux.make_asm_set("kernel_text_virtual", config.kernel.mem.virtual.kernel_text) ++
@@ -51,42 +54,75 @@ pub fn saturn_arch_verify() void {
         @intFromEnum(decls.DeclsOffset_T.arch)
     ];
     if(!@hasDecl(arch, decl)) {
-        @compileError("Error");
+        @compileError(
+            "expected a declaration " ++ decl ++ " for architecture " ++
+            @tagName(config.arch.options.Target)
+        );
     }
     const decl_type = @TypeOf(arch.__SaturnArchDescription__);
     const decl_expect_type = decls.saturn_especial_decls_types[
         @intFromEnum(decls.DeclsOffset_T.arch)
     ];
     if(decl_type != decl_expect_type) {
-        @compileError("Error");
+        @compileError(
+            "declaration " ++ decl ++ " for architecture " ++
+            @tagName(config.arch.options.Target) ++
+            " must be type: " ++
+            @typeName(decls.saturn_especial_decls_types[
+                @intFromEnum(decls.DeclsOffset_T.arch)
+            ])
+        );
     }
-    const arch_fields = [_][]const u8 {
-        "entry", "init", "interrupts", "mm"
-    };
+    if(!arch.__SaturnArchDescription__.usable) {
+        @compileError(
+            "target kernel cpu architecture " ++
+            @tagName(config.arch.options.Target) ++
+            " has no guarantee of functioning by the developer"
+        );
+    }
+    const arch_fields = @typeInfo(decl_expect_type).@"struct".fields;
     for(arch_fields) |field| {
+        if(field.type == bool) continue; // ignore usable field
         @export(
-            (@field(arch.__SaturnArchDescription__, field)).entry,
+            (@field(arch.__SaturnArchDescription__, field.name)).entry,
             .{
-                .name = (@field(arch.__SaturnArchDescription__, field)).label
+                .name = (@field(arch.__SaturnArchDescription__, field.name)).label
             },
         );
     }
 }
 
-pub fn saturn_modules_loader() void {
-    comptime {
-        for(modules.__SaturnAllMods__) |M| {
-            if(!@hasDecl(M, "__SaturnModuleDescription__")) {
+pub fn saturn_modules_verify() void {
+    for(modules.__SaturnAllMods__) |M| {
+        const decl = decls.saturn_especial_decls[
+            @intFromEnum(decls.DeclsOffset_T.module)
+        ];
+        if(!@hasDecl(M, decl)) {
+            @compileError(
+                decl ++ " is not defined in the module file" ++
+                @typeName(M)
+            );
+        }
+        const decl_type = @TypeOf(M.__SaturnModuleDescription__);
+        const decl_expect_type = decls.saturn_especial_decls_types[
+            @intFromEnum(decls.DeclsOffset_T.module)
+        ];
+        if(decl_type != decl_expect_type) {
+            if(decl_type != decl_expect_type) {
                 @compileError(
-                    "__SaturnModuleDescription__ is not defined in the module file" ++
-                    @typeName(M)
+                    "declaration " ++ decl ++ " for module " ++
+                    @tagName(M) ++
+                    " must be type: " ++
+                    @typeName(decls.saturn_especial_decls_types[
+                        @intFromEnum(decls.DeclsOffset_T.module)
+                    ])
                 );
-            }
-            if(@TypeOf(M.__SaturnModuleDescription__) != interfaces.module.ModuleDescription_T) {
-                // ERROR
             }
         }
     }
+}
+
+pub fn saturn_modules_loader() void {
     inline for(modules.__SaturnAllMods__) |M| {
         // Skip nao pode ser comptime se nao vamos ter um
         // erro de compilacao, ja que ele vai tentar carregar

@@ -13,7 +13,6 @@ pub const interrupts: type = saturn.cpu.interrupts;
 pub const linker: type = saturn.cpu.linker;
 pub const mm: type = saturn.cpu.mm;
 pub const core: type = saturn.core;
-pub const memory: type = saturn.memory;
 pub const interfaces: type = saturn.interfaces;
 pub const supervisor: type = saturn.supervisor;
 pub const kernel: type = saturn.lib.kernel;
@@ -36,7 +35,7 @@ const loader: type = saturn.loader;
 
 // O fluxo do kernel funciona da seguinte maneira:
 //  * Primeiro vamos ter o entry de tudo, que deve ser definido dentro
-//    da arquitetura alvo. O x86 tem seu entry em kernel/arch/x86/x86.zig
+//    da arquitetura alvo. O i386 tem seu entry em kernel/arch/i386/i386.zig
 //  * O linker.ld e extremamente importante nesse caso, ja que ele vai colocar
 //    o header do bootloader, no caso do x86 e o AtlasB, voce pode encontrar a
 //    definicao do header do AtlasB no mesmo arquivo passado acima
@@ -48,9 +47,25 @@ comptime {
     @export(&saturn_main, .{
         .name = "saturn.main",
     });
+    @export(str_data.ptr, .{
+        .name = "ptr_data",
+        .section = ".data", // quando esta na rodata, nao funciona
+    });
+    @export(str_rodata.ptr, .{
+        .name = "ptr_rodata",
+        .section = ".rodata", // quando esta na rodata, nao funciona
+    });
 }
 
+const str_data: []const u8 = "Hello, World! .data";
+const str_rodata: []const u8 = "Hello, World! .rodata";
+
 fn saturn_main() callconv(.c) noreturn {
+    asm volatile(
+        \\ leal ptr_data, %eax
+        \\ leal ptr_rodata, %ecx
+        \\ jmp .
+    );
     // Aqui existe um pequeno detalhe, bem interessante por sinal.
     // Quando passamos um ponteiro para uma funcao conhecida em tempo
     // de compilacao para o @call, o compilador precisa considerar que
@@ -67,6 +82,7 @@ fn saturn_main() callconv(.c) noreturn {
     // ou usando somente loader.SaturnArch, isso evita de criar um possivel .never_inline
     // implicito
     @call(.compile_time, loader.saturn_arch_verify, .{}); // verificamos a arch e exportamos suas labels
+//    @call(.compile_time, loader.saturn_modules_verify, .{}); // verificando assinatura dos modulos
     @call(.always_inline, saturn.step.saturn_set_phase, .{
         .init
     });

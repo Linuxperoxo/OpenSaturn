@@ -21,7 +21,7 @@ const section_data_persist = arch.sections.section_data_persist;
 // seus comptimes
 comptime {
     @export(&gdt.gdt_config, .{
-        .name = ".x86.init.gdt",
+        .name = ".i386.init.gdt",
     });
 }
 
