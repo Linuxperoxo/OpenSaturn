@@ -8,6 +8,7 @@ const config: type = @import("root").config;
 const page: type = @import("page.zig");
 const types: type = @import("types.zig");
 const linker: type = @import("root").arch.linker;
+const zone: type = @import("zone.zig");
 
 // sections []const u8
 const section_text_loader = arch.sections.section_text_loader;
@@ -30,8 +31,9 @@ const phys_address_opensaturn_text_start = linker.phys_address_opensaturn_text_s
 const phys_address_opensaturn_text_end = linker.phys_address_opensaturn_text_end; // in linker
 const phys_address_opensaturn_data_start = linker.phys_address_opensaturn_data_start;
 const phys_address_opensaturn_data_end = linker.phys_address_opensaturn_data_end;
-const phys_address_opensaturn_main_pagedir = linker.phys_address_opensaturn_main_pagedir;
-const phys_address_opensaturn_main_pagetable = linker.phys_address_opensaturn_main_pagetable;
+const phys_address_opensaturn_zone_kernel_start = linker.phys_address_zone_kernel_start;
+const phys_address_opensaturn_mmu_start = linker.phys_address_opensaturn_mmu_start;
+const phys_address_opensaturn_mmu_end = linker.phys_address_opensaturn_mmu_end;
 
 // linker
 const phys_i386_start = linker.phys_i386_start;
@@ -72,30 +74,45 @@ comptime {
     }
 }
 
+const kernel_page_dir_virtual = page.kernel_page_dir_virtual;
+const kernel_page_table_virtual = page.kernel_page_table_virtual;
+
 pub fn mmu_init() linksection(section_text_loader) callconv(.c) void {
     @call(.always_inline, configure_bootstrap, .{});
     @call(.always_inline, configure_kernel_text, .{});
     @call(.always_inline, configure_kernel_data, .{});
     @call(.always_inline, configure_kernel_stack, .{});
+    @call(.always_inline, configure_kernel_mmu_phys_to_virt, .{});
     asm volatile(
-        //\\ movl $0xFFFF, (%esp)
-        //\\ movl (%esp), %edi
         \\ andl $0x00000FFF, %esp
+        \\ andl $0x00000FFF, %ebp
         \\ orl %edx, %esp
+        \\ orl %edx, %ebp
         \\ movl %eax, %cr3
         \\ movl %cr0, %eax
         \\ orl %[cr0_paging_bit], %eax
         \\ movl %eax, %cr0
-        //\\ movl (%esp), %esi
-        //\\ movb $0xFF, 4095(%edx)
         :
         :[_] "{eax}" (&page.kernel_page_dir),
          [_] "{edx}" (kernel_stack_base_virtual),
          [cr0_paging_bit] "i" (cr0_paging_bit),
-        : .{
-            .ecx = true,
-        }
     );
+    @call(.always_inline, configure_zone_kernel, .{}) catch unreachable;
+}
+
+fn configure_zone_kernel() types.ZoneErr_T!void {
+    errdefer unreachable; // teoriacamente nunca vai dar erro, ja que e a primeira vez que usamos a zona
+    try @call(.always_inline, zone.zone_resize, .{
+        types.Zones_T.kernel, @intFromPtr(phys_address_opensaturn_zone_kernel_start), 32
+    });
+    try @call(.always_inline, zone.zone_reconf, .{
+        types.Zones_T.kernel, 0b0000101
+    });
+    kernel_page_dir_virtual[page.kernel_index[@intFromEnum(page.KernelPageIndex.paged)] >> 22].present = 1;
+    kernel_page_dir_virtual[page.kernel_index[@intFromEnum(page.KernelPageIndex.paged)] >> 22].rw = 1;
+    kernel_page_dir_virtual[page.kernel_index[@intFromEnum(page.KernelPageIndex.paged)] >> 22].table_phys = @intCast(@intFromPtr(&page.kernel_page_table[
+        @intFromEnum(page.KernelPageIndex.paged)
+    ]) >> 12);
 }
 
 fn configure_bootstrap() void {
@@ -150,6 +167,17 @@ fn configure_kernel_data() void {
         page.KernelPageIndex.data,
         @call(.always_inline, resolve_num_of_pages, .{
             @intFromPtr(phys_address_opensaturn_data_end) - @intFromPtr(phys_address_opensaturn_data_start)
+        }),
+        1
+    });
+}
+
+fn configure_kernel_mmu_phys_to_virt() void {
+    @call(.always_inline, kernel_map, .{
+        @intFromPtr(&page.kernel_page_dir),
+        page.KernelPageIndex.mmu,
+        @call(.always_inline, resolve_num_of_pages, .{
+            @intFromPtr(phys_address_opensaturn_mmu_end) - @intFromPtr(phys_address_opensaturn_mmu_start)
         }),
         1
     });

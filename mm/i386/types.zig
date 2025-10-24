@@ -4,32 +4,45 @@
 // └──────────────────────────────────────────────┘
 
 pub const AllocPage_T: type = struct {
-    virtual: [*]anyopaque,
+    virtual: []u8,
     page: *PageTableEntry_T,
-    len: usize,
-    zone: enum {
-        high,
-        normal,
-        dma,
-    },
+    zone: Zones_T,
+};
+
+pub const ZoneErr_T: type = error {
+    NonActive,
+    NoAlt,
+    NonAlloc,
+};
+
+pub const Zones_T: type = enum {
+    dma,
+    kernel,
+    high,
 };
 
 pub const Zone_T: type = struct {
     base: u32,
-    limit: ?u32,
+    virt: u32,
     pages: u32,
     free: u32,
+    size: u32,
     last: ?u32,
-    flags: struct {
+    table: *[1024]PageTableEntry_T = @ptrFromInt(0x10), // TMP
+    zone: Zones_T,
+    flags: packed struct(u8) {
         active: u1,
         mutex: u1,
         alloc: u1,
+        reserved: u5 = 0,
     },
 };
 
 pub const AllocPageErr_T: type = error {
     OutPage,
-    DoubleFree
+    Denied,
+    DoubleFree,
+    NoTableMap,
 };
 
 pub const PageDirEntry_T: type = packed struct {

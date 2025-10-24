@@ -6,67 +6,29 @@
 const arch: type = @import("root").arch;
 const config: type = @import("root").config;
 const types: type = @import("types.zig");
+const zone: type = @import("zone.zig");
 
 const section_text_loader = arch.sections.section_text_loader;
 const section_data_loader = arch.sections.section_data_loader;
 const section_data_page_dir = arch.sections.section_data_page_dir;
 const section_data_page_table = arch.sections.section_data_page_table;
 
-const phys_address_start = config.kernel.options.kernel_phys_address;
-const virtual_address_start = config.kernel.options.kernel_virtual_address;
-
+const kernel_mmu_main = config.kernel.mem.virtual.kernel_mmu_main;
 const kernel_page_size = config.kernel.options.kernel_page_size;
-
-var zone_dma: types.Zone_T = .{
-    .base = 0x0000_0000,
-    .limit = 0x0010_0000,
-    .pages = 0x0010_0000 / kernel_page_size,
-    .free =  0x0010_0000 / kernel_page_size,
-    .last = null,
-    .flags = .{
-        .active = 1,
-        .mutex = 0,
-        .alloc = 1,
-    },
-};
-
-var zone_normal: types.Zone_T = .{
-    .base = 0, // kernel phys data end align(4096)
-    .limit = null,
-    .pages = 0,
-    .free =  0,
-    .last = null,
-    .flags = .{
-        .active = 1,
-        .mutex = 1,
-        .alloc = 0,
-    },
-};
-
-var zone_high: types.Zone_T = .{
-    .base = 0x1000_0000,
-    .limit = null,
-    .pages = 0,
-    .free =  0,
-    .last = null,
-    .flags = .{
-        .active = 0,
-        .mutex = 1,
-        .alloc = 0,
-    },
-};
 
 pub const kernel_index = [_]u32 {
     config.kernel.mem.virtual.kernel_text, // .text
     config.kernel.mem.virtual.kernel_stack_base, // kernel stack
+    config.kernel.mem.virtual.kernel_mmu_main, // main kernel page_dir and page_table
     config.kernel.mem.virtual.kernel_data, // .data, .rodata
-    config.kernel.mem.virtual.kernel_paged_memory, // zone_normal
+    config.kernel.mem.virtual.kernel_paged_memory, // zone_kernel
     config.kernel.mem.virtual.kernel_mmio, // kernel mmio
 };
 
 pub const KernelPageIndex: type = enum {
     text,
     stack,
+    mmu,
     data,
     paged,
     mmio,
@@ -145,12 +107,27 @@ comptime {
     });
 }
 
-pub fn alloc_page() types.AllocPage_T {
-    
+// sao usados somente para o alocador de paginas consiga manipular as paginas diretamente
+pub const kernel_page_dir_virtual: *[1024]types.PageDirEntry_T = @ptrFromInt(kernel_mmu_main);
+pub const kernel_page_table_virtual: *[kernel_index.len][1024]types.PageTableEntry_T = @ptrFromInt(kernel_mmu_main + @sizeOf(@TypeOf(kernel_page_dir)));
+
+pub fn alloc_page() types.AllocPageErr_T!types.AllocPage_T {
+    return r: {
+        // tentamos alocar uma pagina na zone_kernel, em caso de pageout,
+        // tantamos alocar na zone_high
+        break :r zone.alloc_zone_page(
+            .kernel,
+        ) catch |err| switch(err) {
+            types.AllocPageErr_T.OutPage => break :r zone.alloc_zone_page(
+                .high,
+            ),
+            else => return err,
+        };
+    };
 }
 
 pub fn alloc_pages(_: usize) []types.AllocPage_T {
-
+    
 }
 
 pub fn alloc_zeroed_page() []types.AllocPage_T {

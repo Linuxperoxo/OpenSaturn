@@ -79,12 +79,18 @@ SECTIONS {
 
   . = ALIGN(phys_address_opensaturn_data_end, 4096);
 
+  PROVIDE(
+    phys_address_opensaturn_mmu_start = .
+  );
+
   .opensaturn.mmu : AT(ALIGN(phys_address_opensaturn_data_end, 4096)) {
-    . = ALIGN(8);
     *(.i386.opensaturn.pagedir)
-    . = ALIGN(4096);
     *(.i386.opensaturn.pagetable)
   }
+
+  PROVIDE(
+    phys_address_opensaturn_mmu_end = .
+  );
 
   /*
    * NOTE: Apenas para facilitar a vida do bootloader
@@ -100,6 +106,10 @@ SECTIONS {
 
   PROVIDE(
     phys_address_opensaturn_end = LOADADDR(.opensaturn.bss) + SIZEOF(.opensaturn.bss)
+  );
+
+  PROVIDE(
+    phys_address_zone_kernel_start = ALIGN(phys_address_opensaturn_end, 4096)
   );
 
   /DISCARD/ : {
