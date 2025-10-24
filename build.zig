@@ -3,24 +3,24 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const std: type = @import("std");
-pub const SaturnArchConfig: type = @import("config/arch/config.zig");
+const std: type = @import("std");
+
+const SaturnArchConfig: type = @import("config/arch/config.zig");
+const SaturnCompileConfig: type = @import("config/compile/config.zig");
 
 pub const target: std.Target.Cpu.Arch = switch(SaturnArchConfig.options.Target) {
-    .x86 => .x86,
-    .x86_64 => .x86_64,
+    .i386 => .x86,
+    .amd64 => .x86_64,
     .arm => .arm,
     .avr => .avr,
     .xtensa => .xtensa,
+    .riscv64 => .riscv,
 };
 
-pub const optimize: std.builtin.OptimizeMode = switch(SaturnArchConfig.options.OptimizeMode) {
+pub const optimize: std.builtin.OptimizeMode = switch(SaturnCompileConfig.options.OptimizeMode) {
     .Small => .ReleaseSmall,
     .Fast => .ReleaseFast,
 };
-
-pub export fn init() callconv(.c) void {}
-pub export fn main() callconv(.c) void {}
 
 pub fn build(b: *std.Build) void {
     const saturn = b.addExecutable(.{
@@ -88,9 +88,10 @@ pub fn build(b: *std.Build) void {
 
     saturn_step.makeFn = &struct {
         pub fn make(_: *std.Build.Step, _: std.Build.Step.MakeOptions) anyerror!void {
-            if(SaturnArchConfig.options.CodeMode == .Debug) {
+            if(SaturnCompileConfig.options.CodeMode == .Debug) {
                 std.debug.print("\x1b[33mWARNING:\x1b[0m Debug Mode Enable\n", .{});
             }
+            std.debug.print("Done!\n", .{});
             return {};
         }
     }.make;

@@ -1,16 +1,12 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: step.zig     │
+// │  (c) 2025 Linuxperoxo  •  FILE: options.zig  │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const SaturnStepPhase_T: type = @import("types.zig").SaturnStepPhase_T;
+const types: type = @import("types.zig");
 
-var saturnCurrentStep: SaturnStepPhase_T = .boot;
+const CodeMode_T: type = types.CodeMode_T;
+const OptimizeMode_T: type = types.OptimizeMode_T;
 
-pub fn saturn_set_phase(phase: SaturnStepPhase_T) void {
-    saturnCurrentStep = phase;
-}
-
-pub fn saturn_get_phase() SaturnStepPhase_T {
-    return saturnCurrentStep;
-}
+pub const CodeMode: CodeMode_T = .Debug;
+pub const OptimizeMode: OptimizeMode_T = .Small;

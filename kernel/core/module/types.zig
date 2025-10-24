@@ -32,7 +32,7 @@ pub const ModErr_T: type = error {
     InternalError,
 };
 
-pub const ModuleDescriptionTarget_T: type = arch.target_T;
+pub const ModuleDescriptionTarget_T: type = arch.Target_T;
 
 pub const ModuleDescription_T: type = struct {
     name: []const u8,
