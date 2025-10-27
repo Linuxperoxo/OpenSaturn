@@ -6,6 +6,8 @@
 pub const AllocPage_T: type = struct {
     virtual: []u8,
     page: *PageTableEntry_T,
+    master: u8,
+    slave: u3,
     zone: Zones_T,
 };
 
@@ -43,6 +45,7 @@ pub const AllocPageErr_T: type = error {
     Denied,
     DoubleFree,
     NoTableMap,
+    DoubleAllocPage,
 };
 
 pub const PageDirEntry_T: type = packed struct {

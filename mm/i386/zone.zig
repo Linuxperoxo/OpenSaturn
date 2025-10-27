@@ -100,6 +100,7 @@ pub fn alloc_zone_page(
             }
             break :r AllocPageErr_T.OutPage;
         };
+        if(self.table[base + offset].present == 1) return AllocPageErr_T.DoubleAllocPage;
         self.table[base].reserved |= @as(u7, 0x01) << @intCast(offset);
         self.table[base + offset].phys = @intCast(phys >> 12);
         self.table[base + offset].present = 1;
@@ -109,8 +110,33 @@ pub fn alloc_zone_page(
             .virtual = @as([*]u8, @ptrFromInt(self.virt | ((base + offset) << 12)))[0..self.size],
             .page = &self.table[base + offset],
             .zone = self.zone, // assinatura da zona
+            .master = @intCast(base),
+            .slave = @intCast(offset),
         };
     };
+}
+
+pub fn free_zone_page(
+    zone: if(@import("builtin").is_test) *Zone_T else Zones_T,
+    pg: *const AllocPage_T
+) AllocPageErr_T!void {
+    const self: *Zone_T = switch(@typeInfo(@TypeOf(zone))) {
+        .pointer => zone,
+        else => zones[
+            @intFromEnum(zone)
+        ],
+    };
+    if(self.zone != pg.zone) return AllocPageErr_T.Denied;
+    if(pg.page.present == 0) return AllocPageErr_T.DoubleFree;
+    if(@intFromPtr(pg.virtual.ptr) < self.virt and
+        @intFromPtr(pg.virtual.ptr) > self.virt + (self.size * self.pages)
+    ) return AllocPageErr_T.Denied;
+    pg.page.present = 0;
+    pg.page.phys = 0;
+    pg.page.rw = 0;
+    pg.page.user = 0;
+    self.table[pg.master].reserved &= ~(@as(u7, 0x01) << pg.slave);
+    self.free += 1;
 }
 
 pub fn zone_resize(zone: Zones_T, base: u32, limit: u32) ZoneErr_T!void {

@@ -134,8 +134,8 @@ pub fn alloc_zeroed_page() []types.AllocPage_T {
 
 }
 
-pub fn free_page(_: *types.AllocPage_T) void {
-
+pub fn free_page(page: *const types.AllocPage_T) types.AllocPageErr_T!void {
+    return zone.free_zone_page(.kernel, page);
 }
 
 pub fn free_pages(_: []types.AllocPage_T) void {

@@ -108,9 +108,10 @@ fn configure_zone_kernel() types.ZoneErr_T!void {
     try @call(.always_inline, zone.zone_reconf, .{
         types.Zones_T.kernel, 0b0000101
     });
-    kernel_page_dir_virtual[page.kernel_index[@intFromEnum(page.KernelPageIndex.paged)] >> 22].present = 1;
-    kernel_page_dir_virtual[page.kernel_index[@intFromEnum(page.KernelPageIndex.paged)] >> 22].rw = 1;
-    kernel_page_dir_virtual[page.kernel_index[@intFromEnum(page.KernelPageIndex.paged)] >> 22].table_phys = @intCast(@intFromPtr(&page.kernel_page_table[
+    const page_dir_entry: *types.PageDirEntry_T = &kernel_page_dir_virtual[page.kernel_index[@intFromEnum(page.KernelPageIndex.paged)] >> 22];
+    page_dir_entry.present = 1;
+    page_dir_entry.rw = 1;
+    page_dir_entry.table_phys = @intCast(@intFromPtr(&page.kernel_page_table[
         @intFromEnum(page.KernelPageIndex.paged)
     ]) >> 12);
 }
