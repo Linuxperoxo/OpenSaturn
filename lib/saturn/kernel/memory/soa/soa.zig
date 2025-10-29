@@ -7,35 +7,12 @@
 //      A SLUB-like allocator
 // === === === === === === === ===
 
+const mm: type = if(builtin.is_test) void else @import("root").mm;
+const config: type = if(builtin.is_test) void else @import("root").config;
+const builtin: type = @import("builtin");
+
 pub const Optimize_T: type = @import("types.zig").Optimize_T;
 pub const Cache_T: type = @import("types.zig").Cache_T;
-
-pub const zero = if(!@import("builtin").is_test) @import("root").utils.mem.zero else struct {
-    const Self: type = @This();
-    pub fn zero(comptime T: type) T {
-        @setEvalBranchQuota(4294967295);
-        switch(@typeInfo(T)) {
-            .int, .float => return @as(T, 0),
-            .pointer => |info| if(info.is_allowzero) return @intFromPtr(0) else return undefined,
-            .null, .optional => return null,
-            .array => |info| {
-                var array: T = undefined;
-                for(0..info.len) |i| {
-                    array[i] = comptime Self.zero(info.child);
-                }
-            },
-            .@"struct" => |info| {
-                var @"struct": T = undefined;
-                for(info.fields) |field| {
-                    @field(@"struct", field.name) = comptime Self.zero(field.type);
-                }
-                return @"struct";
-            },
-            else => {},
-        }
-        return undefined;
-    }
-}.zero;
 
 pub fn buildObjAllocator(
     comptime T: type,
@@ -66,7 +43,7 @@ pub fn buildObjAllocator(
         }
     }
     return struct {
-        pool: [num]T = if(zero_init) zero([num]T) else undefined,
+        pool: ?[]T = null,
         allocs: BitMaxIPool = 0,
         bitmap: [r: {
             break :r (num / BitMap_T.MapSize) + if((num % BitMap_T.MapSize) != 0) 1 else 0;
@@ -85,8 +62,13 @@ pub fn buildObjAllocator(
         cache: CacheType_T = if(optimize.type == .linear) {} else [_]?BitMaxIPool {
             null
         } ** CacheElementSize,
+        page: Page_T = if(Page_T == void) {} else undefined,
 
         const Self: type = @This();
+        const Page_T: type = if(builtin.is_test) void else switch(config.arch.options.Target) {
+            .i386 => mm.AllocPage_T,
+            else => void,
+        };
         const BitMap_T: type = struct {
             map: [MapSize]Map_T align(1),
 
@@ -130,6 +112,7 @@ pub fn buildObjAllocator(
             DoubleFree,
             IndexOutBounds,
             UndefinedAction,
+            NotInitialized,
         };
 
         pub const Options: type = struct {
@@ -206,8 +189,8 @@ pub fn buildObjAllocator(
             }
 
             pub fn addrsToIPool(self: *Self, obj: *T) ?BitMaxIPool {
-                return if(@intFromPtr(obj) < @intFromPtr(&self.pool[0]) and @intFromPtr(obj) > @intFromPtr(&self.pool[self.pool.len - 1])) null else r: {
-                    break :r @intCast((@intFromPtr(obj) - @intFromPtr(&self.pool[0])) / @sizeOf(T));
+                return if(@intFromPtr(obj) < @intFromPtr(&self.pool.?[0]) and @intFromPtr(obj) > @intFromPtr(&self.pool.?[self.pool.?.len - 1])) null else r: {
+                    break :r @intCast((@intFromPtr(obj) - @intFromPtr(&self.pool.?[0])) / @sizeOf(T));
                 };
             }
 
@@ -263,12 +246,12 @@ pub fn buildObjAllocator(
                             self.cindex = if(cindex < self.cache.len - 1) cindex + 1 else null;
                             self.lindex = if(self.lindex) |_| i: {
                                 if(self.lindex.? != self.cache[cindex]) break :i self.lindex.?;
-                                if(self.lindex.? < self.pool.len - 1) break :i self.lindex.? + 1;
+                                if(self.lindex.? < self.pool.?.len - 1) break :i self.lindex.? + 1;
                                 break :i null;
                             } else null;
                             const ipool = self.cache[cindex].?;
                             self.cache[cindex] = null;
-                            break :u &self.pool[ipool];
+                            break :u &self.pool.?[ipool];
                         };}
                         continue :sw .sync;
                     },
@@ -309,7 +292,7 @@ pub fn buildObjAllocator(
                 for(
                     init orelse 0
                     ..
-                    if(end == null or end.? > self.pool.len) self.pool.len else end.?
+                    if(end == null or end.? > self.pool.?.len) self.pool.?.len else end.?
                 ) |i| {
                     if(@call(.always_inline, &BitMap.read, .{
                         self, @as(BitMaxIPool, @intCast(i))
@@ -318,23 +301,54 @@ pub fn buildObjAllocator(
                             self, @as(BitMaxIPool, @intCast(i)), .busy
                         });
                         self.allocs += 1;
-                        self.lindex = if(i < self.pool.len - 1) @as(BitMaxIPool, @intCast(i)) + 1 else null;
-                        break : r &self.pool[i];
+                        self.lindex = if(i < self.pool.?.len - 1) @as(BitMaxIPool, @intCast(i)) + 1 else null;
+                        break : r &self.pool.?[i];
                     }
                 }
                 break :r InternalErr_T.Rangeless;
             };
         }
 
+        pub fn ainit(self: *Self) err_T!void {
+            if(builtin.is_test) {
+                const std: type = @import("std");
+                var gpa = std.heap.GeneralPurposeAllocator(.{}) {};
+                var allocator = gpa.allocator();
+                self.pool = allocator.alloc(T, num) catch return err_T.UndefinedAction;
+                return;
+            }
+            switch(comptime config.arch.options.Target) {
+                .i386 => {
+                    if((@sizeOf(T) * num) > config.kernel.options.kernel_page_size) {
+                        @compileError("SOA still does not support objects larger than a page");
+                    }
+                    _ = zero_init;
+                    self.page = mm.alloc_page() catch return err_T.UndefinedAction;
+                    self.pool = @as([*]T, @alignCast(@ptrCast(self.page.virtual.ptr)))[
+                        0..config.kernel.options.kernel_page_size / @sizeOf(T)
+                    ];
+                },
+                else => @compileError("SOA does not yet support " ++ @tagName(config.arch.options.Target)),
+            }
+        }
+
+        pub fn adeinit(self: *Self) void {
+            switch(comptime config.arch.options.Target) {
+                .i386 => mm.page_free(&self.page) catch return err_T.UndefinedAction,
+                else => {},
+            }
+        }
+
         pub const alloc = switch(optimize.type) {
             .dinamic => struct {
                 pub fn dinamic(self: *Self, calling: Optimize_T.CallingAlloc_T) err_T!*T {
+                    if(self.pool == null) return err_T.NotInitialized;
                     return if(self.allocs >= num) err_T.OutOfMemory else switch(calling) {
                         Optimize_T.CallingAlloc_T.auto => @call(.never_inline, &auto, .{
                             self
                         }) catch err_T.UndefinedAction,
                         Optimize_T.CallingAlloc_T.continuos => @call(.never_inline, &continuos, .{
-                            self, self.lindex, self.pool.len
+                            self, self.lindex, @as(u16, @intCast(self.pool.?.len))
                         }) catch err_T.UndefinedAction,
                         Optimize_T.CallingAlloc_T.fast => @call(.never_inline, &fast, .{
                             self, true
@@ -345,6 +359,7 @@ pub fn buildObjAllocator(
 
             .linear => struct {
                 pub fn linear(self: *Self) err_T!*T {
+                    if(self.pool == null) return err_T.NotInitialized;
                     return if(self.allocs >= num) err_T.OutOfMemory else @call(.always_inline, &continuos, .{
                         self, self.lindex, null
                     }) catch err_T.UndefinedAction;
@@ -353,6 +368,7 @@ pub fn buildObjAllocator(
 
             .optimized => struct {
                 pub fn optimized(self: *Self) err_T!*T {
+                    if(self.pool == null) return err_T.NotInitialized;
                     return if(self.allocs >= num) err_T.OutOfMemory else @call(.always_inline, &auto, .{
                         self
                     }) catch err_T.UndefinedAction;
@@ -362,6 +378,7 @@ pub fn buildObjAllocator(
 
         pub fn free(self: *Self, obj: *T) err_T!void {
             return r: {
+                if(self.pool == null) return err_T.NotInitialized;
                 const ipool = @call(.always_inline, &BitMap.addrsToIPool, .{
                     self, obj
                 });
@@ -435,12 +452,13 @@ test "SOA Continuos Alloc" {
         @import("std").debug.print("== CONTINUOS:\n* optmize: {any}\n* cache: {any}\n==\n", .{
             SOAAllocator_T.Options.config.optimize , SOAAllocator_T.Options.config.cache
         });
+        try allocator.ainit();
         for(0..quat) |i| {
             const obj = try SOAAllocator_T.alloc(
                 &allocator, Optimize_T.CallingAlloc_T.continuos,
             );
             for(0..i) |j|
-                if(@intFromPtr(obj) == @intFromPtr(&allocator.pool[j])) return TestErr_T.DoubleAllocInAddrs;
+                if(@intFromPtr(obj) == @intFromPtr(&allocator.pool.?[j])) return TestErr_T.DoubleAllocInAddrs;
             try SOAAllocator_T.free(
                 &allocator, obj
             );
@@ -466,12 +484,13 @@ test "SOA Fast Alloc" {
         @import("std").debug.print("== FAST:\n* optmize: {any}\n* cache: {any}\n==\n", .{
             SOAAllocator_T.Options.config.optimize , SOAAllocator_T.Options.config.cache
         });
+        try allocator.ainit();
         for(0..quat) |i| {
             const obj = try SOAAllocator_T.alloc(
                 &allocator, Optimize_T.CallingAlloc_T.fast,
             );
             for(0..i) |j|
-                if(@intFromPtr(obj) == @intFromPtr(&allocator.pool[j])) return TestErr_T.DoubleAllocInAddrs;
+                if(@intFromPtr(obj) == @intFromPtr(&allocator.pool.?[j])) return TestErr_T.DoubleAllocInAddrs;
         }
         _ = SOAAllocator_T.alloc(
             &allocator, Optimize_T.CallingAlloc_T.fast,
@@ -481,7 +500,7 @@ test "SOA Fast Alloc" {
         };
         for(0..quat) |i| {
             SOAAllocator_T.free(
-                &allocator, @ptrFromInt(@intFromPtr(&allocator.pool[0]) + (@sizeOf( struct { u64, u64, u64, u64, u64, u64, u64 }) * i))
+                &allocator, @ptrFromInt(@intFromPtr(&allocator.pool.?[0]) + (@sizeOf( struct { u64, u64, u64, u64, u64, u64, u64 }) * i))
             ) catch return TestErr_T.TestUnreachableCode;
         }
     }
@@ -494,12 +513,13 @@ test "SOA Auto Alloc" {
         @import("std").debug.print("== AUTO:\n* optmize: {any}\n* cache: {any}\n==\n", .{
             SOAAllocator_T.Options.config.optimize , SOAAllocator_T.Options.config.cache
         });
+        try allocator.ainit();
         for(0..quat) |i| {
             const obj = try SOAAllocator_T.alloc(
                 &allocator, Optimize_T.CallingAlloc_T.auto,
             );
             for(0..i) |j|
-                if(@intFromPtr(obj) == @intFromPtr(&allocator.pool[j])) return TestErr_T.DoubleAllocInAddrs;
+                if(@intFromPtr(obj) == @intFromPtr(&allocator.pool.?[j])) return TestErr_T.DoubleAllocInAddrs;
         }
         _ = SOAAllocator_T.alloc(
             &allocator, Optimize_T.CallingAlloc_T.auto,
@@ -509,7 +529,7 @@ test "SOA Auto Alloc" {
         };
         for(0..quat) |i| {
             SOAAllocator_T.free(
-                &allocator, @ptrFromInt(@intFromPtr(&allocator.pool[0]) + (@sizeOf( struct { u64, u64, u64, u64, u64, u64, u64 }) * i))
+                &allocator, @ptrFromInt(@intFromPtr(&allocator.pool.?[0]) + (@sizeOf( struct { u64, u64, u64, u64, u64, u64, u64 }) * i))
             ) catch return TestErr_T.TestUnreachableCode;
         }
     }

@@ -4,6 +4,6 @@
 // └──────────────────────────────────────────────┘
 
 pub const UseMenuconfigAsRef: bool = true;
-pub const IgnoreModuleWithArchNotSupported: bool = false;
+pub const IgnoreModuleWithArchNotSupported: bool = true;
 pub const DinamicModulesLoad: bool = true;
 pub const AllowDynamicModulesLoad: bool = true;

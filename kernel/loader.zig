@@ -99,7 +99,7 @@ pub fn saturn_modules_verify() void {
         ];
         if(!@hasDecl(M, decl)) {
             @compileError(
-                decl ++ " is not defined in the module file" ++
+                decl ++ " is not defined in the module file " ++
                 @typeName(M)
             );
         }
@@ -111,7 +111,7 @@ pub fn saturn_modules_verify() void {
             if(decl_type != decl_expect_type) {
                 @compileError(
                     "declaration " ++ decl ++ " for module " ++
-                    @tagName(M) ++
+                    @typeName(M) ++
                     " must be type: " ++
                     @typeName(decls.saturn_especial_decls_types[
                         @intFromEnum(decls.DeclsOffset_T.module)
@@ -124,26 +124,28 @@ pub fn saturn_modules_verify() void {
 
 pub fn saturn_modules_loader() void {
     inline for(modules.__SaturnAllMods__) |M| {
+        // caso o modulo seja um modulo atualmente nao utilizavel, simplesmente damos skip
+        if(M.__SaturnModuleDescription__.load == .unlinkable) continue;
+        // Precisamos forçar um comptime aqui para evitar
+        // erro de compilacao
+        comptime arch: {
+            for(M.__SaturnModuleDescription__.arch) |A| {
+                if(config.arch.options.Target == A) {
+                    break :arch;
+                }
+            }
+            if(!config.modules.options.IgnoreModuleWithArchNotSupported) {
+                @compileError("module file " ++
+                    @typeName(M) ++
+                    " is not supported by target architecture " ++
+                    @tagName(config.arch.options.Target));
+            }
+            continue;
+        }
         // Skip nao pode ser comptime se nao vamos ter um
         // erro de compilacao, ja que ele vai tentar carregar
         // os modulos em comptime
         skip: {
-            // Precisamos forçar um comptime aqui para evitar 
-            // erro de compilacao
-            comptime arch: {
-                for(M.__SaturnModuleDescription__.arch) |A| {
-                    if(config.arch.options.Target == A) {
-                        break :arch;
-                    }
-                }
-                if(!config.modules.options.IgnoreModuleWithArchNotSupported) {
-                    @compileError("module file " ++
-                        @typeName(M) ++
-                        " is not supported by target architecture " ++
-                        @tagName(config.arch.options.Target));
-                }
-                break :skip;
-            }
             switch(comptime M.__SaturnModuleDescription__.load) {
                 .dinamic => {},
                 .unlinkable => {},
