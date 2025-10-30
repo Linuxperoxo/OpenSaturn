@@ -3,7 +3,10 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const UseMenuconfigAsRef: bool = true;
-pub const IgnoreModuleWithArchNotSupported: bool = true;
-pub const DinamicModulesLoad: bool = true;
-pub const AllowDynamicModulesLoad: bool = true;
+const types: type = @import("types.zig");
+
+const CodeMode_T: type = types.CodeMode_T;
+const OptimizeMode_T: type = types.OptimizeMode_T;
+
+pub const CodeMode: CodeMode_T = .Debug;
+pub const OptimizeMode: OptimizeMode_T = .Small;

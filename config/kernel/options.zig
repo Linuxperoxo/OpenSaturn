@@ -3,7 +3,5 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const UseMenuconfigAsRef: bool = true;
-pub const IgnoreModuleWithArchNotSupported: bool = true;
-pub const DinamicModulesLoad: bool = true;
-pub const AllowDynamicModulesLoad: bool = true;
+pub const kernel_page_size: u32 = 0x1000;
+pub const kernel_stack_size: u32 = kernel_page_size * 1;

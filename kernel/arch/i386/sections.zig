@@ -1,9 +1,10 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: options.zig  │
+// │  (c) 2025 Linuxperoxo  •  FILE: sections.zig │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const UseMenuconfigAsRef: bool = true;
-pub const IgnoreModuleWithArchNotSupported: bool = true;
-pub const DinamicModulesLoad: bool = true;
-pub const AllowDynamicModulesLoad: bool = true;
+pub const section_text_loader = ".i386.text";
+pub const section_data_loader = ".i386.data";
+pub const section_data_persist = ".i386.opensaturn.data";
+pub const section_data_page_dir = ".i386.opensaturn.pagedir";
+pub const section_data_page_table = ".i386.opensaturn.pagetable";

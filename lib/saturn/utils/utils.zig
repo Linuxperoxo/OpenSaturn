@@ -1,6 +1,0 @@
-// ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: utils.zig    │
-// │            Author: Linuxperoxo               │
-// └──────────────────────────────────────────────┘
-
-pub const mem: type = @import("mem/mem.zig");

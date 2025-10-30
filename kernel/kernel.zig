@@ -6,17 +6,25 @@
 const saturn: type = @import("saturn");
 
 pub const cpu: type = saturn.cpu;
+pub const arch: type = saturn.cpu.arch;
+pub const entry: type = saturn.cpu.entry;
+pub const init: type = saturn.cpu.init;
+pub const interrupts: type = saturn.cpu.interrupts;
+pub const linker: type = saturn.cpu.linker;
+pub const mm: type = saturn.cpu.mm;
 pub const core: type = saturn.core;
-pub const memory: type = saturn.memory;
 pub const interfaces: type = saturn.interfaces;
-//pub const debug: type = saturn.debug;
 pub const supervisor: type = saturn.supervisor;
+pub const lib: type = saturn.lib;
 pub const kernel: type = saturn.lib.kernel;
 pub const userspace: type = saturn.lib.userspace;
-pub const utils: type = saturn.lib.utils;
 pub const config: type = saturn.config;
 pub const modules: type = saturn.modules;
 pub const physio: type = saturn.physio;
+pub const decls: type = saturn.decls;
+pub const step: type = struct {
+    pub const saturn_get_phase = saturn.step.saturn_get_phase;
+};
 
 const loader: type = saturn.loader;
 
@@ -29,7 +37,7 @@ const loader: type = saturn.loader;
 
 // O fluxo do kernel funciona da seguinte maneira:
 //  * Primeiro vamos ter o entry de tudo, que deve ser definido dentro
-//    da arquitetura alvo. O x86 tem seu entry em kernel/arch/x86/x86.zig
+//    da arquitetura alvo. O i386 tem seu entry em kernel/arch/i386/i386.zig
 //  * O linker.ld e extremamente importante nesse caso, ja que ele vai colocar
 //    o header do bootloader, no caso do x86 e o AtlasB, voce pode encontrar a
 //    definicao do header do AtlasB no mesmo arquivo passado acima
@@ -38,20 +46,12 @@ const loader: type = saturn.loader;
 //    chamar a fn main do kernel, feito isso, o kernel vai fazer o resto
 
 comptime {
-    @export(&@"saturn.main", .{
+    @export(&saturn_main, .{
         .name = "saturn.main",
-        .section = ".text.saturn",
-        .linkage = .strong,
-        .visibility = .default,
     });
 }
 
-fn @"saturn.main"() callconv(.c) void {
-    // SaturnArch e resposavel por chamar a fn init da arquitetura alvo,
-    // ela e responsavel tambem por resolver o tipo de interrupcao usada
-    // pela arquitetura, a chamada da fn init para a interrupcao tambem
-    // e feita aqui
-
+fn saturn_main() callconv(.c) noreturn {
     // Aqui existe um pequeno detalhe, bem interessante por sinal.
     // Quando passamos um ponteiro para uma funcao conhecida em tempo
     // de compilacao para o @call, o compilador precisa considerar que
@@ -67,9 +67,17 @@ fn @"saturn.main"() callconv(.c) void {
     // exported symbol collision, como resolver isso então? Simplemente usando o .never_inline
     // ou usando somente loader.SaturnArch, isso evita de criar um possivel .never_inline
     // implicito
-    @call(.always_inline, loader.SaturnArch, .{});
+    @call(.compile_time, loader.saturn_arch_verify, .{}); // verificamos a arch e exportamos suas labels
+    @call(.compile_time, loader.saturn_modules_verify, .{}); // verificando assinatura dos modulos
+    @call(.always_inline, saturn.step.saturn_set_phase, .{
+        .init
+    });
 
     // Depois da arquitetura resolver todos os seus detalhes, podemos iniciar
     // os modulos linkados ao kernel
-    @call(.always_inline, loader.SaturnModules, .{});
+    @call(.always_inline, loader.saturn_modules_loader, .{});
+    @call(.always_inline, saturn.step.saturn_set_phase, .{
+        .runtime
+    });
+    @call(.always_inline, loader.saturn_running, .{}); // noreturn fn
 }

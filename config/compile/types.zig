@@ -1,9 +1,13 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: options.zig  │
+// │  (c) 2025 Linuxperoxo  •  FILE: types.zig    │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const UseMenuconfigAsRef: bool = true;
-pub const IgnoreModuleWithArchNotSupported: bool = true;
-pub const DinamicModulesLoad: bool = true;
-pub const AllowDynamicModulesLoad: bool = true;
+pub const CodeMode_T: type = enum {
+    Debug,
+    Runtime,
+};
+pub const OptimizeMode_T: type = enum {
+    Small,
+    Fast,
+};

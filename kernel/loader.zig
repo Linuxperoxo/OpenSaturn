@@ -4,124 +4,91 @@
 // └──────────────────────────────────────────────┘
 
 // Esse arquivo e responsavel por 2 coisas, carregar
-// recursos do kernel, e fazer verificacoes, se alguma
-// coisa caiu em um @compileError, pode ter certeza que
-// foi nesse arquivo
+// recursos do kernel, e fazer verificacoes de compilacao,
+// se alguma coisa caiu em um @compileError, pode ter certeza
+// que foi nesse arquivo
 
 const cpu: type = @import("root").cpu;
+const arch: type = @import("root").arch;
+const decls: type = @import("root").decls;
+const kernel: type = @import("root").kernel;
 const config: type = @import("root").config;
 const modules: type = @import("root").modules;
 const supervisor: type = @import("root").supervisor;
 const interfaces: type = @import("root").interfaces;
 
-pub fn SaturnArch() void {
-    const Arch: type = cpu.Arch;
-    const Entry: type = cpu.Entry;
-    const Interrupt: type = cpu.Interrupt;
+const sla = @import("std").builtin.Type;
 
-    // === Arch Verify ===
-    comptime {
-        if(!@hasDecl(Arch, "__SaturnArchDescription__")) {
-            @compileError(
-                "expected a declaration __SaturnArchDescription__ for architecture " ++
-                @tagName(config.arch.options.Target)
-            );
+comptime {
+    // NOTE: usar assembly inline dentro do nucleo de um kernel e totalmente desencorajado, ja
+    // que aquele codigo so funciona apenas para uma arquitetura, ou seja, vamos precisar
+    // ter um codigo assembly naquela parte para cada arquitetura, nesse caso, nao tem problema
+    // nenhum em usar assembly inline aqui, ja que usamos diretivas, nao instrucoes, isso funciona
+    // para assembly de qualquer arquitetura suportada pelo GAS
+
+    // isso aqui realmente precisa ser feito, nao funcionaria colocar um 'pub export const' para cada um
+    // la na proprio config, ja que pode acontecer de alguma nao ser usada diretamente no codigo, mas ser
+    // usada dentro de um linker ou assembly, isso iria dar um erro de simbolo nao encontrado, ja que como
+    // nao foi usada dentro do proprio codigo zig, o compilador so iria ignorar e nem colocar o export nela
+    const aux: type = opaque {
+        pub fn make_asm_set(comptime name: []const u8, comptime value: u32) []const u8 {
+            return ".set " ++ name ++ ", " ++ kernel.utils.fmt.intFromArray(value) ++ "\n"
+                ++ ".globl " ++ name ++ "\n"
+            ;
         }
-        if(@TypeOf(Arch.__SaturnArchDescription__) != interfaces.arch.arch_T) {
-            @compileError(
-                "declaration __SaturnArchDescription__ for architecture " ++
-                @tagName(config.arch.options.Target) ++
-                " must be type: " ++
-                @typeName(interfaces.arch.arch_T)
-            );
-        }
-        if(!Arch.__SaturnArchDescription__.usable) {
-            @compileError(
-                "target kernel cpu architecture " ++
-                @tagName(config.arch.options.Target) ++
-                " has no guarantee of functioning by the developer"
-            );
-        }
+    };
+    // caso a arquitetura nao use uma configuracao default, fica por conta dela mesmo fazer isso
+    if(cpu.segments == void) asm(
+        aux.make_asm_set("kernel_phys_address", config.kernel.mem.phys.kernel_phys) ++
+        aux.make_asm_set("kernel_virtual_address", config.kernel.mem.virtual.kernel_text) ++
+        aux.make_asm_set("kernel_text_virtual", config.kernel.mem.virtual.kernel_text) ++
+        aux.make_asm_set("kernel_stack_base_virtual", config.kernel.mem.virtual.kernel_stack_base) ++
+        aux.make_asm_set("kernel_data_virtual", config.kernel.mem.virtual.kernel_data) ++
+        aux.make_asm_set("kernel_paged_memory_virtual", config.kernel.mem.virtual.kernel_paged_memory) ++
+        aux.make_asm_set("kernel_mmio_virtual", config.kernel.mem.virtual.kernel_mmio)
+    );
+}
+
+pub fn saturn_arch_verify() void {
+    const decl = decls.saturn_especial_decls[
+        @intFromEnum(decls.DeclsOffset_T.arch)
+    ];
+    if(!@hasDecl(arch, decl)) {
+        @compileError(
+            "expected a declaration " ++ decl ++ " for architecture " ++
+            @tagName(config.arch.options.Target)
+        );
     }
-    // ===================
-
-    // === Arch Entry Verify ===
-    comptime {
-        if(!@hasDecl(Entry, "__SaturnEntryDescription__")) {
-            @compileError(
-                "expected a declaration __SaturnEntryDescription__ for architecture " ++
-                @tagName(config.arch.options.Target)
-            );
-        }
-        if(@TypeOf(Entry.__SaturnEntryDescription__) != interfaces.arch.entry_T) {
-            @compileError(
-                "declaration __SaturnArchDescription__ for architecture " ++
-                @tagName(config.arch.options.Target) ++
-                " must be type: " ++
-                @typeName(interfaces.arch.entry_T)
-            );
-        }
-        @export(Entry.__SaturnEntryDescription__.entry, .{
-            .name = Entry.__SaturnEntryDescription__.label,
-            .section = Entry.__SaturnEntryDescription__.section,
-        });
+    const decl_type = @TypeOf(arch.__SaturnArchDescription__);
+    const decl_expect_type = decls.saturn_especial_decls_types[
+        @intFromEnum(decls.DeclsOffset_T.arch)
+    ];
+    if(decl_type != decl_expect_type) {
+        @compileError(
+            "declaration " ++ decl ++ " for architecture " ++
+            @tagName(config.arch.options.Target) ++
+            " must be type: " ++
+            @typeName(decls.saturn_especial_decls_types[
+                @intFromEnum(decls.DeclsOffset_T.arch)
+            ])
+        );
     }
-    // =========================
-
-    // Fazendo chamada para o init da arquitetura
-    @call(.never_inline, Arch.__SaturnArchDescription__.init, .{});
-
-    // === Arch Interrupt Verify ===
-    comptime {
-        // TODO: Fazer um type struct para interrupt, para assim ter 3 tipos
-        // para as 3 bases de arquitetura para o kernel
-
-        // Caso a arquitetura queira usar o supervisor, o saturn
-        // precisa que a arquitetura tenha uma funçao para configurar
-        // suas interrupçoes juntamente com o supervisor, caso contrario
-        // o saturn nao pode garantir que as interrupçoes estao funcionando
-        //
-        // O uso do supervisor nao e obrigatorio, por exemplo, para microcontroladores
-        // e desejavel ter maior controle sobre as interrupçoes
-        switch(Arch.__SaturnArchDescription__.interrupt) {
-            .raw => {},
-            .supervisor => {
-                if(!@hasDecl(Interrupt.supervisor, "__SaturnSupervisorTable__")) {
-                    @compileError(
-                        "__SaturnSupervisorTable__ must be defined within the file"
-                    );
-                }
-                switch(@typeInfo(@TypeOf(Interrupt.supervisor.__SaturnSupervisorTable__))) {
-                    .array => |A| {
-                        if(A.child != supervisor.supervisor_T) {
-                            @compileError(
-                                "__SaturnSupervisorTable__ must be an array of " ++
-                                @typeName(supervisor.supervisor_T)
-                            );
-                        }
-                        if(@TypeOf(Interrupt.supervisor.init) != fn([A.len]*const fn() callconv(.c) void) void) {
-                            @compileError(
-                                "supervisor interrupt init function must be an " ++
-                                @typeName(fn([A.len]*const fn() callconv(.c) void) void)
-                            );
-                        }
-                    },
-                    else => {
-                        @compileError(
-                            "__SaturnSupervisorTable__ must be an array of " ++
-                            @typeName(supervisor.supervisor_T)
-                        );
-                    },
-                }
+    if(!arch.__SaturnArchDescription__.usable) {
+        @compileError(
+            "target kernel cpu architecture " ++
+            @tagName(config.arch.options.Target) ++
+            " has no guarantee of functioning by the developer"
+        );
+    }
+    const arch_fields = @typeInfo(decl_expect_type).@"struct".fields;
+    for(arch_fields) |field| {
+        if(field.type == bool) continue; // ignore usable field
+        @export(
+            (@field(arch.__SaturnArchDescription__, field.name)).entry,
+            .{
+                .name = (@field(arch.__SaturnArchDescription__, field.name)).label
             },
-        }
-    }
-    // =============================
-
-    // Fazendo chamada para o init da interrupt da arquitetura
-    switch(comptime Arch.__SaturnArchDescription__.interrupt) {
-        .raw => @call(.never_inline, &Interrupt.raw.init, .{}), // without supervisor
-        .supervisor => @call(.never_inline, &Interrupt.supervisor.init, .{ supervisor.supervisorHandlerPerIsr }), // with supervisor
+        );
     }
 
     // === Arch PhysIo Verify ===
@@ -129,38 +96,60 @@ pub fn SaturnArch() void {
     // =============================
 }
 
-pub fn SaturnModules() void {
-    comptime {
-        for(modules.__SaturnAllMods__) |M| {
-            if(!@hasDecl(M, "__SaturnModuleDescription__")) {
+pub fn saturn_modules_verify() void {
+    for(modules.__SaturnAllMods__) |M| {
+        const decl = decls.saturn_especial_decls[
+            @intFromEnum(decls.DeclsOffset_T.module)
+        ];
+        if(!@hasDecl(M, decl)) {
+            @compileError(
+                decl ++ " is not defined in the module file " ++
+                @typeName(M)
+            );
+        }
+        const decl_type = @TypeOf(M.__SaturnModuleDescription__);
+        const decl_expect_type = decls.saturn_especial_decls_types[
+            @intFromEnum(decls.DeclsOffset_T.module)
+        ];
+        if(decl_type != decl_expect_type) {
+            if(decl_type != decl_expect_type) {
                 @compileError(
-                    "__SaturnModuleDescription__ is not defined in the module file" ++
-                    @typeName(M)
+                    "declaration " ++ decl ++ " for module " ++
+                    @typeName(M) ++
+                    " must be type: " ++
+                    @typeName(decls.saturn_especial_decls_types[
+                        @intFromEnum(decls.DeclsOffset_T.module)
+                    ])
                 );
             }
         }
     }
+}
+
+pub fn saturn_modules_loader() void {
     inline for(modules.__SaturnAllMods__) |M| {
+        // caso o modulo seja um modulo atualmente nao utilizavel, simplesmente damos skip
+        if(M.__SaturnModuleDescription__.load == .unlinkable) continue;
+        // Precisamos forçar um comptime aqui para evitar
+        // erro de compilacao
+        comptime arch: {
+            for(M.__SaturnModuleDescription__.arch) |A| {
+                if(config.arch.options.Target == A) {
+                    break :arch;
+                }
+            }
+            if(!config.modules.options.IgnoreModuleWithArchNotSupported) {
+                @compileError("module file " ++
+                    @typeName(M) ++
+                    " is not supported by target architecture " ++
+                    @tagName(config.arch.options.Target));
+            }
+            continue;
+        }
         // Skip nao pode ser comptime se nao vamos ter um
         // erro de compilacao, ja que ele vai tentar carregar
         // os modulos em comptime
         skip: {
-            // Precisamos forçar um comptime aqui para evitar 
-            // erro de compilacao
-            comptime arch: {
-                for(M.__SaturnModuleDescription__.arch) |A| {
-                    if(config.arch.options.Target == A) {
-                        break :arch;
-                    }
-                }
-                if(!config.modules.options.IgnoreModuleWithArchNotSupported) {
-                    @compileError("module file " ++
-                        @typeName(M) ++
-                        " is not supported by target architecture " ++
-                        @tagName(config.arch.options.Target));
-                }
-                break :skip;
-            }
             switch(comptime M.__SaturnModuleDescription__.load) {
                 .dinamic => {},
                 .unlinkable => {},
@@ -184,6 +173,7 @@ pub fn SaturnModules() void {
                         }
                     }
                     @call(.never_inline, M.__SaturnModuleDescription__.init, .{}) catch {
+                        // klog error
                     };
                 },
             }
@@ -204,4 +194,8 @@ pub fn SaturnModules() void {
             }
         }
     }
+}
+
+pub fn saturn_running() noreturn {
+    while(true) {}
 }

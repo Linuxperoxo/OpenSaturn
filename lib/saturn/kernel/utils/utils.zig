@@ -1,9 +1,7 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: options.zig  │
+// │  (c) 2025 Linuxperoxo  •  FILE: utils.zig    │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const UseMenuconfigAsRef: bool = true;
-pub const IgnoreModuleWithArchNotSupported: bool = true;
-pub const DinamicModulesLoad: bool = true;
-pub const AllowDynamicModulesLoad: bool = true;
+pub const mem: type = @import("mem/mem.zig");
+pub const fmt: type = @import("fmt/fmt.zig");

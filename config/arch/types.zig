@@ -3,35 +3,13 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const target_T: type = enum {
-    x86,
-    x86_64,
+pub const Target_T: type = enum {
+    i386,
+    amd64,
     arm,
     avr,
-    xtensa
-};
-pub const codeMode_T: type = enum {
-    Debug,
-    Runtime,
-};
-pub const optimize_T: type = enum {
-    Small,
-    Fast
-};
-pub const arch_T: type = struct {
-    maintainer: []const u8,
-    usable: bool,
-    init: *const fn() void,
-    interrupt: enum { // NOTE: Possibly obsolete
-        raw,
-        supervisor,
-    },
-};
-pub const entry_T: type = struct {
-    maintainer: []const u8,
-    entry: *const fn() callconv(.naked) noreturn,
-    label: []const u8,
-    section: []const u8,
+    xtensa,
+    riscv64,
 };
 pub const physIo_T: type = struct {
     maintainer: []const u8,

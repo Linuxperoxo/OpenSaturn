@@ -34,4 +34,4 @@ pub const registerfs = @import("management.zig").registerfs;
 pub const unregisterfs = @import("management.zig").unregisterfs;
 
 // NOTE: Alocador temporario
-pub const Allocator: type = @import("root").memory;
+pub const Allocator: type = @import("root").lib.kernel.memory;
