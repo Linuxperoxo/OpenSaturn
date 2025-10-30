@@ -66,6 +66,7 @@ pub fn entry() linksection(section_text_loader) callconv(.naked) noreturn {
         \\ calll .i386.mm
         \\ calll .i386.init.gdt
         \\ calll .i386.interrupts
+        \\ calll .i386.physio
         \\ jmp saturn.main
         :
         :[phys_stack] "i" (

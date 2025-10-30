@@ -10,6 +10,7 @@ const init: type = root.init;
 const interrupts: type = root.interrupts;
 const mm: type = root.mm;
 const interfaces: type = root.interfaces;
+const physio: type = root.physio;
 
 pub const linker: type = @import("linker.zig");
 pub const sections: type = @import("sections.zig");
@@ -35,6 +36,12 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
         .maintainer = "Linuxperoxo",
         .label = ".i386.mm",
         .entry = &mm.mmu_init,
+    },
+    .physio = .{
+        .maintainer = "Linuxperoxo",
+        .label = ".i386.physio",
+        .entry = &physio.physio_init,
+        .sync = &physio.physio_sync,
     },
     // TODO:
     //

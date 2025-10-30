@@ -15,35 +15,22 @@ pub const PhysIo_T: type = struct {
 
 pub const PhysIoInfo_T: type = struct {
     phys: PhysIo_T,
-    status: Status_T,
-
-    pub const Status_T: type = enum {
+    brother: ?*@This(),
+    status: enum {
         missing,
         active,
-        working
-    };
+    },
+    flags: packed struct(u8) {
+        find: u1, // podemos achar esse dispositivo quando o search e usado
+        hit: u2, // quantidade de hits no sync, quando 0 considerado como missing
+        link: u1, // quando um search atingiu esse device
+        save: u1, // salva informacoes do dispositivo para quando for ativado novamente
+        reserved: u3 = 0,
+    },
 };
 
 pub const PhysIoErr_T: type = error {
     Missing,
     NonFound,
+    NoFind,
 };
-
-pub const PhysLevel0_T: type = struct {
-    base: [
-        @typeInfo(PCIClass_T).@"enum".fields.len
-    ]?*PhysLevel1_T,
-};
-
-pub const PhysLevel1_T: type = struct {
-    base: ?*[
-        @typeInfo(PCIVendor_T).@"enum".fields.len
-    ]?*PhysLevel2_T,
-};
-
-pub const PhysLevel2_T: type = struct {
-    base: ?*[
-        @typeInfo(PCIVendor_T).@"enum".fields.len
-    ]?*PhysIoInfo_T,
-};
-

@@ -26,6 +26,7 @@ pub const cpu: type = struct {
     pub const interrupts: type = SelectedArch.interrupts;
     pub const linker: type = SelectedArch.linker;
     pub const mm: type = SelectedArch.mm;
+    pub const physio: type = SelectedArch.physio;
     pub const segments: type = if(@hasDecl(SelectedArch, "segments")) SelectedArch.arch.segments else void;
 };
 pub const Architectures: type = struct {
@@ -39,7 +40,7 @@ pub const Architectures: type = struct {
         pub const init: type = @import("kernel/init/i386/init.zig");
         pub const interrupts: type = @import("kernel/interrupts/i386/interrupts.zig");
         pub const linker: type = @import("linkers/i386/linker.zig");
-        pub const physio: type = @import("kernel/physio/x86/physio_x86.zig");
+        pub const physio: type = @import("kernel/physio/i386/physio.zig");
         pub const mm: type = @import("mm/i386/mm.zig");
         pub const lib: type = struct {
             pub const kernel: type = @import("lib/saturn/kernel/arch/i386/lib.zig");
@@ -110,6 +111,7 @@ pub const core: type = struct {
     pub const fs: type = @import("kernel/core/fs/fs.zig");
     pub const drivers: type = @import("kernel/core/drivers/drivers.zig");
 };
+pub const ioreg: type = @import("kernel/core/ioreg/ioreg.zig");
 pub const loader: type = @import("kernel/loader.zig");
 pub const modules: type = @import("modules.zig");
 pub const interfaces: type = struct {

@@ -69,13 +69,12 @@ fn pathVerify(
     };
 }
 
-pub fn add(
-    class: PCIClass_T,
-    vendor: PCIVendor_T,
+pub fn register_physio(
+    physio: PhysIo_T,
 ) PhysIoErr_T!void {
     return r: {
         const step = @call(.always_inline, &pathVerify, .{
-            class, vendor
+            physio.device.class, physio.device.vendorID
         });
         sw: switch(step orelse break :r PhysIoErr_T.NonFound) {
             .Phys0 => {
@@ -90,11 +89,11 @@ pub fn add(
     };
 }
 
-pub fn search() PhysIoErr_T!void {
+pub fn search_physio() PhysIoErr_T!void {
 
 }
 
-pub fn sync() void {
+pub fn tree_sync() void {
 
 }
 

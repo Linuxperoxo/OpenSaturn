@@ -26,4 +26,10 @@ pub const ArchDescription_T: type = struct {
         label: []const u8,
         entry: *const fn() callconv(.c) void,
     },
+    physio: struct {
+        maintainer: []const u8,
+        label: []const u8,
+        entry: *const fn() callconv(.c) void,
+        sync: *const fn() void,
+    },
 };

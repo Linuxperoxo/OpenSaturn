@@ -16,11 +16,7 @@ pub const AllocatorErr_T: type = SOAAllocator_T.err_T;
 const SOAAllocator_T: type = SOA.buildObjAllocator(
     Driver_T,
     false,
-    r: {
-        if(memory.totalOfPossibleAllocs <= 4) break :r 4;
-        if((memory.totalOfPossibleAllocs % 2) != 0) break :r memory.totalOfPossibleAllocs + 1;
-        break :r memory.totalOfPossibleAllocs;
-    },
+    128,
     .{
         .alignment = @enumFromInt(@sizeOf(usize)),
         .range = .large,
@@ -30,6 +26,12 @@ const SOAAllocator_T: type = SOA.buildObjAllocator(
 );
 
 var allocator: SOAAllocator_T = .{};
+
+pub fn init() AllocatorErr_T!void {
+    return @call(.always_inline, SOAAllocator_T.ainit, .{
+        &allocator
+    });
+}
 
 pub fn alloc() AllocatorErr_T!*Driver_T {
     return @call(.always_inline, &SOAAllocator_T.alloc, .{

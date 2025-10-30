@@ -3,14 +3,20 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const PhysIo_T: type = @import("types.zig").PhysIo_T;
-const PCIAddress_T: type = @import("root").kernel.io.pci.PCIAddress_T;
-const PCIRegsOffset_T: type = @import("root").kernel.io.pci.PCIRegsOffset_T;
-const PCI_UNDEFINED_RETURN = @import("root").kernel.io.pci.PCI_UNDEFINED_RETURN;
-const pci_config_read = @import("root").kernel.io.pci.pci_config_read;
-const physIoRegister: type = @import("core.zig").physIoRegister;
+const root: type = @import("root");
+const types: type = @import("types.zig");
+const core: type = @import("core.zig");
 
-pub fn physIoScan() void {
+const PhysIo_T: type = types.PhysIo_T;
+const PCIAddress_T: type = root.kernel.io.pci.PCIAddress_T;
+const PCIRegsOffset_T: type = root.kernel.io.pci.PCIRegsOffset_T;
+
+const pci_config_read = root.kernel.io.pci.pci_config_read;
+const register_physio = core.register_physio;
+
+const PCI_UNDEFINED_RETURN = root.kernel.io.pci.PCI_UNDEFINED_RETURN;
+
+pub fn physio_scan() void {
     // TODO: O log deve ser [PCI] {domain}:{bus}:{device}.{function} {class}: {vendor} {device} (rev {revision})
     // TODO: Documentar
     // OPTIMIZE: Fazer bitwise para distribuir os regs para as classes,
@@ -103,7 +109,8 @@ pub fn physIoScan() void {
                         };
                     };
                 }
-                @call(.always_inline, &physIoRegister, .{
+                @call(.always_inline, register_physio, .{
+                    physConfigSpace
                 });
                 if(!multiFunction) break;
             }
