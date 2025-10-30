@@ -73,18 +73,28 @@ SECTIONS {
     *(.i386.opensaturn.data)
   }
 
+  .opensaturn.bss (NOLOAD) : {
+    *(.bss*)
+  }
+
   PROVIDE(
-    phys_address_opensaturn_data_end = LOADADDR(.opensaturn.data) + SIZEOF(.opensaturn.data)
+    phys_address_opensaturn_data_end = LOADADDR(.opensaturn.bss) + SIZEOF(.opensaturn.bss)
   );
 
   . = ALIGN(phys_address_opensaturn_data_end, 4096);
 
+  PROVIDE(
+    phys_address_opensaturn_mmu_start = .
+  );
+
   .opensaturn.mmu : AT(ALIGN(phys_address_opensaturn_data_end, 4096)) {
-    . = ALIGN(8);
     *(.i386.opensaturn.pagedir)
-    . = ALIGN(4096);
     *(.i386.opensaturn.pagetable)
   }
+
+  PROVIDE(
+    phys_address_opensaturn_mmu_end = .
+  );
 
   /*
    * NOTE: Apenas para facilitar a vida do bootloader
@@ -94,12 +104,12 @@ SECTIONS {
       . = ALIGN(4096);
   }
 
-  .opensaturn.bss (NOLOAD) : {
-    *(.bss*)
-  }
+  PROVIDE(
+    phys_address_opensaturn_end = LOADADDR(.opensaturn.mmu) + SIZEOF(.opensaturn.mmu)
+  );
 
   PROVIDE(
-    phys_address_opensaturn_end = LOADADDR(.opensaturn.bss) + SIZEOF(.opensaturn.bss)
+    phys_address_zone_kernel_start = ALIGN(phys_address_opensaturn_end, 4096)
   );
 
   /DISCARD/ : {

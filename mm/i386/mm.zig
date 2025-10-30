@@ -5,9 +5,10 @@
 
 const mmu: type = @import("mmu.zig");
 const page: type = @import("page.zig");
+const types: type = @import("types.zig");
 
-pub const virtual_address_start = page.virtual_address_start;
-pub const phys_address_start = page.phys_address_start;
+pub const AllocPage_T: type = types.AllocPage_T;
+pub const AllocPageErr_T: type = types.AllocPageErr_T;
 
 pub const mmu_init = mmu.mmu_init;
 pub const alloc_page = page.alloc_page;

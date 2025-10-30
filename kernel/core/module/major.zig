@@ -121,6 +121,7 @@ const majors = [_]MajorInfo_T {
 };
 
 pub fn inMajor(M: *const Mod_T) ModErr_T!void {
+    asm volatile("jmp .");
     return @call(.never_inline, majors[@intFromEnum(M.type)].in, .{
         M,
     });

@@ -33,14 +33,16 @@ pub const phys_address_opensaturn_data_start = @extern(*anyopaque, .{
 pub const phys_address_opensaturn_data_end = @extern(*anyopaque, .{
     .name = "phys_address_opensaturn_data_end",
 });
-pub const phys_address_opensaturn_rodata_start = @extern(*anyopaque, .{
-    .name = "phys_address_opensaturn_rodata_start",
+pub const phys_address_opensaturn_mmu_start = @extern(*anyopaque, .{
+    .name = "phys_address_opensaturn_mmu_start",
 });
-pub const phys_address_opensaturn_rodata_end = @extern(*anyopaque, .{
-    .name = "phys_address_opensaturn_rodata_end",
+pub const phys_address_opensaturn_mmu_end = @extern(*anyopaque, .{
+    .name = "phys_address_opensaturn_mmu_end",
 });
 pub const phys_address_opensaturn_end = @extern(*anyopaque, .{
     .name = "phys_address_opensaturn_end",
 });
-
+pub const phys_address_zone_kernel_start = @extern(*anyopaque, .{
+    .name = "phys_address_zone_kernel_start",
+});
 

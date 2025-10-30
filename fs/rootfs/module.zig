@@ -20,7 +20,7 @@ const rootfs_umount = &@import("management.zig").rootfs_umount;
 
 pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .name = "ke_m_rootfs",
-    .load = .linkable,
+    .load = .unlinkable,
     .init = &init,
     .type = .{
         .filesystem = .{
