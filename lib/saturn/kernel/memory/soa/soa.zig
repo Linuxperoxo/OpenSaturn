@@ -309,7 +309,7 @@ pub fn buildObjAllocator(
             };
         }
 
-        pub fn ainit(self: *Self) err_T!void {
+        fn pool_init(self: *Self) err_T!void {
             if(builtin.is_test) {
                 const std: type = @import("std");
                 var gpa = std.heap.GeneralPurposeAllocator(.{}) {};
@@ -332,18 +332,23 @@ pub fn buildObjAllocator(
             }
         }
 
-        pub fn adeinit(self: *Self) void {
+        fn pool_deinit(self: *Self) err_T!void {
+            if(builtin.is_test) return;
             switch(comptime config.arch.options.Target) {
                 .i386 => mm.page_free(&self.page) catch return err_T.UndefinedAction,
                 else => {},
             }
         }
 
-        pub const alloc = switch(optimize.type) {
-            .dinamic => struct {
-                pub fn dinamic(self: *Self, calling: Optimize_T.CallingAlloc_T) err_T!*T {
+        pub fn alloc(self: *Self, calling: ?Optimize_T.CallingAlloc_T) err_T!*T {
+            if(self.pool == null)
+                try @call(.never_inline, pool_init, .{
+                    self
+                });
+            switch(optimize.type) {
+                .dinamic => {
                     if(self.pool == null) return err_T.NotInitialized;
-                    return if(self.allocs >= num) err_T.OutOfMemory else switch(calling) {
+                    return if(self.allocs >= num) err_T.OutOfMemory else switch(calling orelse .auto) {
                         Optimize_T.CallingAlloc_T.auto => @call(.never_inline, &auto, .{
                             self
                         }) catch err_T.UndefinedAction,
@@ -354,27 +359,23 @@ pub fn buildObjAllocator(
                             self, true
                         }) catch err_T.UndefinedAction,
                     };
-                }
-            }.dinamic,
+                },
 
-            .linear => struct {
-                pub fn linear(self: *Self) err_T!*T {
+                .linear => {
                     if(self.pool == null) return err_T.NotInitialized;
                     return if(self.allocs >= num) err_T.OutOfMemory else @call(.always_inline, &continuos, .{
                         self, self.lindex, null
                     }) catch err_T.UndefinedAction;
-                }
-            }.linear,
+                },
 
-            .optimized => struct {
-                pub fn optimized(self: *Self) err_T!*T {
+                .optimized => {
                     if(self.pool == null) return err_T.NotInitialized;
                     return if(self.allocs >= num) err_T.OutOfMemory else @call(.always_inline, &auto, .{
                         self
                     }) catch err_T.UndefinedAction;
-                }
-            }.optimized,
-        };
+                },
+            }
+        }
 
         pub fn free(self: *Self, obj: *T) err_T!void {
             return r: {
@@ -393,6 +394,10 @@ pub fn buildObjAllocator(
                 self.lindex = if(self.lindex) |_| self.lindex else ipool;
                 if(optimize.type != .linear)
                     self.cindex = ipool;
+                if(self.allocs == 0)
+                    @call(.never_inline, pool_deinit, .{
+                        self
+                    }) catch {};
             };
         }
     };
@@ -452,7 +457,6 @@ test "SOA Continuos Alloc" {
         @import("std").debug.print("== CONTINUOS:\n* optmize: {any}\n* cache: {any}\n==\n", .{
             SOAAllocator_T.Options.config.optimize , SOAAllocator_T.Options.config.cache
         });
-        try allocator.ainit();
         for(0..quat) |i| {
             const obj = try SOAAllocator_T.alloc(
                 &allocator, Optimize_T.CallingAlloc_T.continuos,
@@ -484,7 +488,6 @@ test "SOA Fast Alloc" {
         @import("std").debug.print("== FAST:\n* optmize: {any}\n* cache: {any}\n==\n", .{
             SOAAllocator_T.Options.config.optimize , SOAAllocator_T.Options.config.cache
         });
-        try allocator.ainit();
         for(0..quat) |i| {
             const obj = try SOAAllocator_T.alloc(
                 &allocator, Optimize_T.CallingAlloc_T.fast,
@@ -513,7 +516,6 @@ test "SOA Auto Alloc" {
         @import("std").debug.print("== AUTO:\n* optmize: {any}\n* cache: {any}\n==\n", .{
             SOAAllocator_T.Options.config.optimize , SOAAllocator_T.Options.config.cache
         });
-        try allocator.ainit();
         for(0..quat) |i| {
             const obj = try SOAAllocator_T.alloc(
                 &allocator, Optimize_T.CallingAlloc_T.auto,
