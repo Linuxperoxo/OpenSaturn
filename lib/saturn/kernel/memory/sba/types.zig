@@ -20,16 +20,3 @@ pub const Cache_T: type = struct {
         huge = 1,
     };
 };
-
-pub const Pool_T: type = struct {
-    bytes: []u8,
-    flags: packed struct(u8) {
-        full: u1,
-        hit: u2,
-        parent: u1,
-    },
-    private: switch(config.arch.options.Target) {
-        .i386 => mm.AllocPage_T,
-        else => void,
-    },
-};
