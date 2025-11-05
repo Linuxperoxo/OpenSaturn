@@ -65,9 +65,11 @@ test "SOA Continuos Alloc" {
     inline for(0..allocators.len) |a| {
         const SOAAllocator_T: type = allocators[a];
         var allocator: SOAAllocator_T = .{};
-        @import("std").debug.print("== CONTINUOS:\n* optmize: {any}\n* cache: {any}\n==\n", .{
-            SOAAllocator_T.Options.config.optimize , SOAAllocator_T.Options.config.cache
-        });
+        errdefer {
+            @import("std").debug.print("FAILED -> FAST: optimize: {any}, cache: {any}\n", .{
+                SOAAllocator_T.Options.config.optimize , SOAAllocator_T.Options.config.cache
+            });
+        }
         for(0..quat) |i| {
             const obj = try SOAAllocator_T.alloc(
                 &allocator, Optimize_T.CallingAlloc_T.continuos,
@@ -96,9 +98,11 @@ test "SOA Fast Alloc" {
     inline for(0..allocators.len) |a| {
         const SOAAllocator_T: type = allocators[a];
         var allocator: SOAAllocator_T = .{};
-        @import("std").debug.print("== FAST:\n* optmize: {any}\n* cache: {any}\n==\n", .{
-            SOAAllocator_T.Options.config.optimize , SOAAllocator_T.Options.config.cache
-        });
+        errdefer {
+            @import("std").debug.print("FAILED -> FAST: optimize: {any}, cache: {any}\n", .{
+                SOAAllocator_T.Options.config.optimize , SOAAllocator_T.Options.config.cache
+            });
+        }
         for(0..quat) |i| {
             const obj = try SOAAllocator_T.alloc(
                 &allocator, Optimize_T.CallingAlloc_T.fast,
@@ -124,9 +128,11 @@ test "SOA Auto Alloc" {
     inline for(0..allocators.len) |a| {
         const SOAAllocator_T: type = allocators[a];
         var allocator: SOAAllocator_T = .{};
-        @import("std").debug.print("== AUTO:\n* optmize: {any}\n* cache: {any}\n==\n", .{
-            SOAAllocator_T.Options.config.optimize , SOAAllocator_T.Options.config.cache
-        });
+        errdefer {
+            @import("std").debug.print("FAILED -> AUTO: optimize: {any}, cache: {any}\n", .{
+                SOAAllocator_T.Options.config.optimize , SOAAllocator_T.Options.config.cache
+            });
+        }
         for(0..quat) |i| {
             const obj = try SOAAllocator_T.alloc(
                 &allocator, Optimize_T.CallingAlloc_T.auto,

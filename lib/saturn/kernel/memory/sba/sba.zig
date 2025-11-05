@@ -71,6 +71,9 @@ pub fn buildByteAllocator(
             UndefinedAction,
             MemoryFrag,
             ZeroBytes,
+            NonPoolInitialized,
+            PoolOverflow,
+            DoubleFree,
         };
 
         fn pool_init(pool: *Pool_T) err_T!void {
@@ -132,14 +135,14 @@ pub fn buildByteAllocator(
             }
         }
 
-        inline fn check_blocks_range(pool: *Pool_T, blocks: usize, locale: usize) struct { index: ?usize, result: bool } {
+        inline fn check_blocks_range(pool: *Pool_T, blocks: usize, locale: usize, state: ?u1) struct { index: ?usize, result: bool } {
             return r: {
                 if((locale + blocks) > pool.bitmap.len) break :r .{
                     .index = null,
                     .result = false,
                 };
                 for(locale..(locale + blocks)) |i| {
-                    if(pool.bitmap[i] == 1) break :r .{
+                    if(pool.bitmap[i] != state orelse 1) break :r .{
                         .index = @intCast(i),
                         .result = false,
                     };
@@ -169,12 +172,20 @@ pub fn buildByteAllocator(
                 pool.bitmap[i] = 1;
         }
 
+        inline fn found_pool_of_ptr(ptr: []u8) *Pool_T {
+            _ = ptr;
+        }
+
+        inline fn check_bounds(pool: *Pool_T, ptr: []u8) bool {
+            return (@intFromPtr(ptr.ptr) - @intFromPtr(&pool.bytes.?[0])) < total_bytes_of_pool;
+        }
+
         fn alloc_sigle_frame(self: *@This(), bytes: usize) err_T![]u8 {
             if(self.root.flags.full == 1) return err_T.OutOfMemory;
             var index: usize = self.root.next orelse 0;
             const blocks_to_alloc: usize = cast_bytes_to_block(bytes);
             for(index..self.root.bitmap.len) |_| {
-                const check = check_blocks_range(&self.root, blocks_to_alloc, index);
+                const check = check_blocks_range(&self.root, blocks_to_alloc, index, 0);
                 if(check.result) break;
                 if(check.index == null) return err_T.MemoryFrag;
                 index = check.index.? + 1;
@@ -196,7 +207,7 @@ pub fn buildByteAllocator(
             const blocks_to_alloc: usize = cast_bytes_to_block(bytes);
             r: {
                 for(index..current_pool.bitmap.len) |_| {
-                    const check = check_blocks_range(current_pool, blocks_to_alloc, index);
+                    const check = check_blocks_range(current_pool, blocks_to_alloc, index, 0);
                     if(check.result) break :r {};
                     if(check.index == null) {
                         try @call(.never_inline, resize, .{
@@ -241,18 +252,28 @@ pub fn buildByteAllocator(
         }
 
         fn free_single_frame(self: *@This(), ptr: []u8) err_T!void {
-            // comecar por aqui
-            _ = self;
-            _ = ptr;
+            if(self.root.bytes == null) return err_T.NonPoolInitialized;
+            if(!check_bounds(&self.root, ptr)) return err_T.IndexOutBounds;
+            const block_to_free: usize = cast_bytes_to_block(ptr.len);
+            const initial_block: usize = cast_bytes_to_block(
+                @intFromPtr(ptr.ptr) - @intFromPtr(&self.root.bytes.?[0])
+            );
+            const check = check_blocks_range(&self.root, block_to_free, initial_block, null);
+            if(check.index != null and !check.result) return err_T.DoubleFree;
+            for(initial_block..(initial_block + block_to_free)) |i| {
+                self.root.bitmap[i] = 0;
+            }
+            self.root.refs -= block_to_free;
+            self.root.flags.full = 0;
         }
 
         pub fn free(self: *@This(), ptr: []u8) err_T!void {
             if(comptime personality.resize) {
-                @call(.always_inline, free_resized_frame, .{
+                try @call(.always_inline, free_resized_frame, .{
                     self, ptr
                 });
             }
-            @call(.always_inline, free_single_frame, .{
+            try @call(.always_inline, free_single_frame, .{
                 self, ptr
             });
         }

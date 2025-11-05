@@ -56,6 +56,19 @@ test "SBA Free Test For Single Frame" {
     for(0..SBA_T.Pool_T.pool_bitmap_len) |_| {
         _ = try sba_allocator.alloc(1);
     }
+    for(0..SBA_T.Pool_T.pool_bitmap_len) |i| {
+        try sba_allocator.free(
+            @as([*]u8, @ptrCast(&sba_allocator.root.bytes.?[i * SBA_T.block_size]))[0..1]
+        );
+    }
+    for(0..SBA_T.Pool_T.pool_bitmap_len) |_| {
+        _ = try sba_allocator.alloc(1);
+    }
+    for(0..SBA_T.Pool_T.pool_bitmap_len) |i| {
+        try sba_allocator.free(
+            @as([*]u8, @ptrCast(&sba_allocator.root.bytes.?[i * SBA_T.block_size]))[0..1]
+        );
+    }
 }
 
 test "SBA Alloc Test For Resized Frame" {
