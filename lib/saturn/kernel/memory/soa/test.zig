@@ -8,7 +8,7 @@
 // OS: Gentoo Linux x86_64
 // Zig: 0.15.1
 // Tester: Linuxperoxo
-// Status: Pass
+// Status: OK
 
 const Optimize_T: type = @import("soa.zig").Optimize_T;
 const Cache_T: type = @import("soa.zig").Cache_T;

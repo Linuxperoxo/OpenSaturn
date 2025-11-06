@@ -25,7 +25,7 @@ pub fn buildByteAllocator(
     return struct {
         root: Pool_T = .{},
         top: ?*Pool_T = null,
-        resized: if(builtin.is_test and personality.resize) bool else void = if(builtin.is_test and personality.resize) false else {},
+        pools: if(builtin.is_test and personality.resize) usize else void = if(builtin.is_test and personality.resize) 1 else {},
 
         // esse calculo e equivalente a fazer:
         //
@@ -93,6 +93,7 @@ pub fn buildByteAllocator(
         }
 
         fn pool_deinit(pool: *Pool_T) err_T!void {
+            // nao precisa de free para test
             if(builtin.is_test) return;
             switch(config.arch.options.Target) {
                 .i386 => @call(.never_inline, mm.free_page, .{
@@ -131,7 +132,7 @@ pub fn buildByteAllocator(
             self.top.?.flags.parent = 1;
             self.top = pool;
             if(builtin.is_test and personality.resize) {
-                self.resized = true;
+                self.pools += 1;
             }
         }
 
@@ -165,19 +166,32 @@ pub fn buildByteAllocator(
         inline fn mark_blocks(pool: *Pool_T, index: usize, blocks: usize) err_T!void {
             // total_bytes_of_pool / block_size = bitmap.len
             if((index + blocks) > pool.bitmap.len) {
-                while(true) {}
                 return err_T.IndexOutBounds;
             }
             for(index..(index + blocks)) |i|
                 pool.bitmap[i] = 1;
         }
 
-        inline fn found_pool_of_ptr(ptr: []u8) *Pool_T {
-            _ = ptr;
+        inline fn found_pool_of_ptr(self: *@This(), ptr: []u8) struct { ?*Pool_T, ?*Pool_T } {
+            var child_pool: ?*Pool_T = null;
+            var parent_pool: ?*Pool_T = null;
+            var current_pool: *Pool_T = &self.root;
+            while(true) {
+                if(check_bounds(current_pool, ptr)) {
+                    child_pool = current_pool; break;
+                }
+                if(current_pool.flags.parent == 0) break;
+                parent_pool = current_pool;
+                current_pool = @alignCast(@ptrCast(&current_pool.bytes.?[0]));
+            }
+            return .{
+                parent_pool,
+                child_pool,
+            };
         }
 
         inline fn check_bounds(pool: *Pool_T, ptr: []u8) bool {
-            return (@intFromPtr(ptr.ptr) - @intFromPtr(&pool.bytes.?[0])) < total_bytes_of_pool;
+            return if(@intFromPtr(ptr.ptr) < @intFromPtr(&pool.bytes.?[0])) false else (@intFromPtr(ptr.ptr) - @intFromPtr(&pool.bytes.?[0])) < total_bytes_of_pool;
         }
 
         fn alloc_sigle_frame(self: *@This(), bytes: usize) err_T![]u8 {
@@ -247,8 +261,35 @@ pub fn buildByteAllocator(
         }
 
         fn free_resized_frame(self: *@This(), ptr: []u8) err_T!void {
-            _ = self;
-            _ = ptr;
+            const parent_pool, const alloc_pool = self.found_pool_of_ptr(ptr);
+            if(alloc_pool == null) return err_T.IndexOutBounds;
+            const block_to_free: usize = cast_bytes_to_block(ptr.len);
+            const initial_block: usize = cast_bytes_to_block(
+                @intFromPtr(ptr.ptr) - @intFromPtr(&alloc_pool.?.bytes.?[0])
+            );
+            const check = check_blocks_range(alloc_pool.?, block_to_free, initial_block, null); // NULL == 1
+            if(check.index != null and !check.result) return err_T.DoubleFree;
+            if((alloc_pool.?.refs - block_to_free) == blocks_reserved and parent_pool != null) {
+                @branchHint(.cold);
+                self.top = if(alloc_pool.?.flags.parent == 0) parent_pool else self.top;
+                parent_pool.?.flags.parent = alloc_pool.?.flags.parent;
+                try @call(.never_inline, pool_deinit, .{
+                    alloc_pool.?
+                });
+                if(alloc_pool.?.flags.parent == 1) {
+                    @branchHint(.cold);
+                    const dest: *Pool_T = @alignCast(@ptrCast(&parent_pool.?.bytes.?[0]));
+                    const src: *Pool_T = @alignCast(@ptrCast(&alloc_pool.?.bytes.?[0]));
+                    dest.* = src.*;
+                }
+                self.pools -= 1;
+                return;
+            }
+            for(initial_block..(initial_block + block_to_free)) |i| {
+                alloc_pool.?.bitmap[i] = 0;
+            }
+            alloc_pool.?.refs -= block_to_free;
+            alloc_pool.?.flags.full = 0;
         }
 
         fn free_single_frame(self: *@This(), ptr: []u8) err_T!void {
@@ -258,7 +299,7 @@ pub fn buildByteAllocator(
             const initial_block: usize = cast_bytes_to_block(
                 @intFromPtr(ptr.ptr) - @intFromPtr(&self.root.bytes.?[0])
             );
-            const check = check_blocks_range(&self.root, block_to_free, initial_block, null);
+            const check = check_blocks_range(&self.root, block_to_free, initial_block, null); // NULL == 1
             if(check.index != null and !check.result) return err_T.DoubleFree;
             for(initial_block..(initial_block + block_to_free)) |i| {
                 self.root.bitmap[i] = 0;
@@ -269,11 +310,11 @@ pub fn buildByteAllocator(
 
         pub fn free(self: *@This(), ptr: []u8) err_T!void {
             if(comptime personality.resize) {
-                try @call(.always_inline, free_resized_frame, .{
+                return @call(.always_inline, free_resized_frame, .{
                     self, ptr
                 });
             }
-            try @call(.always_inline, free_single_frame, .{
+            return @call(.always_inline, free_single_frame, .{
                 self, ptr
             });
         }

@@ -11,12 +11,12 @@ pub const Personality_T: type = struct {
     resizeErr: bool = false,
 };
 
-pub const Cache_T: type = struct {
-    size: CacheSize_T = .auto,
-
-    pub const CacheSize_T: type = enum(u3) {
-        small = 4,
-        large = 2,
-        huge = 1,
-    };
-};
+//pub const Cache_T: type = struct {
+//    size: CacheSize_T = .auto,
+//
+//    pub const CacheSize_T: type = enum(u3) {
+//        small = 4,
+//        large = 2,
+//        huge = 1,
+//    };
+//};
