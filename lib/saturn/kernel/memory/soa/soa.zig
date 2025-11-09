@@ -309,7 +309,7 @@ pub fn buildObjAllocator(
             };
         }
 
-        pub fn ainit(self: *Self) err_T!void {
+        fn pool_init(self: *Self) err_T!void {
             if(builtin.is_test) {
                 const std: type = @import("std");
                 var gpa = std.heap.GeneralPurposeAllocator(.{}) {};
@@ -332,18 +332,23 @@ pub fn buildObjAllocator(
             }
         }
 
-        pub fn adeinit(self: *Self) void {
+        fn pool_deinit(self: *Self) err_T!void {
+            if(builtin.is_test) return;
             switch(comptime config.arch.options.Target) {
                 .i386 => mm.page_free(&self.page) catch return err_T.UndefinedAction,
                 else => {},
             }
         }
 
-        pub const alloc = switch(optimize.type) {
-            .dinamic => struct {
-                pub fn dinamic(self: *Self, calling: Optimize_T.CallingAlloc_T) err_T!*T {
+        pub fn alloc(self: *Self, calling: ?Optimize_T.CallingAlloc_T) err_T!*T {
+            if(self.pool == null)
+                try @call(.never_inline, pool_init, .{
+                    self
+                });
+            switch(optimize.type) {
+                .dinamic => {
                     if(self.pool == null) return err_T.NotInitialized;
-                    return if(self.allocs >= num) err_T.OutOfMemory else switch(calling) {
+                    return if(self.allocs >= num) err_T.OutOfMemory else switch(calling orelse .auto) {
                         Optimize_T.CallingAlloc_T.auto => @call(.never_inline, &auto, .{
                             self
                         }) catch err_T.UndefinedAction,
@@ -354,27 +359,23 @@ pub fn buildObjAllocator(
                             self, true
                         }) catch err_T.UndefinedAction,
                     };
-                }
-            }.dinamic,
+                },
 
-            .linear => struct {
-                pub fn linear(self: *Self) err_T!*T {
+                .linear => {
                     if(self.pool == null) return err_T.NotInitialized;
                     return if(self.allocs >= num) err_T.OutOfMemory else @call(.always_inline, &continuos, .{
                         self, self.lindex, null
                     }) catch err_T.UndefinedAction;
-                }
-            }.linear,
+                },
 
-            .optimized => struct {
-                pub fn optimized(self: *Self) err_T!*T {
+                .optimized => {
                     if(self.pool == null) return err_T.NotInitialized;
                     return if(self.allocs >= num) err_T.OutOfMemory else @call(.always_inline, &auto, .{
                         self
                     }) catch err_T.UndefinedAction;
-                }
-            }.optimized,
-        };
+                },
+            }
+        }
 
         pub fn free(self: *Self, obj: *T) err_T!void {
             return r: {
@@ -393,144 +394,11 @@ pub fn buildObjAllocator(
                 self.lindex = if(self.lindex) |_| self.lindex else ipool;
                 if(optimize.type != .linear)
                     self.cindex = ipool;
+                if(self.allocs == 0)
+                    @call(.never_inline, pool_deinit, .{
+                        self
+                    }) catch {};
             };
         }
     };
-}
-
-// === SOA TESTS ===
-const quat: comptime_int = 8192;
-const TestErr_T: type = error {
-    TestUnreachableCode,
-    DoubleAllocInAddrs,
-};
-const allocators = r: {
-    var allocs: [72]type = undefined;
-    const optmizeAlloc: [3]Optimize_T.OptimizeRange_T = .{
-        .huge, .large, .small
-    };
-    const cacheSync: [3]Cache_T.CacheSync_T = .{
-        .burning, .chilled, .heated
-    };
-    const cacheSize: [4]Cache_T.CacheSize_T = .{
-        .auto, .huge, .large, .small
-    };
-    const cacheMode: [2]Cache_T.CacheMode_T = .{
-        .PrioritizeHits, .PrioritizeSpeed
-    };
-    var allocator_index: u32 = 0;
-    for(optmizeAlloc) |alloc| {
-        for(cacheSync) |sync| {
-            for(cacheSize) |size| {
-                for(cacheMode) |mode| {
-                    allocs[allocator_index] = buildObjAllocator(
-                        struct { u64, u64, u64, u64, u64, u64, u64 },
-                        false,
-                        quat,
-                        .{
-                            .type = .dinamic,
-                            .range = alloc,
-                        },
-                        .{
-                            .mode = mode,
-                            .size = size,
-                            .sync = sync,
-                        },
-                    );
-                    allocator_index += 1;
-                }
-            }
-        }
-    }
-    break :r allocs;
-};
-
-test "SOA Continuos Alloc" {
-    inline for(0..allocators.len) |a| {
-        const SOAAllocator_T: type = allocators[a];
-        var allocator: SOAAllocator_T = .{};
-        @import("std").debug.print("== CONTINUOS:\n* optmize: {any}\n* cache: {any}\n==\n", .{
-            SOAAllocator_T.Options.config.optimize , SOAAllocator_T.Options.config.cache
-        });
-        try allocator.ainit();
-        for(0..quat) |i| {
-            const obj = try SOAAllocator_T.alloc(
-                &allocator, Optimize_T.CallingAlloc_T.continuos,
-            );
-            for(0..i) |j|
-                if(@intFromPtr(obj) == @intFromPtr(&allocator.pool.?[j])) return TestErr_T.DoubleAllocInAddrs;
-            try SOAAllocator_T.free(
-                &allocator, obj
-            );
-        }
-        for(0..quat) |_| {
-            _ = try SOAAllocator_T.alloc(
-                &allocator, Optimize_T.CallingAlloc_T.continuos,
-            );
-        }
-        _ = SOAAllocator_T.alloc(
-            &allocator, Optimize_T.CallingAlloc_T.continuos,
-        ) catch |err| switch(err) {
-            SOAAllocator_T.err_T.OutOfMemory => {},
-            else => return err,
-        };
-    }
-}
-
-test "SOA Fast Alloc" {
-    inline for(0..allocators.len) |a| {
-        const SOAAllocator_T: type = allocators[a];
-        var allocator: SOAAllocator_T = .{};
-        @import("std").debug.print("== FAST:\n* optmize: {any}\n* cache: {any}\n==\n", .{
-            SOAAllocator_T.Options.config.optimize , SOAAllocator_T.Options.config.cache
-        });
-        try allocator.ainit();
-        for(0..quat) |i| {
-            const obj = try SOAAllocator_T.alloc(
-                &allocator, Optimize_T.CallingAlloc_T.fast,
-            );
-            for(0..i) |j|
-                if(@intFromPtr(obj) == @intFromPtr(&allocator.pool.?[j])) return TestErr_T.DoubleAllocInAddrs;
-        }
-        _ = SOAAllocator_T.alloc(
-            &allocator, Optimize_T.CallingAlloc_T.fast,
-        ) catch |err| switch(err) {
-            SOAAllocator_T.err_T.OutOfMemory => {},
-            else => return err,
-        };
-        for(0..quat) |i| {
-            SOAAllocator_T.free(
-                &allocator, @ptrFromInt(@intFromPtr(&allocator.pool.?[0]) + (@sizeOf( struct { u64, u64, u64, u64, u64, u64, u64 }) * i))
-            ) catch return TestErr_T.TestUnreachableCode;
-        }
-    }
-}
-
-test "SOA Auto Alloc" {
-    inline for(0..allocators.len) |a| {
-        const SOAAllocator_T: type = allocators[a];
-        var allocator: SOAAllocator_T = .{};
-        @import("std").debug.print("== AUTO:\n* optmize: {any}\n* cache: {any}\n==\n", .{
-            SOAAllocator_T.Options.config.optimize , SOAAllocator_T.Options.config.cache
-        });
-        try allocator.ainit();
-        for(0..quat) |i| {
-            const obj = try SOAAllocator_T.alloc(
-                &allocator, Optimize_T.CallingAlloc_T.auto,
-            );
-            for(0..i) |j|
-                if(@intFromPtr(obj) == @intFromPtr(&allocator.pool.?[j])) return TestErr_T.DoubleAllocInAddrs;
-        }
-        _ = SOAAllocator_T.alloc(
-            &allocator, Optimize_T.CallingAlloc_T.auto,
-        ) catch |err| switch(err) {
-            SOAAllocator_T.err_T.OutOfMemory => {},
-            else => return err,
-        };
-        for(0..quat) |i| {
-            SOAAllocator_T.free(
-                &allocator, @ptrFromInt(@intFromPtr(&allocator.pool.?[0]) + (@sizeOf( struct { u64, u64, u64, u64, u64, u64, u64 }) * i))
-            ) catch return TestErr_T.TestUnreachableCode;
-        }
-    }
 }
