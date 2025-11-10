@@ -9,6 +9,7 @@ const allocator: type = @import("allocator.zig");
 const aux: type = @import("aux.zig");
 const builtin: type = @import("builtin");
 const @"test": type = @import("test.zig");
+const std: type = @import("std");
 
 const UNIDENTIFIED: u1 = 0;
 const IDENTIFIED: u1 = 1;
@@ -48,7 +49,7 @@ fn physio_unidentified_vendor_register(class_entry: *types.VendorRoot_T, phys: *
         return;
     }
     var current: *types.PhysIoInfo_T = class_entry.unidentified.?;
-    if(current.phys.device.deviceID.? > phys.deviceID.?) {
+    if(current.phys.device.deviceID > phys.deviceID) {
         // precisamos fazer essa primeira verificacao para alterar a propria head da lista
         const first: **types.PhysIoInfo_T = &class_entry.unidentified.?;
         first.* = @call(.always_inline, types.PhysIoInfo_T.alloc_this, .{}) catch return types.PhysIoErr_T.InternalError;
@@ -62,7 +63,7 @@ fn physio_unidentified_vendor_register(class_entry: *types.VendorRoot_T, phys: *
     const search_type: enum { independent, brother } = .independent;
     sw: switch(search_type) {
         .independent => while(current.next != null) : (current = current.next.?) {
-            if(current.phys.device.deviceID.? > phys.deviceID.?) {
+            if(current.phys.device.deviceID > phys.deviceID) {
                 prev.next = @call(.always_inline, types.PhysIoInfo_T.alloc_this, .{}) catch return types.PhysIoErr_T.InternalError;
                 @call(.always_inline, physio_mov_infos, .{
                     prev.next.?, phys, UNIDENTIFIED
@@ -70,7 +71,7 @@ fn physio_unidentified_vendor_register(class_entry: *types.VendorRoot_T, phys: *
                 prev.next.?.next = current;
                 return;
             }
-            if(current.phys.device.deviceID.? == phys.deviceID.?) {
+            if(current.phys.device.deviceID == phys.deviceID) {
                 if(current.brother == null) {
                     current.brother = @call(.never_inline, types.PhysIoInfo_T.alloc_this, .{}) catch return types.PhysIoErr_T.InternalError;
                     @call(.always_inline, physio_mov_infos, .{
@@ -107,7 +108,7 @@ fn physio_identified_vendor_register(class_entry: *types.VendorRoot_T, vendor_in
     const search_type: enum { independent, brother } = .independent;
     sw: switch(search_type) {
         .independent => while(current.next != null) : (current = current.next.?) {
-            if(current.phys.device.deviceID.? == phys.deviceID.?) {
+            if(current.phys.device.deviceID == phys.deviceID) {
                 if(current.brother == null) {
                     current.brother = @call(.never_inline, types.PhysIoInfo_T.alloc_this, .{}) catch return types.PhysIoErr_T.InternalError;
                     @call(.always_inline, physio_mov_infos, .{
@@ -128,31 +129,29 @@ fn physio_identified_vendor_register(class_entry: *types.VendorRoot_T, vendor_in
 }
 
 pub fn physio_register(phys: pci.PCIPhysIo_T) types.PhysIoErr_T!void {
-    return if(phys.class == null or phys.vendorID == null) types.PhysIoErr_T.UnableRegister else r: {
-        const class_index, const vendor_index = @call(.always_inline, aux.resolve_all_index, .{
-            @as(pci.PCIClass_T, @enumFromInt(phys.class.?)),
-            @as(pci.PCIVendor_T, @enumFromInt(phys.vendorID.?))
-        });
-        if(class_index == null) return types.PhysIoErr_T.UnidentifiedPhysError;
-        const class_entry = if(class_root[class_index.?]) |NoNull| NoNull else t: {
-            @branchHint(.likely);
-            const branch = allocator.sba.alloc(
-                @sizeOf(types.VendorRoot_T)
-            ) catch return types.PhysIoErr_T.InternalError;
-            class_root[class_index.?] = @alignCast(@ptrCast(branch.ptr));
-            class_root[class_index.?].?.identified = null;
-            class_root[class_index.?].?.unidentified = null;
-            break :t class_root[class_index.?];
-        };
-        if(vendor_index == null) {
-            break :r @call(.always_inline, physio_unidentified_vendor_register, .{
-                class_entry.?, &phys
-            });
-        }
-        break :r @call(.always_inline, physio_identified_vendor_register, .{
-            class_entry.?, vendor_index.?, &phys
-        });
+    const class_index, const vendor_index = @call(.always_inline, aux.resolve_all_index, .{
+        @as(pci.PCIClass_T, @enumFromInt(phys.class)),
+        @as(pci.PCIVendor_T, @enumFromInt(phys.vendorID))
+    });
+    if(class_index == null) return types.PhysIoErr_T.UnidentifiedPhysError;
+    const class_entry = if(class_root[class_index.?]) |NoNull| NoNull else t: {
+        @branchHint(.likely);
+        const branch = allocator.sba.alloc(
+            @sizeOf(types.VendorRoot_T)
+        ) catch return types.PhysIoErr_T.InternalError;
+        class_root[class_index.?] = @alignCast(@ptrCast(branch.ptr));
+        class_root[class_index.?].?.identified = null;
+        class_root[class_index.?].?.unidentified = null;
+        break :t class_root[class_index.?];
     };
+    if(vendor_index == null) {
+        return @call(.always_inline, physio_unidentified_vendor_register, .{
+            class_entry.?, &phys
+        });
+    }
+    return @call(.always_inline, physio_identified_vendor_register, .{
+        class_entry.?, vendor_index.?, &phys
+    });
 }
 
 pub fn physio_expurg(phys: *types.PhysIo_T) types.PhysIoErr_T!void {
@@ -177,8 +176,8 @@ fn physio_search_unidentified(class: types.PhysIoClass_T, vendor: u16, deviceID:
         or class_root[@intFromEnum(class)].?.unidentified == null) return types.PhysIoErr_T.NonFound;
     var current: ?*types.PhysIoInfo_T = class_root[@intFromEnum(class)].?.unidentified.?;
     while(current != null) : (current = current.?.next) {
-        if(current.?.phys.device.deviceID.? == deviceID) {
-            if(current.?.phys.device.vendorID.? == vendor) return &current.?.phys;
+        if(current.?.phys.device.deviceID == deviceID) {
+            if(current.?.phys.device.vendorID == vendor) return &current.?.phys;
             var brother: ?*types.PhysIoInfo_T = current.?.brother;
             while(brother != null) : (brother = brother.?.next) {
                 if(brother.?.phys.device.vendorID == vendor) return &brother.?.phys;
