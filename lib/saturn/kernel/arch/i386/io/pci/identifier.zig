@@ -4,7 +4,7 @@
 // └─────────────────────────────────────────────────┘
 
 const PCIVendor_T: type = @import("types.zig").PCIVendor_T;
-const PCIClasses_T: type = @import("types.zig").PCIClasses_T;
+const PCIClass_T: type = @import("types.zig").PCIClass_T;
 
 pub fn physIoVendorName(vendorID: PCIVendor_T) []const u8 {
     return switch(vendorID) {
@@ -23,7 +23,7 @@ pub fn physIoVendorName(vendorID: PCIVendor_T) []const u8 {
     };
 }
 
-pub fn physIoClassSubClass(class: PCIClasses_T, sub: u8, prog: u8) []const u8 {
+pub fn physIoClassSubClass(class: PCIClass_T, sub: u8, prog: u8) []const u8 {
     return switch(class) {
         .storage => switch(sub) {
             0x01 => "IDE Controller",

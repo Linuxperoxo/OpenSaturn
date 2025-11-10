@@ -15,16 +15,18 @@ const in: type = struct {
     pub const l = @import("root").kernel.io.ports.inl;
 };
 
+pub const PCIAddress_T: type = @import("types.zig").PCIAddress_T;
+pub const PCIRegsOffset_T: type = @import("types.zig").PCIRegsOffset_T;
+pub const PCIPhysIo_T: type = @import("types.zig").PCIPhysIo_T;
+pub const PCIClass_T: type = @import("types.zig").PCIClass_T;
+pub const PCIVendor_T: type = @import("types.zig").PCIVendor_T;
+
+pub const PCI_UNDEFINED_RETURN: u32 = 0xFFFFFFFF; // or ~0x0;
+
 const PCI_CONFIG_ADDRESS_PORT: u16 = 0xCF8;
 const PCI_CONFIG_DATA_PORT: u16 = 0xCFC;
 
-pub const PCIAddress_T: type = @import("types.zig").PCIAddress_T;
-pub const PCIRegsOffset_T: type = @import("types.zig").PCIRegsOffset_T;
-
-pub const PCI_UNDEFINED_RETURN: u32 = 0xFFFFFFFF;
-
 pub fn pci_config_write(address: PCIAddress_T, data: u32) void {
-    address.always0; // Precisa ser alinhado
     @call(.always_inline, &out.l, .{
         PCI_CONFIG_ADDRESS_PORT,
         @as(u32, @bitCast(address)),
