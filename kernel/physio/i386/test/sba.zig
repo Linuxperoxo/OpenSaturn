@@ -4,28 +4,38 @@
 // └──────────────────────────────────────────────┘
 
 const builtin: type = @import("builtin");
-const mm: type = @import("root").mm;
-const config: type = @import("root").config;
-const types: type = @import("types.zig");
 const std: type = @import("std");
 
-// === Saturn Byte Allocator ===
+// === Saturn Byte Allocator (FOR TEST) ===
+
+var gpa = std.heap.GeneralPurposeAllocator(.{}) {};
+var allocator = gpa.allocator();
 
 const total_bytes_of_pool_test: comptime_int = 4096;
 const default_block_size: comptime_int = 16;
-const total_bytes_of_pool = if(builtin.is_test) total_bytes_of_pool_test else switch(config.arch.options.Target) {
-    .i386 => config.kernel.options.kernel_page_size,
-    else => unreachable,
+const total_bytes_of_pool = total_bytes_of_pool_test;
+
+pub const Personality_T: type = struct {
+    resize: bool = true,
+    resizeErr: bool = false,
 };
+
+comptime {
+    if(!builtin.is_test) {
+        @compileError(
+            \\ Only Test SBA Memory Allocator
+        );
+    }
+}
 
 pub fn buildByteAllocator(
     comptime block: ?comptime_int,
-    comptime personality: types.Personality_T,
+    comptime personality: Personality_T,
 ) type {
     return struct {
         root: Pool_T = .{},
         top: ?*Pool_T = null,
-        pools: if(builtin.is_test and personality.resize) usize else void = if(builtin.is_test and personality.resize) 1 else {},
+        pools: if(personality.resize) usize else void = if(personality.resize) 1 else {},
 
         // esse calculo e equivalente a fazer:
         //
@@ -57,10 +67,7 @@ pub fn buildByteAllocator(
 
             pub const pool_bitmap_len = total_bytes_of_pool / block_size;
 
-            pub const Private_T: type = if(builtin.is_test) void else switch(config.arch.options.Target) {
-                .i386 => mm.AllocPage_T,
-                else => void,
-            };
+            pub const Private_T: type = void;
         };
 
         pub const err_T: type = error {
@@ -77,30 +84,11 @@ pub fn buildByteAllocator(
         };
 
         fn pool_init(pool: *Pool_T) err_T!void {
-            if(builtin.is_test) {
-                var gpa = std.heap.GeneralPurposeAllocator(.{}) {};
-                var allocator = gpa.allocator();
-                pool.bytes = allocator.alloc(u8, total_bytes_of_pool_test) catch return err_T.PoolInitFailed;
-                return;
-            }
-            switch(config.arch.options.Target) {
-                .i386 => {
-                    pool.private = @call(.never_inline, mm.alloc_page, .{}) catch return err_T.PoolInitFailed;
-                    pool.bytes = pool.private.virtual;
-                },
-                else => unreachable,
-            }
+            pool.bytes = allocator.alloc(u8, total_bytes_of_pool_test) catch return err_T.PoolInitFailed;
         }
 
         fn pool_deinit(pool: *Pool_T) err_T!void {
-            // nao precisa de free para test
-            if(builtin.is_test) return;
-            switch(config.arch.options.Target) {
-                .i386 => @call(.never_inline, mm.free_page, .{
-                    &pool.private
-                }) catch return err_T.PoolInitFailed,
-                else => unreachable,
-            }
+            allocator.free(pool.bytes.?);
         }
 
         fn resize(self: *@This()) err_T!void {
@@ -131,7 +119,7 @@ pub fn buildByteAllocator(
             });
             self.top.?.flags.parent = 1;
             self.top = pool;
-            if(builtin.is_test and personality.resize) {
+            if(personality.resize) {
                 self.pools += 1;
             }
         }
@@ -279,8 +267,7 @@ pub fn buildByteAllocator(
                     const src: *Pool_T = @alignCast(@ptrCast(&alloc_pool.?.bytes.?[0]));
                     dest.* = src.*;
                 }
-                if(builtin.is_test)
-                    self.pools -= 1;
+                self.pools -= 1;
                 return;
             }
             for(initial_block..(initial_block + block_to_free)) |i| {

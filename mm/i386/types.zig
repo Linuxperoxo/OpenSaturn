@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const AllocPage_T: type = packed struct {
+pub const AllocPage_T: type = struct {
     virtual: []u8,
     page: *PageTableEntry_T,
     master: u8,

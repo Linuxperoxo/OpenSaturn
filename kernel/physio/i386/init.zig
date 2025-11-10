@@ -1,7 +1,10 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: io.zig       │
+// │  (c) 2025 Linuxperoxo  •  FILE: init.zig     │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const ports: type = @import("ports.zig");
-pub const pci: type = @import("pci/pci.zig");
+const scan: type = @import("scan.zig");
+
+pub fn physio_init() callconv(.c) void {
+    @call(.always_inline, scan.physio_scan, .{});
+}

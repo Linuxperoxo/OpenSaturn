@@ -5,3 +5,4 @@
 
 pub const mem: type = @import("mem/mem.zig");
 pub const fmt: type = @import("fmt/fmt.zig");
+pub const tree: type = @import("tree/tree.zig");
