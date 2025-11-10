@@ -10,8 +10,6 @@ const aux: type = @import("aux.zig");
 const builtin: type = @import("builtin");
 const @"test": type = @import("test.zig");
 
-// TODO: suportar class nao reconhecidas
-
 const UNIDENTIFIED: u1 = 0;
 const IDENTIFIED: u1 = 1;
 
@@ -44,6 +42,9 @@ fn physio_mov_infos(noalias dest: *types.PhysIoInfo_T, noalias src: *const pci.P
 fn physio_unidentified_vendor_register(class_entry: *types.VendorRoot_T, phys: *const pci.PCIPhysIo_T) types.PhysIoErr_T!void {
     if(class_entry.unidentified == null) {
         class_entry.unidentified = @call(.always_inline, types.PhysIoInfo_T.alloc_this, .{}) catch return types.PhysIoErr_T.InternalError;
+        @call(.always_inline, physio_mov_infos, .{
+            class_entry.unidentified.?, phys, UNIDENTIFIED
+        });
         return;
     }
     var current: *types.PhysIoInfo_T = class_entry.unidentified.?;
@@ -165,18 +166,47 @@ pub fn physio_expurg(phys: *types.PhysIo_T) types.PhysIoErr_T!void {
         node_next.prev = node_prev;
 }
 
-// TODO: adicionar mais suportes de busca
+fn physio_search_identified(class: types.PhysIoClass_T, vendor: types.PhysIoVendor_T) types.PhysIoErr_T!*types.PhysIo_T {
+    if(class_root[@intFromEnum(class)] == null
+        or class_root[@intFromEnum(class)].?.identified.?[@intFromEnum(vendor)] == null) return types.PhysIoErr_T.NonFound;
+    return &class_root[@intFromEnum(class)].?.identified.?[@intFromEnum(vendor)].?.phys;
+}
+
+fn physio_search_unidentified(class: types.PhysIoClass_T, vendor: u16, deviceID: u16) types.PhysIoErr_T!*types.PhysIo_T {
+    if(class_root[@intFromEnum(class)] == null
+        or class_root[@intFromEnum(class)].?.unidentified == null) return types.PhysIoErr_T.NonFound;
+    var current: ?*types.PhysIoInfo_T = class_root[@intFromEnum(class)].?.unidentified.?;
+    while(current != null) : (current = current.?.next) {
+        if(current.?.phys.device.deviceID.? == deviceID) {
+            if(current.?.phys.device.vendorID.? == vendor) return &current.?.phys;
+            var brother: ?*types.PhysIoInfo_T = current.?.brother;
+            while(brother != null) : (brother = brother.?.next) {
+                if(brother.?.phys.device.vendorID == vendor) return &brother.?.phys;
+            }
+        }
+    }
+    return types.PhysIoErr_T.NonFound;
+}
 
 pub fn physio_search(
-    class: types.PhysIoClass_T,
-    vendor: types.PhysIoVendor_T,
-    //deviceID: ?u16,
-    //flags: struct {
-    //    all: u1 = 0,
-    //    brothers: u1 = 0,
-    //},
+    phys: union(enum(u1)) {
+        identified: struct {
+            class: types.PhysIoClass_T,
+            vendor: types.PhysIoVendor_T,
+        },
+        unidentified: struct {
+            class: types.PhysIoClass_T,
+            vendor: u16,
+            deviceID: u16,
+        },
+    },
 ) types.PhysIoErr_T!*types.PhysIo_T {
-    if(class_root[@intFromEnum(class)] == null) return types.PhysIoErr_T.NonFound;
-    if(class_root[@intFromEnum(class)].?.identified.?[@intFromEnum(vendor)] == null) return types.PhysIoErr_T.NonFound;
-    return &class_root[@intFromEnum(class)].?.identified.?[@intFromEnum(vendor)].?.phys;
+    return switch(phys) {
+        .identified => |fields| @call(.always_inline, physio_search_identified, .{
+            fields.class, fields.vendor
+        }),
+        .unidentified => |fields| @call(.always_inline, physio_search_unidentified, .{
+            fields.class, fields.vendor, fields.deviceID
+        }),
+    };
 }

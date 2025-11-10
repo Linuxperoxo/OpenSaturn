@@ -85,11 +85,55 @@ test "PhysIo Tree Register Test" {
             physio.vendorID = @intCast(@typeInfo(PCIVendor_T).@"enum".fields[j].value);
             try tree.physio_register(physio);
             const physio_found = tree.physio_search(
-                @as(types.PhysIoClass_T, @enumFromInt(@typeInfo(types.PhysIoClass_T).@"enum".fields[i].value)),
-                @as(types.PhysIoVendor_T, @enumFromInt(@typeInfo(types.PhysIoVendor_T).@"enum".fields[j].value)),
+                .{
+                    .identified = .{
+                        .class = @as(types.PhysIoClass_T, @enumFromInt(@typeInfo(types.PhysIoClass_T).@"enum".fields[i].value)),
+                        .vendor = @as(types.PhysIoVendor_T, @enumFromInt(@typeInfo(types.PhysIoVendor_T).@"enum".fields[j].value)),
+                    }
+                }
             ) catch return TestErr_T.ExistsButNotFound;
             if(physio_found.device.class != physio.class or physio_found.device.vendorID != physio.vendorID)
                 return TestErr_T.FoundSomeDiff;
+        }
+    }
+}
+
+test "PhysIo Tree Register Unidentified Test" {
+    var physio: PCIPhysIo_T = .{
+        .bus = 0,
+        .device = 0,
+        .function = 0,
+        .vendorID = 0x7162,
+        .deviceID = 0xAB00,
+        .class = null,
+        .subclass = 0,
+        .command = null,
+        .status = null,
+        .prog = 0,
+        .revision = null,
+        .irq_line = null,
+        .irq_pin = null,
+        .bars = .{
+            null
+        } ** 6,
+    };
+    inline for(0..6) |i| {
+        physio.class = @intCast(@typeInfo(PCIClass_T).@"enum".fields[i].value);
+        for(0..11) |_| {
+            try tree.physio_register(physio);
+            const physio_found = tree.physio_search(
+                .{
+                    .unidentified = .{
+                        .class = @as(types.PhysIoClass_T, @enumFromInt(physio.class.?)),
+                        .vendor = physio.vendorID.?,
+                        .deviceID = physio.deviceID.?,
+                    },
+                }
+            ) catch return TestErr_T.ExistsButNotFound;
+            if(physio_found.device.class != physio.class or physio_found.device.vendorID != physio.vendorID)
+                return TestErr_T.FoundSomeDiff;
+            physio.vendorID.? += 1;
+            physio.deviceID.? += 1;
         }
     }
 }
