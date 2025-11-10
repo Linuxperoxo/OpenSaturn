@@ -219,21 +219,18 @@ pub fn buildByteAllocator(
             };
             var index: usize = current_pool.next orelse blocks_reserved;
             const blocks_to_alloc: usize = cast_bytes_to_block(bytes);
-            r: {
-                for(index..current_pool.bitmap.len) |_| {
-                    const check = check_blocks_range(current_pool, blocks_to_alloc, index, 0);
-                    if(check.result) break :r {};
-                    if(check.index == null) {
-                        try @call(.never_inline, resize, .{
-                            self
-                        });
-                        current_pool = self.top.?;
-                        index = blocks_reserved;
-                        break;
-                    }
-                    index = check.index.? + 1;
+            for(index..current_pool.bitmap.len) |_| {
+                const check = check_blocks_range(current_pool, blocks_to_alloc, index, 0);
+                if(check.result) break;
+                if(check.index == null) {
+                    try @call(.never_inline, resize, .{
+                        self
+                    });
+                    current_pool = self.top.?;
+                    index = blocks_reserved;
+                    break;
                 }
-                unreachable;
+                index = check.index.? + 1;
             }
             try mark_blocks(current_pool, index, blocks_to_alloc);
             current_pool.refs += blocks_to_alloc;
