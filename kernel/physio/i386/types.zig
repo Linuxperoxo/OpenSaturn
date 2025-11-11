@@ -17,6 +17,7 @@ pub const PhysIo_T: type = struct {
     // o driver saiba se outro driver esta possivelmente usando o mesmo
     // phys
     refs: u32,
+    brothers: u8,
     status: enum {
         missing,
         active,
@@ -35,6 +36,7 @@ pub const PhysIo_T: type = struct {
 pub const PhysIoInfo_T: type = struct {
     phys: PhysIo_T,
     brother: ?*@This(),
+    older_brother: ?*@This(),
     next: ?*@This(),
     prev: ?*@This(),
 
@@ -63,6 +65,9 @@ pub const PhysIoErr_T: type = error {
     UnidentifiedPhysClass,
     UnidentifiedPhysVendor,
     ImpossibleSearch,
+    NoBrothers,
+    NotAllBrothersCopied,
+    OutMemoryForBrothers,
 };
 
 pub const VendorRoot_T: type = struct {
