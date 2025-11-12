@@ -8,6 +8,9 @@ const std: type = @import("std");
 
 // === Saturn Byte Allocator (FOR TEST) ===
 
+var gpa = std.heap.GeneralPurposeAllocator(.{}) {};
+var allocator = gpa.allocator();
+
 const total_bytes_of_pool_test: comptime_int = 4096;
 const default_block_size: comptime_int = 16;
 const total_bytes_of_pool = total_bytes_of_pool_test;
@@ -81,14 +84,11 @@ pub fn buildByteAllocator(
         };
 
         fn pool_init(pool: *Pool_T) err_T!void {
-            var gpa = std.heap.GeneralPurposeAllocator(.{}) {};
-            var allocator = gpa.allocator();
             pool.bytes = allocator.alloc(u8, total_bytes_of_pool_test) catch return err_T.PoolInitFailed;
         }
 
-        fn pool_deinit(_: *Pool_T) err_T!void {
-            // nao precisa de free para test
-            return;
+        fn pool_deinit(pool: *Pool_T) err_T!void {
+            allocator.free(pool.bytes.?);
         }
 
         fn resize(self: *@This()) err_T!void {

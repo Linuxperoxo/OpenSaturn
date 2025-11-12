@@ -49,7 +49,7 @@ pub const PhysIoInfo_T: type = struct {
 
     pub fn free_this(ptr: *@This()) allocator.sba.AllocatorErr_T!void {
         const slice: []u8 = @as([*]u8, @ptrCast(ptr))[0..@sizeOf(@This())];
-        @call(.never_inline, allocator.sba.free, .{
+        try @call(.never_inline, allocator.sba.free, .{
             slice
         });
     }
@@ -68,6 +68,7 @@ pub const PhysIoErr_T: type = error {
     NoBrothers,
     NotAllBrothersCopied,
     OutMemoryForBrothers,
+    ExpurgAnAlreadyExpurged,
 };
 
 pub const VendorRoot_T: type = struct {

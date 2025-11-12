@@ -14,26 +14,46 @@ const std: type = @import("std");
 const UNIDENTIFIED: u1 = 0;
 const IDENTIFIED: u1 = 1;
 
-var class_root = [_]?*types.VendorRoot_T {
+pub var class_root = [_]?*types.VendorRoot_T {
     null,
 } ** if(!builtin.is_test) @typeInfo(pci.PCIClass_T).@"enum".fields.len else
     @typeInfo(@"test".PCIClass_T).@"enum".fields.len;
 
 fn physio_mov_infos(noalias dest: *types.PhysIoInfo_T, noalias src: *const pci.PCIPhysIo_T, ident: u1) void {
-    dest.phys.device = src.*;
-    dest.phys.status = .active;
-    dest.phys.refs = 0;
-    dest.phys.brothers = 0;
-    dest.phys.flags = .{
-        .find = 1,
-        .hit = 0,
-        .link = 0,
-        .save = 0,
-        .identified = ident,
+    dest.* = .{
+        .phys = .{
+            .private = dest,
+            .brothers = 0,
+            .device =  src.*,
+            .refs = 0,
+            .status = .active,
+            .flags = .{
+                .find = 0,
+                .hit = 1,
+                .identified = ident,
+                .link = 0,
+                .save = 0,
+            },
+        },
+        .next = null,
+        .brother = null,
+        .prev = null,
+        .older_brother = null,
     };
-    dest.phys.private = dest;
-    dest.next = null;
-    dest.brother = null;
+}
+
+fn try_alloc_first_brother(older_brother: *types.PhysIoInfo_T, phys: *const pci.PCIPhysIo_T, ident: u1) types.PhysIoErr_T!bool {
+    if(older_brother.brother == null) {
+        older_brother.brother = @call(.never_inline, types.PhysIoInfo_T.alloc_this, .{}) catch return types.PhysIoErr_T.InternalError;
+        @call(.always_inline, physio_mov_infos, .{
+            older_brother.brother.?, phys, ident
+        });
+        older_brother.phys.flags.identified = ident;
+        older_brother.brother.?.older_brother = older_brother;
+        older_brother.brother.?.prev = older_brother;
+        return true;
+    }
+    return false;
 }
 
 fn physio_unidentified_vendor_register(class_entry: *types.VendorRoot_T, phys: *const pci.PCIPhysIo_T) types.PhysIoErr_T!void {
@@ -57,34 +77,33 @@ fn physio_unidentified_vendor_register(class_entry: *types.VendorRoot_T, phys: *
     }
     var prev: *types.PhysIoInfo_T = class_entry.unidentified.?;
     var older_brother: ?*types.PhysIoInfo_T = null;
-    const search_type: enum { independent, brother } = .independent;
+    const search_type: enum { independent,  brother } = .independent;
     sw: switch(search_type) {
-        .independent => while(current.next != null) : (current = current.next.?) {
-            if(current.phys.device.deviceID > phys.deviceID) {
-                prev.next = @call(.always_inline, types.PhysIoInfo_T.alloc_this, .{}) catch return types.PhysIoErr_T.InternalError;
-                @call(.always_inline, physio_mov_infos, .{
-                    prev.next.?, phys, UNIDENTIFIED
-                });
-                prev.next.?.next = current;
-                return;
-            }
-            if(current.phys.device.deviceID == phys.deviceID) {
-                current.phys.brothers += 1;
-                older_brother = current;
-                if(current.brother == null) {
-                    current.brother = @call(.never_inline, types.PhysIoInfo_T.alloc_this, .{}) catch return types.PhysIoErr_T.InternalError;
+        .independent => {
+            // caso seja o primeiro irmao, entao current.next == null
+            if(current.phys.device.deviceID == phys.deviceID) continue :sw .brother;
+            while(current.next != null) : (current = current.next.?) {
+                if(current.phys.device.deviceID == phys.deviceID) continue :sw .brother;
+                if(current.phys.device.deviceID > phys.deviceID) {
+                    prev.next = @call(.always_inline, types.PhysIoInfo_T.alloc_this, .{}) catch return types.PhysIoErr_T.InternalError;
                     @call(.always_inline, physio_mov_infos, .{
-                        current.brother.?, phys, UNIDENTIFIED
+                        prev.next.?, phys, UNIDENTIFIED
                     });
-                    current.brother.?.older_brother = older_brother;
+                    prev.next.?.next = current;
                     return;
                 }
-                current = current.brother.?;
-                continue :sw .brother;
+                prev = current;
             }
-            prev = current;
         },
-        .brother => while(current.next != null) : (current = current.next.?) {},
+        .brother => {
+            current.phys.brothers += 1;
+            older_brother = current;
+            if(try @call(.always_inline, try_alloc_first_brother, .{
+                current, phys, UNIDENTIFIED
+            })) return;
+            current = current.brother.?;
+            while(current.next != null) : (current = current.next.?) {}
+        },
     }
     current.next = @call(.always_inline, types.PhysIoInfo_T.alloc_this, .{}) catch return types.PhysIoErr_T.InternalError;
     @call(.always_inline, physio_mov_infos, .{
@@ -110,23 +129,22 @@ fn physio_identified_vendor_register(class_entry: *types.VendorRoot_T, vendor_in
     var older_brother: ?*types.PhysIoInfo_T = null;
     const search_type: enum { independent, brother } = .independent;
     sw: switch(search_type) {
-        .independent => while(current.next != null) : (current = current.next.?) {
-            if(current.phys.device.deviceID == phys.deviceID) {
-                current.phys.brothers += 1;
-                older_brother = current;
-                if(current.brother == null) {
-                    current.brother = @call(.never_inline, types.PhysIoInfo_T.alloc_this, .{}) catch return types.PhysIoErr_T.InternalError;
-                    @call(.always_inline, physio_mov_infos, .{
-                        current.brother.?, phys, IDENTIFIED
-                    });
-                    current.brother.?.older_brother = older_brother;
-                    return;
-                }
-                current = current.brother.?;
-                continue :sw .brother;
+        // caso seja o primeiro irmao, entao current.next == null
+        .independent => {
+            if(current.phys.device.deviceID == phys.deviceID) continue :sw .brother;
+            while(current.next != null) : (current = current.next.?) {
+                if(current.phys.device.deviceID == phys.deviceID) continue :sw .brother;
             }
         },
-        .brother => while(current.next != null) : (current = current.next.?) {},
+        .brother => {
+            current.phys.brothers += 1;
+            older_brother = current;
+            if(try @call(.always_inline, try_alloc_first_brother, .{
+                current, phys, IDENTIFIED
+            })) return;
+            current = current.brother.?;
+            while(current.next != null) : (current = current.next.?) {}
+        },
     }
     current.next = @call(.never_inline, types.PhysIoInfo_T.alloc_this, .{}) catch return types.PhysIoErr_T.InternalError;
     @call(.always_inline, physio_mov_infos, .{
@@ -163,14 +181,72 @@ pub fn physio_register(phys: pci.PCIPhysIo_T) types.PhysIoErr_T!void {
 }
 
 pub fn physio_expurg(phys: *types.PhysIo_T) types.PhysIoErr_T!void {
+    if(phys.status != .active) return types.PhysIoErr_T.ExpurgAnAlreadyExpurged;
     const node_info: *types.PhysIoInfo_T = @alignCast(@ptrCast(phys.private));
-    const node_prev: *types.PhysIoInfo_T = node_info.prev;
-    const node_next: *types.PhysIoInfo_T = node_info.next;
-    types.PhysIoInfo_T.free_this(node_info) catch types.PhysIoErr_T.InternalError;
-    if(node_prev != null)
-        node_prev.next = node_next;
-    if(node_next != null)
-        node_next.prev = node_prev;
+    const node_prev: ?*types.PhysIoInfo_T = node_info.prev;
+    const node_next: ?*types.PhysIoInfo_T = node_info.next;
+    // tentamos procurar o physio na arvore, caso exista podemos continua,
+    // caso nao, estamos tentando expurgar um expurgado
+    r: {
+        const physio_found: *types.PhysIo_T = physio_search(
+            if(phys.flags.identified == 1)
+            .{
+                .identified = .{
+                    .class = @enumFromInt(aux.resolve_index_by_class(@enumFromInt(phys.device.class)) orelse return types.PhysIoErr_T.InternalError),
+                    .vendor = @enumFromInt(aux.resolve_index_by_vendor(@enumFromInt(phys.device.vendorID)) orelse return types.PhysIoErr_T.InternalError),
+                },
+            }
+            else
+            .{
+                .unidentified = .{
+                    .class = @enumFromInt(aux.resolve_index_by_class(@enumFromInt(phys.device.class)) orelse return types.PhysIoErr_T.InternalError),
+                    .vendor = phys.device.vendorID,
+                    .deviceID = phys.device.deviceID,
+                },
+            }
+        ) catch return types.PhysIoErr_T.ExpurgAnAlreadyExpurged;
+        if(physio_found.device.bus != phys.device.bus
+            or physio_found.device.device != phys.device.device) {
+            var physio_found_info: ?*types.PhysIoInfo_T = (@as(*types.PhysIoInfo_T, @alignCast(@ptrCast(physio_found.private)))).brother;
+            while(physio_found_info != null) : (physio_found_info = physio_found_info.?.next) {
+                if(physio_found_info.?.phys.device.bus == phys.device.bus
+                    or physio_found_info.?.phys.device.device == phys.device.device) break :r {};
+            }
+            return types.PhysIoErr_T.ExpurgAnAlreadyExpurged;
+        }
+    }
+    r: {
+        if(node_info.older_brother != null) {
+            // brother
+            const older_brother: *types.PhysIoInfo_T = node_info.older_brother.?;
+            older_brother.phys.brothers -= 1;
+            // o primeiro brother usa o prev para se conectar ao older_brother, entao
+            // para saber se e o primeiro irmao, basta comparar os 2
+            if(node_info.older_brother == node_info.prev) {
+                older_brother.brother = node_info.next; // ligando a outro irmao, nao tem problema caso seja null
+                if(node_info.next != null) {
+                    node_info.next.?.prev = older_brother;
+                }
+                break :r {};
+            }
+        }
+        if(node_prev != null) node_prev.?.next = node_next;
+        if(node_next != null) node_next.?.prev = node_prev;
+    }
+    node_info.brother = null;
+    node_info.next = null;
+    node_info.older_brother = null;
+    node_info.prev = null;
+    phys.status = .missing;
+    phys.flags.link = 0;
+    phys.flags.hit = 0;
+    phys.brothers = 0;
+    if(phys.flags.save == 0) {
+        types.PhysIoInfo_T.free_this(node_info) catch |err| switch(err) {
+            allocator.sba.AllocatorErr_T.DoubleFree => return types.PhysIoErr_T.ExpurgAnAlreadyExpurged,
+            else => return types.PhysIoErr_T.InternalError,
+        };
+    }
 }
 
 pub fn physio_brother(phys: *types.PhysIo_T, noalias dest: []*types.PhysIo_T) types.PhysIoErr_T!void {
@@ -188,6 +264,8 @@ pub fn physio_brother(phys: *types.PhysIo_T, noalias dest: []*types.PhysIo_T) ty
 fn physio_search_identified(class: types.PhysIoClass_T, vendor: types.PhysIoVendor_T) types.PhysIoErr_T!*types.PhysIo_T {
     if(class_root[@intFromEnum(class)] == null
         or class_root[@intFromEnum(class)].?.identified.?[@intFromEnum(vendor)] == null) return types.PhysIoErr_T.NonFound;
+    class_root[@intFromEnum(class)].?.identified.?[@intFromEnum(vendor)].?.phys.flags.hit = 1;
+    class_root[@intFromEnum(class)].?.identified.?[@intFromEnum(vendor)].?.phys.flags.link = 1;
     return &class_root[@intFromEnum(class)].?.identified.?[@intFromEnum(vendor)].?.phys;
 }
 
