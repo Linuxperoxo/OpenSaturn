@@ -20,15 +20,29 @@ pub const sba: type = struct {
 
     var allocator: Allocator_T = .{};
 
-    pub fn alloc(bytes: u32) AllocatorErr_T![]u8 {
+    fn alloc(bytes: u32) AllocatorErr_T![]u8 {
         return @call(.always_inline, Allocator_T.alloc, .{
             &allocator, bytes
         });
     }
 
-    pub fn free(ptr: []u8) AllocatorErr_T!void {
+    fn free(ptr: []u8) AllocatorErr_T!void {
         return @call(.always_inline, Allocator_T.free, .{
             &allocator, ptr
+        });
+    }
+
+    pub fn alloc_type_single(comptime T: type) AllocatorErr_T!*T {
+        return @alignCast(@ptrCast(
+            (try @call(.never_inline, alloc, .{
+                @sizeOf(T)
+            })).ptr
+        ));
+    }
+
+    pub fn free_type_single(comptime T: type, ptr: *T) AllocatorErr_T!void {
+        return @call(.never_inline, free, .{
+            @as([*]u8, @ptrCast(ptr))[0..@sizeOf(T)]
         });
     }
 };

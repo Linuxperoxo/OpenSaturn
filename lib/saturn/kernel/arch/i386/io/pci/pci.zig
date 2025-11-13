@@ -4,15 +4,15 @@
 // └──────────────────────────────────────────────┘
 
 const out: type = struct {
-    pub const b = @import("root").kernel.io.ports.outb;
-    pub const w = @import("root").kernel.io.ports.outw;
-    pub const l = @import("root").kernel.io.ports.outl;
+    pub const b = @import("root").kernel.arch.io.ports.outb;
+    pub const w = @import("root").kernel.arch.io.ports.outw;
+    pub const l = @import("root").kernel.arch.io.ports.outl;
 };
 
 const in: type = struct {
-    pub const b = @import("root").kernel.io.ports.inb;
-    pub const w = @import("root").kernel.io.ports.inw;
-    pub const l = @import("root").kernel.io.ports.inl;
+    pub const b = @import("root").kernel.arch.io.ports.inb;
+    pub const w = @import("root").kernel.arch.io.ports.inw;
+    pub const l = @import("root").kernel.arch.io.ports.inl;
 };
 
 pub const PCIAddress_T: type = @import("types.zig").PCIAddress_T;

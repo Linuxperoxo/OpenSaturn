@@ -111,7 +111,10 @@ pub const core: type = struct {
     pub const fs: type = @import("kernel/core/fs/fs.zig");
     pub const drivers: type = @import("kernel/core/drivers/drivers.zig");
 };
-pub const ioreg: type = @import("kernel/core/ioreg/ioreg.zig");
+// no futuro o ioreg sera usado para todas as arquiteturas como uma forma
+// de procurar devices, cada arch vai ter sua implementacao, mas ioreg
+// vai fazer a mesma coisa que o sba e o soa faz por exemplo
+//pub const ioreg: type = @import("kernel/core/ioreg/ioreg.zig");
 pub const loader: type = @import("kernel/loader.zig");
 pub const modules: type = @import("modules.zig");
 pub const interfaces: type = struct {

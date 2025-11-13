@@ -5,17 +5,17 @@
 
 const root: type = @import("root");
 const types: type = @import("types.zig");
-const core: type = @import("core.zig");
+const tree: type = @import("tree.zig");
 
 const PhysIo_T: type = types.PhysIo_T;
-const PCIPhysIo_T: type = root.kernel.io.pci.PCIPhysIo_T;
-const PCIAddress_T: type = root.kernel.io.pci.PCIAddress_T;
-const PCIRegsOffset_T: type = root.kernel.io.pci.PCIRegsOffset_T;
+const PCIPhysIo_T: type = root.kernel.arch.io.pci.PCIPhysIo_T;
+const PCIAddress_T: type = root.kernel.arch.io.pci.PCIAddress_T;
+const PCIRegsOffset_T: type = root.kernel.arch.io.pci.PCIRegsOffset_T;
 
-const pci_config_read = root.kernel.io.pci.pci_config_read;
-const register_physio = core.register_physio;
+const pci_config_read = root.kernel.arch.io.pci.pci_config_read;
+const physio_register = tree.physio_register;
 
-const PCI_UNDEFINED_RETURN = root.kernel.io.pci.PCI_UNDEFINED_RETURN;
+const PCI_UNDEFINED_RETURN = root.kernel.arch.io.pci.PCI_UNDEFINED_RETURN;
 
 pub fn physio_scan() void {
     // TODO: O log deve ser [PCI] {domain}:{bus}:{device}.{function} {class}: {vendor} {device} (rev {revision})
@@ -108,9 +108,9 @@ pub fn physio_scan() void {
                         };
                     };
                 }
-                @call(.always_inline, register_physio, .{
+                @call(.always_inline, physio_register, .{
                     physConfigSpace
-                });
+                }) catch {};
                 if(!multiFunction) break;
             }
         }

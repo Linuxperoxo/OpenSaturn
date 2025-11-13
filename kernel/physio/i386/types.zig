@@ -4,7 +4,7 @@
 // └──────────────────────────────────────────────┘
 
 const builtin: type = @import("builtin");
-const pci: type = if(!builtin.is_test) @import("root").kernel.io.pci else @import("test.zig");
+const pci: type = if(!builtin.is_test) @import("root").kernel.arch.io.pci else @import("test_types.zig");
 const allocator: type = @import("allocator.zig");
 
 const PCIPhysIo_T: type = pci.PCIPhysIo_T;
@@ -18,6 +18,10 @@ pub const PhysIo_T: type = struct {
     // phys
     refs: u32,
     brothers: u8,
+    events: struct {
+        connect: ?*const fn(*PhysIo_T) void = null,
+        disconnect: ?*const fn(*PhysIo_T) void = null,
+    },
     status: enum {
         missing,
         active,
@@ -33,26 +37,18 @@ pub const PhysIo_T: type = struct {
     private: *anyopaque,
 };
 
+pub const ListenersNode_T: type = struct {
+    right: ?*@This(),
+    left: ?*@This(),
+    phys: ?*PhysIo_T,
+};
+
 pub const PhysIoInfo_T: type = struct {
     phys: PhysIo_T,
     brother: ?*@This(),
     older_brother: ?*@This(),
     next: ?*@This(),
     prev: ?*@This(),
-
-    pub fn alloc_this() allocator.sba.AllocatorErr_T!*@This() {
-        const slice = try @call(.never_inline, allocator.sba.alloc, .{
-            @sizeOf(@This())
-        });
-        return @alignCast(@ptrCast(slice.ptr));
-    }
-
-    pub fn free_this(ptr: *@This()) allocator.sba.AllocatorErr_T!void {
-        const slice: []u8 = @as([*]u8, @ptrCast(ptr))[0..@sizeOf(@This())];
-        try @call(.never_inline, allocator.sba.free, .{
-            slice
-        });
-    }
 };
 
 pub const PhysIoErr_T: type = error {
@@ -69,6 +65,8 @@ pub const PhysIoErr_T: type = error {
     NotAllBrothersCopied,
     OutMemoryForBrothers,
     ExpurgAnAlreadyExpurged,
+    ListenerCollision,
+    NoNListener,
 };
 
 pub const VendorRoot_T: type = struct {
@@ -78,12 +76,8 @@ pub const VendorRoot_T: type = struct {
     unidentified: ?*PhysIoInfo_T, // ordenado por deviceID
 
     pub fn alloc_this_identified(self: *@This()) allocator.sba.AllocatorErr_T!void {
-        const slice = try @call(.never_inline, allocator.sba.alloc, .{
-            @sizeOf(
-                [
-                    @typeInfo(PCIVendor_T).@"enum".fields.len
-                ]?*PhysIoInfo_T
-            )
+        const slice = try @call(.never_inline, allocator.sba.alloc_type_single, .{
+            [@typeInfo(PCIVendor_T).@"enum".fields.len]?*PhysIoInfo_T
         });
         self.identified = @alignCast(@ptrCast(slice.ptr));
         for(0..self.identified.?.len) |i|
