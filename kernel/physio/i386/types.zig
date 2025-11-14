@@ -35,6 +35,17 @@ pub const PhysIo_T: type = struct {
         reserved: u2 = 0,
     },
     private: *anyopaque,
+
+    // deve ter essa funcao para que o driver possa ele
+    // mesmo liberar seu proprio PhysIo_T
+    pub fn free(self: *@This()) PhysIoErr_T!void {
+        return r: {
+            @call(.always_inline, allocator.sba.free_type_single, .{
+                @This(), self
+            }) catch break :r PhysIoErr_T.InternalError;
+            break :r {};
+        };
+    }
 };
 
 pub const ListenersNode_T: type = struct {
@@ -44,7 +55,7 @@ pub const ListenersNode_T: type = struct {
 };
 
 pub const PhysIoInfo_T: type = struct {
-    phys: PhysIo_T,
+    phys: *PhysIo_T,
     brother: ?*@This(),
     older_brother: ?*@This(),
     next: ?*@This(),

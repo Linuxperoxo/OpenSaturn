@@ -4,11 +4,11 @@
 // └────────────────────────────────────────────────┘
 
 const builtin: type = @import("builtin");
-const memory: type = if(!builtin.is_test) @import("root").lib.kernel.memory else @import("test_sba.zig");
+const memory: type = if(!builtin.is_test) @import("root").lib.kernel.memory.sba else @import("test_sba.zig");
 const types: type = @import("types.zig");
 
 pub const sba: type = struct {
-    const buildByteAllocator = if(!builtin.is_test) memory.sba.buildByteAllocator else memory.buildByteAllocator;
+    const buildByteAllocator = memory.buildByteAllocator;
     const Allocator_T: type = buildByteAllocator(
         null,
         .{
@@ -19,8 +19,16 @@ pub const sba: type = struct {
     pub const AllocatorErr_T: type = Allocator_T.err_T;
 
     var allocator: Allocator_T = .{};
+    var firts_call: bool = true;
 
     fn alloc(bytes: u32) AllocatorErr_T![]u8 {
+        // apenas para evitar problema do ponteiro
+        // iniciar apontando para um lugar invalido
+        firts_call = r: {
+            if(firts_call)
+                allocator.root.bytes = null;
+            break :r false;
+        };
         return @call(.always_inline, Allocator_T.alloc, .{
             &allocator, bytes
         });
