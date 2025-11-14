@@ -54,6 +54,13 @@ pub const ListenersNode_T: type = struct {
     phys: ?*PhysIo_T,
 };
 
+pub const WaitingNode_T: type = struct {
+    right: ?*@This(),
+    left: ?*@This(),
+    id: u32,
+    hit: ?*const fn(*PhysIo_T) void,
+};
+
 pub const PhysIoInfo_T: type = struct {
     phys: *PhysIo_T,
     brother: ?*@This(),

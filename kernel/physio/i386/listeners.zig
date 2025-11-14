@@ -7,7 +7,6 @@ const builtin: type = @import("builtin");
 const types: type = @import("types.zig");
 const allocator: type = @import("allocator.zig");
 const pci: type = if(!builtin.is_test) @import("root").kernel.io.pci else @import("test_types.zig");
-const std: type = @import("std");
 
 pub var listeners_tree_root: types.ListenersNode_T = .{
     .left = null,
@@ -27,8 +26,7 @@ pub inline fn physio_tree_id(phys: *types.PhysIo_T) usize {
 
 pub fn physio_listen(phys: *types.PhysIo_T) types.PhysIoErr_T!void {
     var branch: ?*types.ListenersNode_T = &listeners_tree_root;
-    var i: usize = 0;
-    while(branch.?.phys != null) : (i += 1) {
+    while(branch.?.phys != null) {
         const phys_to_listen = physio_tree_id(phys);
         const phys_tree = physio_tree_id(branch.?.phys.?);
         if(phys_to_listen < phys_tree) {
@@ -39,8 +37,11 @@ pub fn physio_listen(phys: *types.PhysIo_T) types.PhysIoErr_T!void {
             branch.?.left = @call(.always_inline, allocator.sba.alloc_type_single, .{
                 types.ListenersNode_T
             }) catch return types.PhysIoErr_T.InternalError;
-            branch.?.left.?.phys = phys;
-            branch.?.left.?.right = null;
+            branch.?.left.?.* = .{
+                .right = null,
+                .left = null,
+                .phys = phys,
+            };
             return;
         }
         if(phys_to_listen > phys_tree) {
@@ -51,8 +52,11 @@ pub fn physio_listen(phys: *types.PhysIo_T) types.PhysIoErr_T!void {
             branch.?.right = @call(.always_inline, allocator.sba.alloc_type_single, .{
                 types.ListenersNode_T
             }) catch return types.PhysIoErr_T.InternalError;
-            branch.?.right.?.phys = phys;
-            branch.?.right.?.left = null;
+            branch.?.right.?.* = .{
+                .right = null,
+                .left = null,
+                .phys = phys
+            };
             return;
         }
         return types.PhysIoErr_T.ListenerCollision;
