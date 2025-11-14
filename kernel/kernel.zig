@@ -26,6 +26,7 @@ pub const step: type = struct {
     pub const saturn_get_phase = saturn.step.saturn_get_phase;
 };
 
+const modsys: type = saturn.modsys;
 const loader: type = saturn.loader;
 
 // NOTE: Para obter mais detalhes de como funciona a inicializacao do
@@ -51,6 +52,11 @@ comptime {
     });
 }
 
+comptime {
+    @call(.compile_time, loader.saturn_arch_verify, .{}); // verificamos a arch e exportamos suas labels
+    @call(.compile_time, modsys.saturn_modules_verify, .{}); // verificando assinatura dos modulos
+}
+
 fn saturn_main() callconv(.c) noreturn {
     // Aqui existe um pequeno detalhe, bem interessante por sinal.
     // Quando passamos um ponteiro para uma funcao conhecida em tempo
@@ -67,15 +73,13 @@ fn saturn_main() callconv(.c) noreturn {
     // exported symbol collision, como resolver isso então? Simplemente usando o .never_inline
     // ou usando somente loader.SaturnArch, isso evita de criar um possivel .never_inline
     // implicito
-    @call(.compile_time, loader.saturn_arch_verify, .{}); // verificamos a arch e exportamos suas labels
-    @call(.compile_time, loader.saturn_modules_verify, .{}); // verificando assinatura dos modulos
     @call(.always_inline, saturn.step.saturn_set_phase, .{
         .init
     });
 
     // Depois da arquitetura resolver todos os seus detalhes, podemos iniciar
     // os modulos linkados ao kernel
-    @call(.always_inline, loader.saturn_modules_loader, .{});
+    @call(.always_inline, modsys.saturn_modules_loader, .{});
     @call(.always_inline, saturn.step.saturn_set_phase, .{
         .runtime
     });
