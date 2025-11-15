@@ -109,7 +109,7 @@ pub fn physio_scan() void {
                     };
                 }
                 @call(.always_inline, physio_register, .{
-                    physConfigSpace
+                    physConfigSpace, null
                 }) catch {};
                 if(!multiFunction) break;
             }

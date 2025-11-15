@@ -282,7 +282,8 @@ pub fn buildByteAllocator(
                     const src: *Pool_T = @alignCast(@ptrCast(&alloc_pool.?.bytes.?[0]));
                     dest.* = src.*;
                 }
-                self.pools -= 1;
+                if(builtin.is_test)
+                    self.pools -= 1;
                 return;
             }
             for(initial_block..(initial_block + block_to_free)) |i| {

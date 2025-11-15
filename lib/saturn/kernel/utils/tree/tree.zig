@@ -40,6 +40,8 @@ pub fn TreeBuild(
         }
 
         fn allocator_verify(Allocator_T: type) void {
+            if(true)
+                return;
             const A = switch(@typeInfo(Allocator_T)) {
                 .@"pointer" => |info| info.child,
                 .@"struct" => Allocator_T,

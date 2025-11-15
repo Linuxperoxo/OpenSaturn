@@ -73,6 +73,7 @@ pub const PhysIoErr_T: type = error {
     ListenerCollision,
     NoNListener,
     AlwaysWaiting,
+    NoNWaiting,
 };
 
 pub const VendorRoot_T: type = struct {

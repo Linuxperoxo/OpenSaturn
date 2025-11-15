@@ -67,12 +67,15 @@ test "Listeners Tree Adding" {
     for(&physio, 0..) |*io, i| {
         io.device.bus = @intCast(i);
         try listeners.physio_listen(io);
-        _ = listeners.physio_listener_search(io) catch return TestErr_T.UnreachableCode;
+        _ = listeners.physio_listener_search(io.device.bus, io.device.device, io.device.function) catch return TestErr_T.UnreachableCode;
     }
     tree_clean();
 }
 
 test "Listeners Tree Remove" {
+    const num: ?u32 = null;
+    const sla = num.?;
+    _ = sla;
     var physio = [_]types.PhysIo_T {
         .{
             .brothers = 0,
@@ -110,15 +113,15 @@ test "Listeners Tree Remove" {
     for(&physio, 2..) |*io, i| {
         io.device.bus = @intCast(if(i % 2 == 0) i else i - 2);
         try listeners.physio_listen(io);
-        const found = listeners.physio_listener_search(io) catch return TestErr_T.UnreachableCode;
+        const found = listeners.physio_listener_search(io.device.bus, io.device.device, io.device.function) catch return TestErr_T.UnreachableCode;
         if(found != io) return TestErr_T.UnreachableCode;
     }
     // verificando se a arvore nao quebrou
     try listeners.physio_listen_drop(&physio[7]);
-    var found = listeners.physio_listener_search(&physio[13]) catch return TestErr_T.UnreachableCode;
+    var found = listeners.physio_listener_search(physio[13].device.bus, physio[13].device.device, physio[13].device.function) catch return TestErr_T.UnreachableCode;
     if(found != &physio[13]) return TestErr_T.UnreachableCode;
     try listeners.physio_listen_drop(&physio[13]);
-    found = listeners.physio_listener_search(&physio[12]) catch return TestErr_T.UnreachableCode;
+    found = listeners.physio_listener_search(physio[12].device.bus, physio[12].device.device, physio[12].device.function) catch return TestErr_T.UnreachableCode;
     if(found != &physio[12]) return TestErr_T.UnreachableCode;
     tree_clean();
 }

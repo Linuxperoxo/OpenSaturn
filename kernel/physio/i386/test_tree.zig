@@ -62,10 +62,10 @@ test "PhysIo Tree Brothers Identified Test" {
             null
         } ** 6,
     };
-    try tree.physio_register(physio);
+    try tree.physio_register(physio, null);
     physio.bus += 1;
     for(0..total_of_brothers) |_| {
-        try tree.physio_register(physio);
+        try tree.physio_register(physio, null);
         physio.bus += 1;
     }
     const physio_found = tree.physio_search(
@@ -108,10 +108,10 @@ test "PhysIo Tree Brothers Unidentified Test" {
             null
         } ** 6,
     };
-    try tree.physio_register(physio);
+    try tree.physio_register(physio, null);
     physio.bus += 1;
     for(0..total_of_brothers) |_| {
-        try tree.physio_register(physio);
+        try tree.physio_register(physio, null);
         physio.bus += 1;
     }
     const physio_found = tree.physio_search(
@@ -158,7 +158,7 @@ test "PhysIo Tree Register Test" {
         physio.class = @intCast(@typeInfo(PCIClass_T).@"enum".fields[c].value);
         inline for(0..11) |v| {
             physio.vendorID = @intCast(@typeInfo(PCIVendor_T).@"enum".fields[v].value);
-            try tree.physio_register(physio);
+            try tree.physio_register(physio, null);
             const physio_found = tree.physio_search(
                 .{
                     .identified = .{
@@ -197,7 +197,7 @@ test "PhysIo Tree Register Unidentified Test" {
         physio.class = @intCast(@typeInfo(PCIClass_T).@"enum".fields[c].value);
         inline for(0..11) |v| {
             physio.vendorID = @intCast(v);
-            try tree.physio_register(physio);
+            try tree.physio_register(physio, null);
             const physio_found = tree.physio_search(
                 .{
                     .unidentified = .{
@@ -236,7 +236,7 @@ test "PhysIo Tree Register Unidentified DeviceID Collision Test" {
     };
     for(0..32) |d| {
         physio.vendorID = @intCast(base_vendorID + d);
-        try tree.physio_register(physio);
+        try tree.physio_register(physio, null);
     }
     for(0..32) |d| {
         const physio_found: *types.PhysIo_T = tree.physio_search(.{
@@ -274,7 +274,7 @@ test "PhysIo Tree Register Unidentified VendorID Collision Test" {
     };
     for(0..32) |d| {
         physio.deviceID = @intCast(base_deviceID + d);
-        try tree.physio_register(physio);
+        try tree.physio_register(physio, null);
     }
     for(0..32) |d| {
         const physio_found: *types.PhysIo_T = tree.physio_search(
@@ -312,10 +312,10 @@ test "PhysIo Tree Register Expurg Identified Brothers Test" {
             null
         } ** 6,
     };
-    try tree.physio_register(physio);
+    try tree.physio_register(physio, null);
     physio.bus += 1;
     for(0..total_of_brothers) |_| {
-        try tree.physio_register(physio);
+        try tree.physio_register(physio, null);
         physio.bus += 1;
     }
     const physio_found = tree.physio_search(
@@ -367,10 +367,10 @@ test "PhysIo Tree Register Expurg Unidentified Brothers Test" {
             null
         } ** 6,
     };
-    try tree.physio_register(physio);
+    try tree.physio_register(physio, null);
     physio.bus += 1;
     for(0..total_of_brothers) |_| {
-        try tree.physio_register(physio);
+        try tree.physio_register(physio, null);
         physio.bus += 1;
     }
     const physio_found = tree.physio_search(
