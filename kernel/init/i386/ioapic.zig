@@ -136,7 +136,7 @@ pub fn setIRQ(IDTEntry: u8, IRQ: u8, LAPICID: u8) void {
             }
         }
     );
-    
+
     @call(
         .always_inline, 
         &writeIOAPIC,
