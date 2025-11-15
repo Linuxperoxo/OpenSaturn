@@ -14,6 +14,9 @@
 
 .equ VBE_DEFAULT_MODE, 0x117
 
+.equ VIDEO_BIT_FLAG, 0x01
+.equ DEBUG_BIT_FLAG, 0x02
+
 .section .atlas.text.atlas, "ax", @progbits
 .code16
 .align 4
@@ -21,9 +24,9 @@
 .AtlasReal:
   cli
 
-  movw $0xA000, %sp # NOTE: Configurando stack
+  movl $0xA000, %esp # NOTE: Configurando stack
 
-  #movw $.ModeInfo, %di # NOTE: Parameter Struct ptr: Lugar onde as informações do modo serão colocadas 
+  #movw $.ModeInfo, %di # NOTE: Parameter Struct ptr: Lugar onde as informações do modo serão colocadas
   #xorw %bx,        %bx # NOTE: Parameter Mode: Modo a ser carregado, se %bx == 0 então vamos usar o modo default
   #call GetMode         # NOTE: Quando retornar, se a BIOS suportar o modo, a struct .ModeInfo vai estar totalmente preenchida
 
@@ -35,7 +38,7 @@
 
   # NOTE: Habilitando bit do gdt em cr0
   movl %cr0, %eax
-  orl  $1,   %eax
+  orl  $1, %eax
   movl %eax, %cr0
 
   # NOTE: Configurando segmento de dados
@@ -46,7 +49,7 @@
   movw %ax,   %gs
   movw %ax,   %es
   
-  # NOTE: Configurando segmento de código com far jmp, ljmp(long jump) serve para mudar 
+  # NOTE: Configurando segmento de código com far jmp, ljmp(long jump) serve para mudar
   #       o segmento de código, já o jmp apenas modifica o offset dentro do segmento atual
   ljmp $0x08, $.AtlasProtected
 
@@ -57,50 +60,46 @@
 
   prefetcht0 .AtlasStruct
 
+  # NOTE: Carregamos o segundo setor do disco para preencher AtlasStruct
   pushl $.AtlasStruct # NOTE: Preenchendo os dados de boot e suas informações
   pushl $0x0000001
   pushl $1
   pushl $0
   call  ataLBA_R
-  jmp   2f
 
-  1:
-    incw %ax
-    jmp 3f 
+  movl .AtlasImgSize, %eax
+  movl $512, %ecx
+  xorl %edx, %edx
+  leal -1(%eax, %ecx,), %eax
+  divl %ecx
 
-  2:
-    movw  .AtlasImgSize, %ax
-    movw  $512,          %cx
-    cmpw  %cx,           %ax
-    cmovl %cx,           %ax
-    xorw  %dx,           %dx
-    divw  %cx
-    testw %dx,           %dx
-    jnz 1b
+  pushl .AtlasLoadDest
+  pushl $0x00000001
+  pushl %eax
+  pushl $0
+  call  ataLBA_R
 
-  3:
-    pushl .AtlasLoadDest
-    pushl $0x00000001
-    pushl %eax
-    pushl $0
-    call  ataLBA_R
-  
   # TODO: Voltar do PM para o RM para conseguir setar o modo de vídeo desejado
 
   # NOTE: Mandamos um ponteiro para a struct do modo de vídeo para o entry, caso o bit foi setado
-  xorl   %eax,        %eax
-  movl   $.ModeInfo,  %edi
-  movb   .AtlasFlags, %dl
-  testb  $0x01,       %dl
-  cmovnz %edi,        %eax
-  xorl   %ebx,        %ebx
-  xorl   %ecx,        %ecx
-  xorl   %edi,        %edi
-  
+  xorl   %eax,            %eax
+  movl   $.ModeInfo,      %edi
+  movb   .AtlasFlags,     %dl
+  testb  $VIDEO_BIT_FLAG, %dl
+  cmovnz %edi,            %eax
+  xorl   %ebx,            %ebx
+  xorl   %ecx,            %ecx
+  xorl   %edi,            %edi
+
   # NOTE: Passando o controle de execução
   movl .AtlasLoadDest, %ebx
   addl .AtlasOffset,   %ebx
+  testb $DEBUG_BIT_FLAG, %dl
+  jnz 1f
   jmp *%ebx
+
+  1:
+    jmp .
 
 # NOTE: Para melhor entendimento dessa parte veja as seguintes documentações
 #       -> https://wiki.osdev.org/VESA_Video_Modes
@@ -140,7 +139,7 @@
   .ModeInfo_ReservedMaskPos:     .space  1,0
   .ModeInfo_DirectColorModeInfo: .space  1,0
 
-  # NOTE: VBE 2.0 extensions 
+  # NOTE: VBE 2.0 extensions
   .ModeInfo_PhysBasePtr:         .space  4,0
   .ModeInfo_OffScreenMemOffset:  .space  4,0
   .ModeInfo_OffScreenMemSize:    .space  2,0
@@ -156,15 +155,16 @@
 #   AtlasLoadDest: .long -> Aqui é o endereço de memória onde a imagem deve ser carregada
 #   AtlasOffset:   .long -> Aqui é o offset dentro da imagem para a função main, ou seja, o atlas vai passar o controle para o endereço .AtlasLoadDest + .AtlasOffset
 #   AtlasImgSize:  .long -> Tamanho total em bytes da image, isso é importante para o atlas saber quantos setores precisa carregar, quando adicionar um fs para o Atlas não vamos mais precisar dessa informação
-#   AtlasVMode:    .word -> Modo de vídeo VBE que deseja ser setado, isso se for suportado. Caso seja 0x1000, o modo VGA 80x25 será usado 
+#   AtlasVMode:    .word -> Modo de vídeo VBE que deseja ser setado, isso se for suportado. Caso seja 0x1000, o modo VGA 80x25 será usado
 #   AtlasFlags:    .byte -> Flags gerais para o atlas:
 #                   * bit 0: Caso setado, vamos passar o ponteiro para a struct do modo de vídeo .ModeInfo será passado pelo %eax quando for passar o controle para a imagem
+#                   * bit 1: Debug bit, caso setado, nao vai dar jmp para o offset passado no header
 
 # NOTE: OBS: Caso essa struct seja feita em C, use __attribute__((packed)) para evitar alinhamento pelo compilador. Para zig use packed struct
 
-.section .atlas.struct.atlas, "w", @nobits
-.align 4
-.type .AtlasStruct, @object
+  .section .atlas.struct.atlas, "w", @nobits
+  .align 4
+  .type .AtlasStruct, @object
 .AtlasStruct:
   .AtlasMagic:    .space  2,0
   .AtlasLoadDest: .space  4,0

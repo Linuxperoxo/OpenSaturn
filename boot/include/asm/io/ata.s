@@ -30,9 +30,9 @@
   .align 4
   .type ataLBA_R, @function
   ataLBA_R:
-  
+
     # NOTE:
-    # -   (%ebp): u8 __head__; 
+    # -   (%ebp): u8 __head__;
     # -  4(%ebp): u8 __sectors_to_read__;
     # -  8(%ebp): u32 __drive_addrs__;
     # - 12(%ebp): u32 __dest_addrs__;
@@ -54,7 +54,7 @@
 
     # NOTE:
     # Porta 0x1F7:
-    #   (Bits 0-3): Cabeçote 
+    #   (Bits 0-3): Cabeçote
     #   (Bit 4): Drive | 0 -> Master | 1 -> Slave. OBS: ATA só suporta 2 drive, o master e o slave
     #   (Bit 5): Nos primeiros padrões de discos rígidos (IDE/ATA antigos), esse bit tinha uma função específica. No entanto, com a evolução do protocolo, ele foi fixado em 1 para manter compatibilidade.
     #   (Bit 6): Tipo de endereçamento, 0 -> CHS | 1 -> LBA
@@ -80,12 +80,12 @@
     outb %al,      %dx
 
     # NOTE:
-    # Porta 0x1F4: 
+    # Porta 0x1F4:
     #   Configurando o endereço LBA mid
     shrl $8, %eax
     incw %dx
     outb %al, %dx
-  
+
     # NOTE:
     # Porta 0x1F5:
     #   Configurando o endereço LBA high
@@ -94,12 +94,12 @@
     outb %al, %dx
 
     # NOTE:
-    # Porta 0x1F7:  
+    # Porta 0x1F7:
     #   Enviando comando de leitura para o controlador ATA
     movb $COMMAND_READ, %al
     movw $COMMAND_PORT, %dx
     outb %al, %dx
-  
+
     movw  $ERROR_PORT, %dx
     inb   %dx,         %al
     testb %al,         %al
@@ -111,15 +111,16 @@
       jmp .
 
     2:
+      xorl %ebx, %ebx
       movw 4(%ebp),  %bx  # NOTE: Setores a serem lidos
       movl 12(%ebp), %edi # NOTE: Endereço de destino dos dados lidos
       cld
 
     1:
-      testl %ebx, %ebx 
+      testl %ebx, %ebx
       jz    3f
       decl  %ebx
-      movw  $STATUS_PORT, %dx 
+      movw  $STATUS_PORT, %dx
 
     2:
       inb   %dx, %al
@@ -128,7 +129,7 @@
 
       movl $SECTOR_SIZE_WORD, %ecx
       movw $DATA_PORT,        %dx
-  
+
       # NOTE:
       # REP: Repete uma instrução até %ecx != 0. OBS: A cada interação %ecx será decrementado
       # INSW: Lê a porta de %dx, e manda os dados para %es:%di. Se DF = 0 (CLD), 
@@ -147,7 +148,7 @@
       popl %eax
       popl %ebp
       ret
-    
+
   .global ataLBA_W
   .align 4
   .type ataLBA_W, @function
@@ -155,5 +156,3 @@
 .else
   .warning "asm/io/ata.s is already defined!"
 .endif
-
-  

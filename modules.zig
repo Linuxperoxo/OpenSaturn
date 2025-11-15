@@ -22,3 +22,13 @@ pub const __SaturnAllMods__ = [_]type {
     // Module Location!
     @import("fs/rootfs/module.zig"),
 };
+
+pub fn countModOfType(comptime T: @import("root").interfaces.module.ModType_T) usize {
+    var count: usize = 0;
+    for(__SaturnAllMods__) |M| {
+        if(@hasDecl(M, "__SaturnModuleDescription__")) {
+            count += if(M.__SaturnModuleDescription__.type == T) 1 else 0;
+        }
+    }
+    return count;
+}

@@ -6,6 +6,8 @@
 pub const Menuconfig_T: type = @import("types.zig").Menuconfig_T;
 pub const Load_T: type = @import("types.zig").Load_T;
 
+// TODO: reescrita de menuconfig para as arquiteturas
+
 pub const ModulesSelection: Menuconfig_T = .{
     .ke_m_rootfs = .yes,
 };
