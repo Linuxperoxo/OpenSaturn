@@ -4,3 +4,4 @@
 // └──────────────────────────────────────────────┘
 
 pub const io: type = @import("io/io.zig");
+pub const @"asm": type = @import("asm/asm.zig");

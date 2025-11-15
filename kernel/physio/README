@@ -1,0 +1,7 @@
+Esse diretorio provavelmente sera movido, como tudo no OpenSaturn sao modulos,
+o registro de phys nao sera diferente. Essa parte ficara em /sys/bus/{pci,usb},
+para buscar um dispositivo, e so dar touch nos diretorio, por exemplo, no pci
+vamos ter /sys/bus/pci/class/ aqui vamos ter todas as class encontradas, o proximo
+sera o vendor, entao ficaria /sys/bin/pci/class/3/vendor/4660/, e pronto, ai ficara
+todos os dispositivos. Essa busca funciona da mesma maneira que o i386 implementa
+a busca por physio no pci

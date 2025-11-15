@@ -11,19 +11,25 @@ pub const ArchDescription_T: type = struct {
         label: []const u8,
         entry: *const fn() callconv(.naked) noreturn,
     },
-    init: struct {
+    init: ?struct {
         maintainer: []const u8,
         label: []const u8,
         entry: *const fn() callconv(.c) void,
     },
-    interrupts: struct {
+    interrupts: ?struct {
         maintainer: []const u8,
         label: []const u8,
         entry: *const fn() callconv(.c) void,
     },
-    mm: struct {
+    mm: ?struct {
         maintainer: []const u8,
         label: []const u8,
         entry: *const fn() callconv(.c) void,
+    },
+    physio: struct {
+        maintainer: []const u8,
+        label: []const u8,
+        entry: *const fn() callconv(.c) void,
+        sync: *const fn() void,
     },
 };

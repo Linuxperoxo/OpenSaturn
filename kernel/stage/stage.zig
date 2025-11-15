@@ -1,7 +1,16 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: io.zig       │
+// │  (c) 2025 Linuxperoxo  •  FILE: stage.zig    │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const ports: type = @import("ports.zig");
-pub const pci: type = @import("pci/pci.zig");
+const Stage_T: type = @import("types.zig").Stage_T;
+
+var saturnStage: Stage_T = .boot;
+
+pub fn stageSwitch(stage: Stage_T) void {
+    saturnStage = stage;
+}
+
+pub fn stageGet() Stage_T {
+    return saturnStage;
+}

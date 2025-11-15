@@ -1,0 +1,116 @@
+// ┌──────────────────────────────────────────────┐
+// │  (c) 2025 Linuxperoxo  •  FILE: types.zig    │
+// │            Author: Linuxperoxo               │
+// └──────────────────────────────────────────────┘
+
+const builtin: type = @import("builtin");
+const pci: type = if(!builtin.is_test) @import("root").kernel.arch.io.pci else @import("test/types.zig");
+const allocator: type = @import("allocator.zig");
+
+const PCIPhysIo_T: type = pci.PCIPhysIo_T;
+const PCIClass_T: type = pci.PCIClass_T;
+const PCIVendor_T: type = pci.PCIVendor_T;
+
+pub const PhysIo_T: type = struct {
+    device: PCIPhysIo_T,
+    // quantidade de retornos desse phys, isso e importante para que
+    // o driver saiba se outro driver esta possivelmente usando o mesmo
+    // phys
+    refs: u32,
+    brothers: u8,
+    events: struct {
+        connect: ?*const fn(*PhysIo_T) void = null,
+        disconnect: ?*const fn(*PhysIo_T) void = null,
+    },
+    status: enum {
+        missing,
+        active,
+    },
+    flags: packed struct(u8) {
+        find: u1, // podemos achar esse dispositivo quando o search e usado
+        hit: u2, // quantidade de hits no sync, quando 0 considerado como missing
+        link: u1, // quando um search atingiu esse device
+        save: u1, // salva informacoes do dispositivo para quando for ativado novamente
+        identified: u1, // phys identificado, ou seja, com vendor reconhecido
+        reserved: u2 = 0,
+    },
+    private: *anyopaque,
+
+    // deve ter essa funcao para que o driver possa ele
+    // mesmo liberar seu proprio PhysIo_T
+    pub fn free(self: *@This()) PhysIoErr_T!void {
+        return r: {
+            @call(.always_inline, allocator.sba.free_type_single, .{
+                @This(), self
+            }) catch break :r PhysIoErr_T.InternalError;
+            break :r {};
+        };
+    }
+};
+
+pub const PhysIoInfo_T: type = struct {
+    phys: *PhysIo_T,
+    brother: ?*@This(),
+    older_brother: ?*@This(),
+    next: ?*@This(),
+    prev: ?*@This(),
+};
+
+pub const PhysIoErr_T: type = error {
+    Missing,
+    NonFound,
+    NoFind,
+    UnableRegister,
+    InternalError,
+    UnidentifiedPhysError,
+    UnidentifiedPhysClass,
+    UnidentifiedPhysVendor,
+    ImpossibleSearch,
+    NoBrothers,
+    NotAllBrothersCopied,
+    OutMemoryForBrothers,
+    ExpurgAnAlreadyExpurged,
+    ListenerCollision,
+    NoNListener,
+    AlwaysWaiting,
+    NoNWaiting,
+};
+
+pub const VendorRoot_T: type = struct {
+    identified: ?*[
+        @typeInfo(PCIVendor_T).@"enum".fields.len
+    ]?*PhysIoInfo_T,
+    unidentified: ?*PhysIoInfo_T, // ordenado por deviceID
+
+    pub fn alloc_this_identified(self: *@This()) allocator.sba.AllocatorErr_T!void {
+        const slice = try @call(.never_inline, allocator.sba.alloc_type_single, .{
+            [@typeInfo(PCIVendor_T).@"enum".fields.len]?*PhysIoInfo_T
+        });
+        self.identified = @alignCast(@ptrCast(slice.ptr));
+        for(0..self.identified.?.len) |i|
+            self.identified.?[i] = null;
+    }
+};
+
+pub const PhysIoClass_T: type = enum {
+    storage,
+    network,
+    display,
+    multimedia,
+    bridge,
+    sbus,
+};
+
+pub const PhysIoVendor_T: type = enum {
+    intel,
+    amd,
+    nvidia,
+    broadcom,
+    realtek,
+    qualcomm,
+    marvell,
+    vmware,
+    virtio,
+    virtualbox,
+    qemu,
+};
