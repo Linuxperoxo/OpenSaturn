@@ -2,14 +2,18 @@
                  OpenSaturn Kernel
 ===================================================
 
-OpenSaturn é um kernel de sistema operacional Unix-based,
-escrito inteiramente em Zig, projetado com os princípios de
-simplicidade, modularidade e personalização total.
+OpenSaturn é um kernel Unix-based, escrito inteiramente
+em Zig, projetado com os princípios de simplicidade, modularidade
+e personalização total.
 
 É uma iniciativa pensada para desenvolvedores que desejam
 compreender, estender e moldar cada camada do seu sistema
 operacional, desde as syscalls até os drivers e o sistema
 de arquivos.
+
+No OpenSaturn tudo é composto por módulos, absolutamente tudo.
+O kernel não depende de módulos para funcionar, ele pode ser executado
+sem nenhum deles. Isso permite outra base inteira criando todos os módulos do zero.
 
 ---------------------------------------------------
                  Por que Zig?
@@ -74,19 +78,6 @@ com a complexidade de como integrá-lo ao kernel.
 
   - Facilitar a portabilidade do kernel para diferentes
     tipos de dispositivos.
-
----------------------------------------------------
-               Status do Projeto
----------------------------------------------------
-
-O kernel está em desenvolvimento ativo, com foco inicial
-nos seguintes componentes:
-
-  - Sistema de módulos para drivers, dispositivos, sistemas
-    de arquivos e syscalls;
-
-  - Gerenciamento de memória, paging e alocações básicas
-    para o próprio kernel e seus módulos.
 
 ===================================================
 
