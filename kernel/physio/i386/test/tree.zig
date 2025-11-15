@@ -39,41 +39,6 @@ pub fn TreeBuild(
             return .all_null;
         }
 
-        fn allocator_verify(Allocator_T: type) void {
-            const A = switch(@typeInfo(Allocator_T)) {
-                .@"pointer" => |info| info.child,
-                .@"struct" => Allocator_T,
-                else => @compileError(
-                    \\ expect allocator struct or pointer to allocator struct
-                ),
-            };
-            if(@hasDecl(A, "alloc")) {
-                sw: switch(@typeInfo(@TypeOf(A.alloc))) {
-                    .@"fn" => |info| {
-                        if(info.return_type == null or info.return_type.?) {
-                            continue :sw @typeInfo(void);
-                        }
-                    },
-                    else => @compileError(
-                        \\
-                    ),
-                }
-            }
-            if(!@hasDecl(A, "free")) {
-                sw: switch(@typeInfo(@TypeOf(A.free))) {
-                    .@"fn" => |info| {
-                        if(info.return_type == null or info.return_type.? != void or info.params.len != 2
-                            or info.params[0].type != *A or info.params[1].type != []u8) {
-                            continue :sw @typeInfo(void);
-                        }
-                    },
-                    else => @compileError(
-                        \\
-                    ),
-                }
-            }
-        }
-
         fn find_node(self: *@This(), id: usize) TreeErr_T!struct{ *TreeNode_T, *TreeNode_T } {
             if(self.root == null) return TreeErr_T.NoNFound;
             var prev_branch: *TreeNode_T = self.root.?;
@@ -107,7 +72,6 @@ pub fn TreeBuild(
         }
 
         pub fn put_in_tree(self: *@This(), id: usize, some: T, sba: anytype) TreeErr_T!void {
-            comptime allocator_verify(@TypeOf(sba));
             if(self.root == null) {
                 const alloc = sba.alloc(
                     @sizeOf(TreeNode_T)
@@ -163,7 +127,6 @@ pub fn TreeBuild(
         }
 
         pub fn drop_in_tree(self: *@This(), id: usize, sba: anytype) TreeErr_T!void {
-            comptime allocator_verify(@TypeOf(sba));
             var prev, var current = @call(.always_inline, find_node, .{
                 self, id
             }) catch |err| return err;

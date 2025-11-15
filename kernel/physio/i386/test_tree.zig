@@ -6,7 +6,7 @@
 const std: type = @import("std");
 const types: type = @import("types.zig");
 const tree: type = @import("tree.zig");
-const test_types: type = @import("test_types.zig");
+const test_types: type = @import("test/types.zig");
 
 const PCIPhysIo_T: type = test_types.PCIPhysIo_T;
 const PCIClass_T: type = test_types.PCIClass_T;

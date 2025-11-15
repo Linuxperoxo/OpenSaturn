@@ -7,6 +7,13 @@ const std: type = @import("std");
 const tree: type = @import("tree.zig");
 const sba: type = @import("sba_for_test.zig");
 
+// === Teste Info ===
+//
+// OS: Gentoo Linux x86_64
+// Zig: 0.15.2
+// Tester: Linuxperoxo
+// Status: OK
+
 const Tree_T: type = tree.TreeBuild(usize);
 const buildByteAllocator = sba.buildByteAllocator;
 const AllocatorErr_T: type = Allocator_T.err_T;

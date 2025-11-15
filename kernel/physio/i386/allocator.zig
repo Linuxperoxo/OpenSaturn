@@ -4,7 +4,7 @@
 // └────────────────────────────────────────────────┘
 
 const builtin: type = @import("builtin");
-const memory: type = if(!builtin.is_test) @import("root").lib.kernel.memory.sba else @import("test_sba.zig");
+const memory: type = if(!builtin.is_test) @import("root").lib.kernel.memory.sba else @import("test/sba.zig");
 const types: type = @import("types.zig");
 
 pub const sba: type = struct {
@@ -18,7 +18,7 @@ pub const sba: type = struct {
 
     pub const AllocatorErr_T: type = Allocator_T.err_T;
 
-    var allocator: Allocator_T = .{};
+    pub var allocator: Allocator_T = .{};
     var firts_call: bool = true;
 
     fn alloc(bytes: u32) AllocatorErr_T![]u8 {

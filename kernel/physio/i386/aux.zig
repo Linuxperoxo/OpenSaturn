@@ -4,7 +4,7 @@
 // └──────────────────────────────────────────────┘
 
 const builtin: type = @import("builtin");
-const pci: type = if(!builtin.is_test) @import("root").kernel.arch.io.pci else @import("test_types.zig");
+const pci: type = if(!builtin.is_test) @import("root").kernel.arch.io.pci else @import("test/types.zig");
 const types: type = @import("types.zig");
 
 pub fn resolve_all_index(class: pci.PCIClass_T, vendor: pci.PCIVendor_T) struct { ?u8, ?u8 } {

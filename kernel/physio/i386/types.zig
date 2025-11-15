@@ -4,7 +4,7 @@
 // └──────────────────────────────────────────────┘
 
 const builtin: type = @import("builtin");
-const pci: type = if(!builtin.is_test) @import("root").kernel.arch.io.pci else @import("test_types.zig");
+const pci: type = if(!builtin.is_test) @import("root").kernel.arch.io.pci else @import("test/types.zig");
 const allocator: type = @import("allocator.zig");
 
 const PCIPhysIo_T: type = pci.PCIPhysIo_T;
@@ -48,19 +48,6 @@ pub const PhysIo_T: type = struct {
     }
 };
 
-pub const ListenersNode_T: type = struct {
-    right: ?*@This(),
-    left: ?*@This(),
-    phys: ?*PhysIo_T,
-};
-
-pub const WaitingNode_T: type = struct {
-    right: ?*@This(),
-    left: ?*@This(),
-    id: u32,
-    hit: ?*const fn(*PhysIo_T) void,
-};
-
 pub const PhysIoInfo_T: type = struct {
     phys: *PhysIo_T,
     brother: ?*@This(),
@@ -85,6 +72,7 @@ pub const PhysIoErr_T: type = error {
     ExpurgAnAlreadyExpurged,
     ListenerCollision,
     NoNListener,
+    AlwaysWaiting,
 };
 
 pub const VendorRoot_T: type = struct {

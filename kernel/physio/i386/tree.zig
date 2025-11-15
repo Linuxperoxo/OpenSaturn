@@ -4,11 +4,11 @@
 // └──────────────────────────────────────────────┘
 
 const types: type = @import("types.zig");
-const pci: type = if(!builtin.is_test) @import("root").kernel.arch.io.pci else @import("test_types.zig");
+const pci: type = if(!builtin.is_test) @import("root").kernel.arch.io.pci else @import("test/types.zig");
 const allocator: type = @import("allocator.zig");
 const aux: type = @import("aux.zig");
 const builtin: type = @import("builtin");
-const @"test": type = @import("test_types.zig");
+const test_types: type = @import("test/types.zig");
 const std: type = @import("std");
 
 const UNIDENTIFIED: u1 = 0;
@@ -17,7 +17,7 @@ const IDENTIFIED: u1 = 1;
 pub var class_root = [_]?*types.VendorRoot_T {
     null,
 } ** if(!builtin.is_test) @typeInfo(pci.PCIClass_T).@"enum".fields.len else
-    @typeInfo(@"test".PCIClass_T).@"enum".fields.len;
+    @typeInfo(test_types.PCIClass_T).@"enum".fields.len;
 
 fn physio_mov_infos(noalias dest: *types.PhysIoInfo_T, noalias src: *const pci.PCIPhysIo_T, ident: u1) types.PhysIoErr_T!void {
     const phys_alloc: *types.PhysIo_T = allocator.sba.alloc_type_single(types.PhysIo_T) catch return types.PhysIoErr_T.InternalError;
