@@ -77,11 +77,21 @@ pub fn saturn_arch_verify() void {
     }
     const arch_fields = @typeInfo(decl_expect_type).@"struct".fields;
     for(arch_fields) |field| {
-        if(field.type == bool) continue; // ignore usable field
+        if(field.type == bool) continue;
+        const opt: bool = sw: switch(@typeInfo(field.type)) {
+            .optional => {
+                if(@field(arch.__SaturnArchDescription__, field.name) == null) continue;
+                break :sw true;
+            },
+            else => break :sw false,
+        };
+         // ignore usable field
         @export(
-            (@field(arch.__SaturnArchDescription__, field.name)).entry,
+            if(opt) (@field(arch.__SaturnArchDescription__, field.name)).?.entry else
+                (@field(arch.__SaturnArchDescription__, field.name)).entry,
             .{
-                .name = (@field(arch.__SaturnArchDescription__, field.name)).label
+                .name = if(opt) (@field(arch.__SaturnArchDescription__, field.name)).?.label else
+                    (@field(arch.__SaturnArchDescription__, field.name)).label,
             },
         );
     }
