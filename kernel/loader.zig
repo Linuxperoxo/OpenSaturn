@@ -45,6 +45,18 @@ comptime {
 }
 
 pub fn saturn_arch_verify() void {
+    const aux: type = opaque {
+        pub fn export_this(
+            comptime ptr: *const anyopaque,
+            comptime label: []const u8,
+            comptime section: ?[]const u8
+        ) void {
+            @export(ptr, .{
+                .name = label,
+                .section = section,
+            });
+        }
+    };
     const decl = decls.saturn_especial_decls[
         @intFromEnum(decls.DeclsOffset_T.arch)
     ];
@@ -77,22 +89,33 @@ pub fn saturn_arch_verify() void {
     }
     const arch_fields = @typeInfo(decl_expect_type).@"struct".fields;
     for(arch_fields) |field| {
+         // ignore usable field
         if(field.type == bool) continue;
         const opt: bool = sw: switch(@typeInfo(field.type)) {
             .optional => {
                 if(@field(arch.__SaturnArchDescription__, field.name) == null) continue;
+                if(field.type == ?[]const decl_expect_type.Extra_T) {
+                    for((@field(arch.__SaturnArchDescription__, field.name)).?) |extra| {
+                        aux.export_this(extra.entry, extra.label, null);
+                    }
+                    continue;
+                }
+                if(field.type == ?[]const decl_expect_type.Data_T) {
+                    for((@field(arch.__SaturnArchDescription__, field.name)).?) |data| {
+                        aux.export_this(data.ptr, data.label, null);
+                    }
+                    continue;
+                }
                 break :sw true;
             },
             else => break :sw false,
         };
-         // ignore usable field
-        @export(
+        aux.export_this(
             if(opt) (@field(arch.__SaturnArchDescription__, field.name)).?.entry else
                 (@field(arch.__SaturnArchDescription__, field.name)).entry,
-            .{
-                .name = if(opt) (@field(arch.__SaturnArchDescription__, field.name)).?.label else
-                    (@field(arch.__SaturnArchDescription__, field.name)).label,
-            },
+            if(opt) (@field(arch.__SaturnArchDescription__, field.name)).?.label else
+                (@field(arch.__SaturnArchDescription__, field.name)).label,
+            null
         );
     }
 }
