@@ -169,3 +169,84 @@ pub fn entry() linksection(section_text_loader) callconv(.naked) noreturn {
         )
     );
 }
+
+// depois de criar a implementar todos os arquivos, precisamos adicionar ela ao kernel,
+// isso pode ser feito por 3 arquivos, o primeiro e em config/arch/types.zig, la vamor ter
+// um enum:
+
+pub const Target_T: type = enum {
+    amd64,
+    arm,
+    avr,
+    xtensa,
+    riscv64,
+};
+
+// basta colocar sua nova arquitetura, digamos que seja i386
+
+pub const Target_T: type = enum {
+    i386,
+    amd64,
+    arm,
+    avr,
+    xtensa,
+    riscv64,
+};
+
+// feito isso, vamos precisar ir em saturn.zig, la temos uma grande struct chamada
+// Architectures, dentro dela temos todas as arquiteturas do kernel, e seus arquivos,
+// voce deve fazer a mesma coisa, seguindo a mesma ideia, vamos usar de exemplo i386
+// navamente
+
+pub const Architectures: type = struct {
+    pub const @"i386": type = struct {
+        // todos os arquivos da nossa arquitetura
+        pub const arch: type = @import("kernel/arch/i386/i386.zig"); // aqui fica o __SaturnArchDescription__
+        pub const entry: type = @import("kernel/entries/i386/entry.zig");
+        pub const init: type = @import("kernel/init/i386/init.zig");
+        pub const interrupts: type = @import("kernel/interrupts/i386/interrupts.zig");
+        pub const linker: type = @import("linkers/i386/linker.zig");
+        pub const physio: type = @import("kernel/physio/i386/physio.zig");
+        pub const mm: type = @import("mm/i386/mm.zig");
+        // essa struct lib provavalmente no futuro sera opcional existir, mas atualmente
+        // ela e obrigatoria
+        pub const lib: type = struct {
+            pub const kernel: type = @import("lib/saturn/kernel/arch/i386/lib.zig");
+            pub const userspace: type = @import("lib/saturn/userspace/i386/lib.zig");
+        };
+    };
+
+    pub const amd64: type = struct {
+        pub const arch: type = @import("kernel/arch/amd64/amd64.zig");
+        pub const entry: type = @import("kernel/entries/amd64/entry.zig");
+        pub const interrupts: type = @import("kernel/interrupts/amd64/interrupts.zig");
+        pub const linker: type = @import("linkers/amd64/linker.zig");
+        pub const mm: type = @import("mm/amd64/mm.zig");
+        pub const lib: type = struct {
+            pub const kernel: type = @import("lib/saturn/kernel/arch/amd64/lib.zig");
+            pub const userspace: type = @import("lib/saturn/userspace/amd64/lib.zig");
+        };
+    };
+};
+
+// e por fim, modificar o SelectedArch
+
+const SelectedArch: type = switch(config.arch.options.Target) {
+    .i386 => Architectures.i386,
+    .amd64 => Architectures.amd64,
+};
+
+// agora a arquitetura ja existe, e ja e reconhecida pelo kernel, agora so precisa
+// de um detalhe, modificar o build.zig, essa parte nao vai mais ser necessaria em
+// versoes futuras, nao gosto da ideia de modificar o build.zig, e ainda mais deixa-lo
+// complexo. O que voce deve fazer e exatamente o que voce fez com SelectedArch arch
+
+pub const target: std.Target.Cpu.Arch = switch(SaturnArchConfig.options.Target) {
+    // voce pode olhar std.Target.Cpu.Arch, e ver qual arquitetura deve ser passada
+    // para o compilador
+    // kernel => Zig Target
+    .i386 => .x86,
+    .amd64 => .x86_64,
+};
+
+// pronto, agora sua arquitetura esta pronta e funcionando perfeitamente no saturn
