@@ -29,7 +29,7 @@ pub const step: type = struct {
 const modsys: type = saturn.modsys;
 const loader: type = saturn.loader;
 
-// NOTE: Para obter mais detalhes de como funciona a inicializacao do
+// Para obter mais detalhes de como funciona a inicializacao do
 // kernel voce pode olhar o arquivo kernel/loader.zig, nele vai ter toda
 // a logica de comptime e runtime para inicializar e resolver os detalhes
 // da inicializacao do kernel. O motivo de ter um arquivo separado para isso
@@ -40,7 +40,7 @@ const loader: type = saturn.loader;
 //  * Primeiro vamos ter o entry de tudo, que deve ser definido dentro
 //    da arquitetura alvo. O i386 tem seu entry em kernel/arch/i386/i386.zig
 //  * O linker.ld e extremamente importante nesse caso, ja que ele vai colocar
-//    o header do bootloader, no caso do x86 e o AtlasB, voce pode encontrar a
+//    o header do bootloader, no caso do i386 e o AtlasB, voce pode encontrar a
 //    definicao do header do AtlasB no mesmo arquivo passado acima
 //  * E pronto, feito isso o bootloader apos carregar a imagem do kernel,
 //    ele vai passar o controle para a fn entry. O entry deve obrigatoriamente
