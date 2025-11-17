@@ -64,7 +64,7 @@ pub fn entry() linksection(section_text_loader) callconv(.naked) noreturn {
         \\ movl %[phys_stack], %esp
         \\ calll .i386.init
         \\ calll .i386.mm
-        \\ calll .i386.init.gdt
+        \\ calll .i386.gdt
         \\ calll .i386.interrupts
         \\ calll .i386.physio
         \\ jmp saturn.main

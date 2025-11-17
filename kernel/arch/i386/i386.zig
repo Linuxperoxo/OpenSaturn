@@ -43,6 +43,35 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
         .entry = &physio.physio_init,
         .sync = &physio.physio_sync,
     },
+    .extra = &[_]interfaces.arch.ArchDescription_T.Extra_T {
+        .{
+            .maintainer = "Linuxperoxo",
+            .label = ".i386.gdt",
+            .entry = &physio.physio_init,
+        },
+    },
+    .data = &[_]interfaces.arch.ArchDescription_T.Data_T {
+        .{
+            .label = "gdt_struct",
+            .section = sections.section_data_persist,
+            .ptr = &init.gdt.gdt_struct,
+        },
+        .{
+            .label = "gdt_entries",
+            .section = sections.section_data_persist,
+            .ptr = &init.gdt.gdt_entries,
+        },
+        .{
+            .label = "idt_struct",
+            .section = sections.section_data_persist,
+            .ptr = &interrupts.idt_struct,
+        },
+        .{
+            .label = "idt_entries",
+            .section = sections.section_data_persist,
+            .ptr = &interrupts.idt_entries,
+        },
+    },
     // TODO:
     //
     //.userspace = .{
