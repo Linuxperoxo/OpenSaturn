@@ -3,15 +3,16 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
+const builtin: type = @import("builtin");
+
 pub fn BuildList(comptime T: type) type {
     return struct {
         private: ?*anyopaque = null,
-        sla: ?*?*Private_T = null,
 
         pub const ListNode_T: type = struct {
             next: ?*@This(),
             prev: ?*@This(),
-            data: ?*T,
+            data: T,
         };
 
         const Private_T: type = struct {
@@ -39,8 +40,21 @@ pub fn BuildList(comptime T: type) type {
             }
         }
 
-        fn cast_private(private: *anyopaque) *Private_T {
+        pub fn cast_private(private: *anyopaque) *Private_T {
             return @alignCast(@ptrCast(private));
+        }
+
+        pub fn find_index(self: *@This(), index: usize) ListErr_T!*ListNode_T {
+            const private_casted: *Private_T = @call(.always_inline, cast_private, .{
+                self.private.?
+            });
+            if(private_casted.eol == null) return ListErr_T.NoNInitialized;
+            if(index >= private_casted.nodes) return ListErr_T.IndexOutBounds;
+            var current = private_casted.root.?;
+            for(0..index) |_| {
+                current = current.next.?;
+            }
+            return current;
         }
 
         pub fn init(self: *@This(), allocator: anytype) ListErr_T!void {
@@ -54,7 +68,7 @@ pub fn BuildList(comptime T: type) type {
             private_casted.eol = null;
         }
 
-        pub fn push_in_list(self: *@This(), allocator: anytype, data: T) ListErr_T!*T {
+        pub fn push_in_list(self: *@This(), allocator: anytype, data: T) ListErr_T!void {
             comptime check_allocator(@TypeOf(allocator));
             if(self.private == null) return ListErr_T.NoNInitialized;
             const private_casted: *Private_T = @call(.always_inline, cast_private, .{
@@ -64,14 +78,7 @@ pub fn BuildList(comptime T: type) type {
                 if(private_casted.eol == null) {
                     @branchHint(.unlikely);
                     private_casted.root = &(allocator.alloc(ListNode_T, 1) catch return ListErr_T.AllocatorErr)[0];
-                    private_casted.root.?.data = &(allocator.alloc(T, 1) catch {
-                    const slice: []ListNode_T = @as([*]ListNode_T, @ptrCast(private_casted.eol.?.next.?))[0..1];
-                        @constCast(&allocator).*.free(
-                            slice
-                        ) catch {};
-                        return ListErr_T.AllocatorErr;
-                    })[0];
-                    private_casted.root.?.data.?.* = data;
+                    private_casted.root.?.data = data;
                     private_casted.root.?.next = null;
                     private_casted.root.?.prev = null;
                     private_casted.eol = private_casted.root;
@@ -79,37 +86,24 @@ pub fn BuildList(comptime T: type) type {
                     break :r {};
                 }
                 private_casted.eol.?.next = &(allocator.alloc(ListNode_T, 1) catch return ListErr_T.AllocatorErr)[0];
-                private_casted.eol.?.next.?.data = &(allocator.alloc(T, 1) catch {
-                    const slice: []ListNode_T = @as([*]ListNode_T, @ptrCast(private_casted.eol.?.next.?))[0..1];
-                    allocator.free(
-                        slice
-                    ) catch {};
-                    return ListErr_T.AllocatorErr;
-                })[0];
-                private_casted.eol.?.next.?.data.?.* = data;
+                private_casted.eol.?.next.?.data = data;
                 private_casted.eol.?.next.?.prev = private_casted.eol;
+                private_casted.eol.?.next.?.next = null;
                 private_casted.eol = private_casted.eol.?.next;
             }
             private_casted.nodes += 1;
-            return private_casted.eol.?.data.?;
         }
 
-        pub fn drop_on_list(self: *@This(), data: *T, allocator: anytype) ListErr_T!void {
+        pub fn drop_on_list(self: *@This(), index: usize, allocator: anytype) ListErr_T!void {
             comptime check_allocator(@TypeOf(allocator));
             if(self.private == null) return ListErr_T.NoNInitialized;
             const private_casted: *Private_T = @call(.always_inline, cast_private, .{
                 self.private.?
             });
             if(private_casted.root == null) return ListErr_T.NoNNodes;
-            var current: ?*ListNode_T = private_casted.root;
-            r: {
-                while(current != null) : (current = current.?.next) {
-                    if(current.?.data.? == data) {
-                        break :r {};
-                    }
-                }
-                return ListErr_T.NoNNodeFound;
-            }
+            var current: ?*ListNode_T = try @call(.always_inline, find_index, .{
+                self, index
+            });
             if(current.?.prev != null) {
                 current.?.prev.?.next = current.?.next;
             }
@@ -133,20 +127,13 @@ pub fn BuildList(comptime T: type) type {
             private_casted.nodes -= 1;
         }
 
-        pub fn access_by_index(self: *@This(), index: usize) ListErr_T!*T {
-            const private_casted: *Private_T = @call(.always_inline, cast_private, .{
-                self.private.?
-            });
-            if(private_casted.eol == null) return ListErr_T.NoNInitialized;
-            if(index >= private_casted.nodes) return ListErr_T.IndexOutBounds;
-            var current = private_casted.root.?;
-            for(0..index) |_| {
-                current = current.next.?;
-            }
-            return current.data.?;
+        pub fn access_by_index(self: *@This(), index: usize) ListErr_T!T {
+            return (@call(.always_inline, find_index, .{
+                self, index
+            }) catch |err| return err).data;
         }
 
-        pub fn interator(self: *@This()) ListErr_T!*T {
+        pub fn interator(self: *@This()) ListErr_T!T {
             const private_casted: *Private_T = @call(.always_inline, cast_private, .{
                 self.private.?
             });
@@ -157,7 +144,7 @@ pub fn BuildList(comptime T: type) type {
             }
             const current_interator: *ListNode_T = private_casted.interator.?;
             private_casted.interator = private_casted.interator.?.next;
-            return current_interator.data.?;
+            return current_interator.data;
         }
     };
 }
