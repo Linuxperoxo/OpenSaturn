@@ -17,8 +17,9 @@ pub const Event_T: type = struct {
 };
 
 pub const EventOut_T: type = struct {
+    sender: u8 = 0, // TODO:
     data: ?usize,
-    flags: u16,
+    extra: u16,
 };
 
 pub const EventInput_T: type = struct {
@@ -37,12 +38,20 @@ pub const EventErr_T: type = error {
     NoNEvent,
     BlockedEvent,
     ListenerInteratorFailed,
+    FreeEventFailed,
+    NoNListenerInstall,
+    IteratorForceExit,
+    RemoveListenerInternalError,
 };
 
 pub const EventListener_T: type = struct {
     handler: *const fn(EventOut_T) EventInput_T,
+    who: u8, // TODO:
     flags: packed struct(u8) {
         satisfied: u1,
+        listen: u1,
+        link: u1,
+        reserved: u5 = 0,
     },
 };
 
