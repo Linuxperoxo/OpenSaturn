@@ -15,9 +15,9 @@ const types: type = @import("types.zig");
 const allocators: type = @import("allocators.zig");
 
 var event_buses = [_]types.EventBus_T {
-    types.EventInfo_T {
-        .line = [_]types.EventInfo_T {
-            null,
+    types.EventBus_T {
+        .line = [_]?*types.EventInfo_T {
+            null
         } ** 8,
     },
 } ** 4;
@@ -48,15 +48,15 @@ inline fn listeners_iterator(
     }
 }
 
-pub fn install_event(event: *types.Event_T, comptime default: ?types.EventDefault_T) types.EventErr_T!*types.Event_T {
-    const bus, const line = if(default != null) aux.default_bus(default) else .{
+pub fn install_event(event: *types.Event_T, comptime default: ?types.EventDefault_T) types.EventErr_T!void {
+    const bus, const line = if(default != null) aux.default_bus(default.?) else .{
         event.bus,
         event.line
     };
     if(check_path(bus, line)) return types.EventErr_T.EventCollision;
     event_buses[bus].line[line] = &(allocators.sba.allocator.alloc(
         types.EventInfo_T, 1
-    ))[0];
+    ) catch return types.EventErr_T.AllocFailed)[0];
     event_buses[bus].line[line].?.event = event;
     event_buses[bus].line[line].?.listeners.private = null; // garantindo uma lista vazia
 }
@@ -70,7 +70,10 @@ pub fn send_event(event: *types.Event_T, out: types.EventOut_T) types.EventErr_T
         event_info,
         &opaque {
             pub fn handler(listener: *types.EventListener_T, _: usize) anyerror!void {
-                listener.handler(out);
+                const listener_out = listener.handler(out);
+                if(event_info.event.listener_out != null) {
+                    event_info.event.listener_out.?(listener_out);
+                }
             }
         }.handler,
     );

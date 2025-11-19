@@ -3,16 +3,19 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const list: type = @import("root").kernel.utils.list;
+const builtin: type = @import("builtin");
+const list: type = if(!builtin.is_test) @import("root").kernel.utils.list else @import("test/list.zig");
 
 pub const Event_T: type = struct {
     bus: u2,
     line: u3,
+    listener_out: ?*const fn(EventInput_T) void,
     flags: packed struct(u8) {
-        active: u1,
-        block: u1,
-        listeners: u4,
-        reserved: u2 = 0,
+        control: packed struct(u2) {
+            active: u1,
+            block: u1,
+        },
+        reserved: u6 = 0,
     },
 };
 
@@ -42,15 +45,22 @@ pub const EventErr_T: type = error {
     NoNListenerInstall,
     IteratorForceExit,
     RemoveListenerInternalError,
+    AllocFailed,
 };
 
 pub const EventListener_T: type = struct {
     handler: *const fn(EventOut_T) EventInput_T,
     who: u8, // TODO:
     flags: packed struct(u8) {
-        satisfied: u1,
-        listen: u1,
-        link: u1,
+        // flags change the way the listener works (RW)
+        control: packed struct(u2) {
+            satisfied: u1,
+            listen: u1,
+        },
+        // flags changed by the event (READY ONLY FLAGS!)
+        internal: packed struct(u1) {
+            link: u1,
+        },
         reserved: u5 = 0,
     },
 };
