@@ -22,12 +22,17 @@ const SelectedArch: type = switch(config.arch.options.Target) {
 pub const cpu: type = struct {
     pub const arch: type = SelectedArch.arch;
     pub const entry: type = SelectedArch.entry;
-    pub const init: type = SelectedArch.init;
-    pub const interrupts: type = SelectedArch.interrupts;
     pub const linker: type = SelectedArch.linker;
-    pub const mm: type = SelectedArch.mm;
-    pub const physio: type = SelectedArch.physio;
-    pub const segments: type = if(@hasDecl(SelectedArch, "segments")) SelectedArch.arch.segments else void;
+    pub const lib: type = if(@hasDecl(SelectedArch, "lib")) SelectedArch.lib else void;
+    pub const segments: type = if(@hasDecl(SelectedArch, "segments")) SelectedArch.segments else void;
+    pub const init: type = if(@hasDecl(SelectedArch, "init")) SelectedArch.init else
+            @compileError("this architecture has no implementation for \'init\'");
+    pub const interrupts: type = if(@hasDecl(SelectedArch, "interrupts")) SelectedArch.interrupts else
+        @compileError("this architecture has no implementation for \'interrupts\'");
+    pub const physio: type = if(@hasDecl(SelectedArch, "physio")) SelectedArch.physio else
+        @compileError("this architecture has no implementation for \'physio\'");
+    pub const mm: type = if(@hasDecl(SelectedArch, "mm")) SelectedArch.mm else
+        @compileError("this architecture has no implementation for \'mm\'");
 };
 pub const Architectures: type = struct {
     // Eu poderia usar usar o @tagName para construir o caminho
@@ -96,13 +101,13 @@ pub const Architectures: type = struct {
         };
     };
 };
-pub const physio: type = SelectedArch.physio;
-pub const arch: type = SelectedArch.arch;
-pub const entry: type = SelectedArch.entry;
-pub const init: type = SelectedArch.init;
-pub const interrupts: type = SelectedArch.interrupts;
-pub const linker: type = SelectedArch.linker;
-pub const mm: type = SelectedArch.mm;
+pub const physio: type = cpu.physio;
+pub const arch: type = cpu.arch;
+pub const entry: type = cpu.entry;
+pub const init: type = cpu.init;
+pub const interrupts: type = cpu.interrupts;
+pub const linker: type = cpu.linker;
+pub const mm: type = cpu.mm;
 pub const core: type = struct {
     pub const module: type = @import("kernel/core/module/module.zig");
     pub const paging: type = @import("kernel/core/paging/paging.zig");
@@ -133,9 +138,11 @@ pub const lib: type = struct {
     pub const kernel: type = struct {
         pub const memory: type = @import("lib/saturn/kernel/memory/memory.zig");
         pub const utils: type = @import("lib/saturn/kernel/utils/utils.zig");
-        pub const arch: type = SelectedArch.lib.kernel;
+        pub const arch: type = if(cpu.lib != void and @hasDecl(cpu.lib, "kernel")) cpu.lib.kernel else
+            @compileError("this architecture has no implementation \'for lib/arch\'");
     };
-    pub const userspace: type = SelectedArch.lib.userspace;
+    pub const userspace: type = if(cpu.lib != void and @hasDecl(cpu.lib, "userspace")) cpu.lib.userspace else
+        @compileError("this architecture has no implementation for \'lib/arch/userspace\'");
 };
 pub const config: type = struct {
     pub const modules: type = @import("config/modules/config.zig");
@@ -144,7 +151,7 @@ pub const config: type = struct {
     pub const kernel: type = struct {
         pub const options: type = @import("config/kernel/options.zig");
         pub const mem: type = if(cpu.segments == void) @import("config/kernel/segments.zig") else
-            SelectedArch.arch.segments
+            cpu.segments
         ;
     };
 };

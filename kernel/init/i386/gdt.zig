@@ -162,7 +162,7 @@ const GDTSegments_T: type = enum(u8) {
     userdata = 0x20,
 };
 
-const gdt_entries = [_]GDTEntry_T {
+pub const gdt_entries = [_]GDTEntry_T {
     create_gdt_entry_comptime(
         0x00,
         0x00,
@@ -198,20 +198,9 @@ const gdt_entries = [_]GDTEntry_T {
 // [0 - 1]: limit: .word -> sizeof max offset byte
 // [2 - 5]: entires: .long -> ptr to entries
 
-var gdt_struct: [6]u8 align(4) = .{
+pub var gdt_struct: [6]u8 align(4) = .{
     0
 } ** @sizeOf(GDTStruct_T);
-
-comptime {
-    @export(&gdt_entries, .{
-        .section = section_data_persist,
-        .name = "gdt_entries",
-    });
-    @export(&gdt_struct, .{
-        .section = section_data_persist,
-        .name = "gdt_struct",
-    });
-}
 
 pub fn gdt_config() linksection(section_text_loader) callconv(.naked) void {
     asm volatile(

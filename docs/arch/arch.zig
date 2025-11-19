@@ -91,6 +91,54 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
         .label = ".i386.mm",
         .entry = &mm.mmu_init,
     },
+    // * physio: detalhes do gerenciamento de physio, em versoes futuras provavelmente
+    // sera promovido a modulo. Para obter mais detalhes veja kernel/physio/README
+    .physio = .{
+        .maintainer = "Linuxperoxo",
+        .label = ".i386.physio",
+        .entry = &physio.physio_init,
+        .sync = &physio.physio_sync,
+    },
+    // aqui temos o .extra e .data, eles sao usados para a arquitetura usar o @export
+    // em certas coisas, como seus detalhes de ISA, isso evita ficar colocando @export
+    // em varios arquivos diferentes, desse jeito fica tudo em um unico lugar
+    .extra = &[_]interfaces.arch.ArchDescription_T.Extra_T {
+        .{
+            .maintainer = "Linuxperoxo",
+            .label = ".i386.gdt",
+            .entry = &physio.physio_init,
+        },
+    },
+    // esse .extra e .data resolve um problema bem especifico. O compilador
+    // nao resolve bloco comptime de container nao usados diretamente,
+    // ou seja, se voce apenas uma o @import() e nao usa nada dentro
+    // daquele container, o bloco comptime nunca sera executado, isso
+    // pode causar confusao caso voce use um @export() dentro de um bloco
+    // comptime que nunca sera executado, isso provavelmente vai dar erro
+    // de symbol not found quando voce tentar usar no assembly. Com esses 2
+    // fields a arquitetura evita usar em 100% dos casos o @export diretamente
+    .data = &[_]interfaces.arch.ArchDescription_T.Data_T {
+        .{
+            .label = "gdt_struct",
+            .section = sections.section_data_persist,
+            .ptr = &init.gdt.gdt_struct,
+        },
+        .{
+            .label = "gdt_entries",
+            .section = sections.section_data_persist,
+            .ptr = &init.gdt.gdt_entries,
+        },
+        .{
+            .label = "idt_struct",
+            .section = sections.section_data_persist,
+            .ptr = &interrupts.idt_struct,
+        },
+        .{
+            .label = "idt_entries",
+            .section = sections.section_data_persist,
+            .ptr = &interrupts.idt_entries,
+        },
+    },
 };
 
 // =================== kernel/entries/i386/entry.zig:

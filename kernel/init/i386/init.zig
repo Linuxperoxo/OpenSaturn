@@ -14,17 +14,6 @@ const section_text_loader = arch.sections.section_text_loader;
 const section_data_loader = arch.sections.section_data_loader;
 const section_data_persist = arch.sections.section_data_persist;
 
-// NOTE: Deixo o comptime nesse arquivo para garantir que o
-// bloco comptime vai ser executado, deixa-lo dentro de gdt
-// vai fazer ele nao ser executado, ja que nunca usamos nenhuma
-// referencia contida nele, isso faz o compilador nao resolver
-// seus comptimes
-comptime {
-    @export(&gdt.gdt_config, .{
-        .name = ".i386.init.gdt",
-    });
-}
-
 pub fn init() linksection(section_text_loader) callconv(.c) void {
     // Este trecho de assembly habilita a FPU e o conjunto de instruções SSE:
     //

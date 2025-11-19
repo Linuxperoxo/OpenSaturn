@@ -17,7 +17,7 @@ const section_data_persist = arch.sections.section_data_persist;
 
 const exceptionsMessagens = @import("idt.zig").cpuExceptionsMessagens;
 
-var idt_entries = [_]IDTEntry_T {
+pub var idt_entries = [_]IDTEntry_T {
     IDTEntry_T {
         .segment = 0x08,
         .flags = 0x00 | @as(u8, @intCast(interrupt_gate)),
@@ -27,20 +27,9 @@ var idt_entries = [_]IDTEntry_T {
     },
 } ** 256;
 
-const idt_struct = [_]u8 {
+pub const idt_struct = [_]u8 {
     0,
 } ** @sizeOf(IDTStruct_T);
-
-comptime {
-    @export(&idt_struct, .{
-        .section = section_data_persist,
-        .name = "idt_struct",
-    });
-    @export(&idt_entries, .{
-        .section = section_data_persist,
-        .name = "idt_entries",
-    });
-}
 
 pub fn idt_init() linksection(section_text_loader) callconv(.c) void {
     asm volatile(
