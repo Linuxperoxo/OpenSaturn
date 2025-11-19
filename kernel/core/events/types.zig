@@ -3,10 +3,6 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-// modificar o campo data da lista, ele pode receber
-// ponteiros quando struct brutas, isso vai tirar
-// a alocacao dinamica para data
-
 const list: type = @import("root").kernel.utils.list;
 
 pub const Event_T: type = struct {
@@ -40,6 +36,7 @@ pub const EventErr_T: type = error {
     EventCollision,
     NoNEvent,
     BlockedEvent,
+    ListenerInteratorFailed,
 };
 
 pub const EventListener_T: type = struct {
@@ -51,8 +48,6 @@ pub const EventListener_T: type = struct {
 
 pub const EventInfo_T: type = struct {
     event: *Event_T,
-    // aqui deve ser ponteiro, ja que quem e responsavel
-    // pelo proprio EventListener_T e quem esta escutando
     listeners: list.BuildList(*EventListener_T),
 };
 

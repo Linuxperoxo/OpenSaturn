@@ -18,8 +18,8 @@ inline fn check_path(bus: u2, line: u3) bool {
     return if(event_buses[bus].line[line] != null) true else false;
 }
 
-inline fn ret_event(bus: u2, line: u3) *types.Event_T {
-    return event_buses[bus].line[line].?;
+inline fn ret_event(bus: u2, line: u3) *types.EventInfo_T {
+    return event_buses[bus].line[line];
 }
 
 pub fn install_event(event: *types.Event_T, comptime default: ?types.EventDefault_T) types.EventErr_T!void {
@@ -31,10 +31,23 @@ pub fn install_event(event: *types.Event_T, comptime default: ?types.EventDefaul
     
 }
 
+pub fn send_event(event: *types.Event_T, out: types.EventOut_T) types.EventErr_T!void {
+    if(!check_path(event.bus, event.line)) return types.EventErr_T.NoNEvent;
+    const event_info = ret_event(event.bus, event.line);
+    while(event_info.listeners.interator()) |listener| {
+         listener.handler(out);
+    } else |err| {
+        switch(err) {
+            @TypeOf(event_info.listeners).ListErr_T.EndOfInterator => {},
+            else => return types.EventErr_T.
+        }
+    }
+}
+
 pub fn remove_event(event: *types.Event_T) types.EventErr_T!void {
     
 }
 
-pub fn listen_event_bus_line(handler: *const fn(types.EventOut_T) types.EventInput_T) types.EventErr_T!void {
+pub fn listen_event(listener: *types.EventListener_T) types.EventErr_T!void {
     
 }
