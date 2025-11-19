@@ -51,14 +51,15 @@ const SBAResizedPool_T: type = SBAResized_T.Pool_T;
 
 fn full_alloc(comptime SBA_T: type, allocator: *SBA_T) anyerror!void {
     for(if(SBA_T == SBASingle_T) 0 else SBA_T.blocks_reserved..SBA_T.Pool_T.pool_bitmap_len) |_| {
-        _ = try allocator.alloc(1);
+        _ = try allocator.alloc(u8, 1);
     }
 }
 
 fn full_free(comptime SBA_T: type, pool: *SBA_T.Pool_T, allocator: *SBA_T, index: usize) anyerror!void {
     for(index..SBA_T.Pool_T.pool_bitmap_len) |i| {
+        const slice: []u8 =  @as([*]u8, @alignCast(@ptrCast(&pool.bytes.?[i * SBA_T.block_size])))[0..1];
         try allocator.free(
-            @as([*]u8, @ptrCast(&pool.bytes.?[i * SBA_T.block_size]))[0..1]
+            slice
         );
     }
 }
@@ -74,7 +75,7 @@ test "SBA Alloc Test For Single Frame" {
     var sba_allocator: SBASingle_T = .{};
     var old_ptr: ?[]u8 = null;
     for(0..SBASingle_T.Pool_T.pool_bitmap_len) |_| {
-        const ptr = try sba_allocator.alloc(1);
+        const ptr = try sba_allocator.alloc(u8, 1);
         if(old_ptr != null) {
             if((@intFromPtr(ptr.ptr) - @intFromPtr(old_ptr.?.ptr)) != SBASingle_T.block_size) return TestSingleErr_T.BlockAlignMiss;
         }
@@ -96,7 +97,7 @@ test "SBA Alloc Test For Resized Frame" {
     var sba_allocator: SBAResized_T = .{};
     var old_ptr: ?[]u8 = null;
     for(SBAResized_T.blocks_reserved..SBAResized_T.Pool_T.pool_bitmap_len) |_| {
-        const ptr = try sba_allocator.alloc(1);
+        const ptr = try sba_allocator.alloc(u8, 1);
         if(old_ptr != null) {
             if((@intFromPtr(ptr.ptr) - @intFromPtr(old_ptr.?.ptr)) != SBAResized_T.block_size) return TestResizedErr_T.BlockAlignMiss;
         }
@@ -107,11 +108,11 @@ test "SBA Alloc Test For Resized Frame" {
     // resized test
 
     if(sba_allocator.pools > 1) return TestResizedErr_T.ResizeOutOfTime;
-    _ = try sba_allocator.alloc(1);
+    _ = try sba_allocator.alloc(u8, 1);
     if(sba_allocator.pools == 1) return TestResizedErr_T.NonResize;
     old_ptr = null;
     for(SBAResized_T.blocks_reserved..SBAResized_T.Pool_T.pool_bitmap_len - 1) |_| {
-        const ptr = try sba_allocator.alloc(1);
+        const ptr = try sba_allocator.alloc(u8, 1);
         if(old_ptr != null) {
             if((@intFromPtr(ptr.ptr) - @intFromPtr(old_ptr.?.ptr)) != SBAResized_T.block_size) return TestResizedErr_T.BlockAlignMiss;
         }

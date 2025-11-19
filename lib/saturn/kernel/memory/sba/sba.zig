@@ -238,7 +238,8 @@ pub fn buildByteAllocator(
             return current_pool.bytes.?[cast_block_to_byte(index)..cast_block_to_byte(index + blocks_to_alloc)];
         }
 
-        pub fn alloc(self: *@This(), bytes: usize) err_T![]u8 {
+        pub fn alloc(self: *@This(), comptime T: type, N: usize) err_T![]T {
+            const bytes: usize = @sizeOf(T) * N;
             self.top = self.top orelse &self.root;
             if(bytes == 0) return err_T.ZeroBytes;
             if(self.root.bytes == null) {
@@ -248,13 +249,13 @@ pub fn buildByteAllocator(
                 });
             }
             if(comptime personality.resize) {
-                return @call(.always_inline, alloc_resized_frame, .{
+                return @as([]T, @alignCast(@ptrCast(try @call(.always_inline, alloc_resized_frame, .{
                     self, bytes
-                });
+                }))));
             }
-            return @call(.always_inline, alloc_sigle_frame, .{
+            return @as([]T, @alignCast(@ptrCast(try @call(.always_inline, alloc_sigle_frame, .{
                 self, bytes
-            });
+            }))));
         }
 
         fn free_resized_frame(self: *@This(), ptr: []u8) err_T!void {
@@ -306,14 +307,24 @@ pub fn buildByteAllocator(
             self.root.flags.full = 0;
         }
 
-        pub fn free(self: *@This(), ptr: []u8) err_T!void {
+        pub fn free(self: *@This(), ptr: anytype) err_T!void {
+            comptime {
+                sw: switch(@typeInfo(@TypeOf(ptr))) {
+                    .pointer => |ptr_info| {
+                        if(ptr_info.size != .slice) continue :sw @typeInfo(void);
+                    },
+                    else => @compileError(
+                        \\ expect slice to free
+                    ),
+                }
+            }
             if(comptime personality.resize) {
                 return @call(.always_inline, free_resized_frame, .{
-                    self, ptr
+                    self, @as([]u8, @alignCast(@ptrCast(ptr)))
                 });
             }
             return @call(.always_inline, free_single_frame, .{
-                self, ptr
+                self, @as([]u8, @alignCast(@ptrCast(ptr)))
             });
         }
     };
