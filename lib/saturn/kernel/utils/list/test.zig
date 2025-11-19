@@ -13,9 +13,9 @@ const S: type = struct {
 const TestErr_T: type = error {
     InvalidIndexAccess,
     DiferentDataInIndex,
-    InteratorDiferentData,
+    IteratorDiferentData,
     ReinteratorDiferentData,
-    InteratorIndexOutBounds,
+    IteratorIndexOutBounds,
     PushedInDiferentIndex,
 };
 
@@ -34,19 +34,19 @@ test "List All Tests" {
         if(found.f0 != i) return TestErr_T.PushedInDiferentIndex;
     }
     for(0..128) |i| {
-        const interator = try test_list.interator();
-        if(interator.f0 != i) return TestErr_T.InteratorDiferentData;
+        const iterator = try test_list.iterator();
+        if(iterator.f0 != i) return TestErr_T.IteratorDiferentData;
     }
     r: {
-        _ = test_list.interator() catch |err| switch(err) {
-            @TypeOf(test_list).ListErr_T.EndOfInterator => break :r {},
+        _ = test_list.iterator() catch |err| switch(err) {
+            @TypeOf(test_list).ListErr_T.EndOfIterator => break :r {},
             else => {},
         };
-        return TestErr_T.InteratorIndexOutBounds;
+        return TestErr_T.IteratorIndexOutBounds;
     }
     for(0..128) |i| {
-        const interator = try test_list.interator();
-        if(interator.f0 != i) return TestErr_T.ReinteratorDiferentData;
+        const iterator = try test_list.iterator();
+        if(iterator.f0 != i) return TestErr_T.ReinteratorDiferentData;
     }
     for(0..127) |i| {
         var found = try test_list.access_by_index(0);

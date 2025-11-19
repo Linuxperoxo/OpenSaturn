@@ -26,7 +26,7 @@ pub fn BuildList(comptime T: type) type {
             AllocatorErr,
             IndexOutBounds,
             NoNInitialized,
-            EndOfInterator,
+            EndOfIterator,
             NoNNodes,
             NoNNodeFound,
         };
@@ -133,14 +133,14 @@ pub fn BuildList(comptime T: type) type {
             }) catch |err| return err).data;
         }
 
-        pub fn interator(self: *@This()) ListErr_T!T {
+        pub fn iterator(self: *@This()) ListErr_T!T {
             const private_casted: *Private_T = @call(.always_inline, cast_private, .{
                 self.private.?
             });
             if(private_casted.eol == null) return ListErr_T.NoNInitialized;
             if(private_casted.interator == null) {
                 private_casted.interator = private_casted.root.?;
-                return ListErr_T.EndOfInterator;
+                return ListErr_T.EndOfIterator;
             }
             const current_interator: *ListNode_T = private_casted.interator.?;
             private_casted.interator = private_casted.interator.?.next;
