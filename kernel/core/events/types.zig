@@ -9,6 +9,7 @@ const list: type = if(!builtin.is_test) @import("root").kernel.utils.list else @
 pub const Event_T: type = struct {
     bus: u2,
     line: u3,
+    who: u8,
     listener_out: ?*const fn(EventInput_T) void,
     flags: packed struct(u8) {
         control: packed struct(u2) {
@@ -20,13 +21,14 @@ pub const Event_T: type = struct {
 };
 
 pub const EventOut_T: type = struct {
-    sender: u8 = 0, // TODO:
-    data: ?usize,
-    extra: u16,
+    data: usize,
+    flags: u16,
 };
 
 pub const EventInput_T: type = struct {
-    
+    sender: u8,
+    data: usize,
+    flags: u16,
 };
 
 pub const EventDefault_T: type = enum {
@@ -44,24 +46,25 @@ pub const EventErr_T: type = error {
     FreeEventFailed,
     NoNListenerInstall,
     IteratorForceExit,
+    DropListFailed,
     RemoveListenerInternalError,
     AllocFailed,
+    ListInitFailed,
 };
 
 pub const EventListener_T: type = struct {
-    handler: *const fn(EventOut_T) EventInput_T,
-    who: u8, // TODO:
+    handler: *const fn(EventOut_T) ?EventInput_T,
+    listening: u8,
     flags: packed struct(u8) {
-        // flags change the way the listener works (RW)
-        control: packed struct(u2) {
+        control: packed struct(u1) {
+            // flags change the way the listener works (RW)
             satisfied: u1,
+        },
+        internal: packed struct(u1) {
+            // flags changed by the event (READY ONLY FLAGS!)
             listen: u1,
         },
-        // flags changed by the event (READY ONLY FLAGS!)
-        internal: packed struct(u1) {
-            link: u1,
-        },
-        reserved: u5 = 0,
+        reserved: u6 = 0,
     },
 };
 

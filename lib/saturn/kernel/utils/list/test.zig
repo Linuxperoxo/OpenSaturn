@@ -3,6 +3,14 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
+// === Teste Info ===
+//
+// OpenSaturn: 0.1.1
+// OS: Gentoo Linux x86_64
+// Zig: 0.15.2
+// Tester: Linuxperoxo
+// Status: OK
+
 const std: type = @import("std");
 const list: type = @import("list.zig");
 const sba: type = @import("test/sba.zig");

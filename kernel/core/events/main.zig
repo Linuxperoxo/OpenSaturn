@@ -32,20 +32,29 @@ inline fn ret_event(bus: u2, line: u3) *types.EventInfo_T {
 
 inline fn listeners_iterator(
     event_info: *types.EventInfo_T,
-    comptime handler: *const fn(*types.EventListener_T, usize) anyerror!void
+    event_out: ?types.EventOut_T,
+    event_listener: ?*types.EventListener_T,
+    comptime handler: *const fn(*types.EventInfo_T, *types.EventListener_T, usize, ?types.EventOut_T, ?*types.EventListener_T) types.EventErr_T!void,
 ) types.EventErr_T!void {
     var i: usize = 0;
     while(event_info.listeners.iterator()) |listener| {
         @call(.always_inline, handler, .{
-            listener, i
-        }) catch return types.EventErr_T.IteratorForceExit;
+            event_info, listener, i, event_out, event_listener
+        }) catch |err| {
+            event_info.listeners.iterator_reset() catch unreachable;
+            return err;
+        };
         i += 1;
     } else |err| {
         switch(err) {
-            @TypeOf(event_info.listeners).ListErr_T.EndOfInterator => {},
-            else => return types.EventErr_T.ListenerInteratorFailed,
+            @TypeOf(event_info.listeners).ListErr_T.EndOfIterator => {},
+            else => {
+                event_info.listeners.iterator_reset() catch unreachable;
+                return types.EventErr_T.ListenerInteratorFailed;
+            },
         }
     }
+    event_info.listeners.iterator_reset() catch unreachable;
 }
 
 pub fn install_event(event: *types.Event_T, comptime default: ?types.EventDefault_T) types.EventErr_T!void {
@@ -59,6 +68,8 @@ pub fn install_event(event: *types.Event_T, comptime default: ?types.EventDefaul
     ) catch return types.EventErr_T.AllocFailed)[0];
     event_buses[bus].line[line].?.event = event;
     event_buses[bus].line[line].?.listeners.private = null; // garantindo uma lista vazia
+    event_buses[bus].line[line].?.listeners.init(&allocators.sba.allocator) catch
+        return types.EventErr_T.ListInitFailed;
 }
 
 // quando tiver ktask, vamos ter um novo parametro, que vai enviar para todos de uma vez
@@ -68,11 +79,16 @@ pub fn send_event(event: *types.Event_T, out: types.EventOut_T) types.EventErr_T
     const event_info = ret_event(event.bus, event.line);
     try listeners_iterator(
         event_info,
+        out,
+        null,
         &opaque {
-            pub fn handler(listener: *types.EventListener_T, _: usize) anyerror!void {
-                const listener_out = listener.handler(out);
-                if(event_info.event.listener_out != null) {
-                    event_info.event.listener_out.?(listener_out);
+            pub fn handler(ite_event: *types.EventInfo_T, listener: *types.EventListener_T, _: usize, event_out: ?types.EventOut_T, _: ?*types.EventListener_T) types.EventErr_T!void {
+                // como no futuro teremos mais de 1 evento no bus_line, o listener precisa saber quem escutar
+                if(listener.flags.control.satisfied == 0 and listener.listening == ite_event.event.who) {
+                    const listener_out = listener.handler(event_out.?);
+                    if(ite_event.event.listener_out != null and listener_out != null) {
+                        ite_event.event.listener_out.?(listener_out.?);
+                    }
                 }
             }
         }.handler,
@@ -84,14 +100,17 @@ pub fn remove_event(event: *types.Event_T) types.EventErr_T!void {
     const event_info = ret_event(event.bus, event.line);
     try listeners_iterator(
         event_info,
+        null,
+        null,
         &opaque {
-            pub fn handler(listener: *types.EventListener_T, _: usize) anyerror!void {
-                listener.flags.listen = 0;
+            pub fn handler(_: *types.EventInfo_T, listener: *types.EventListener_T, _: usize, _: ?types.EventOut_T, _: ?*types.EventListener_T) types.EventErr_T!void {
+                listener.flags.internal.listen = 0;
             }
         }.handler,
     );
-    allocators.sba.allocator.free(event_info)
-        catch return types.EventErr_T.FreeEventFailed;
+    const slice: []types.EventInfo_T = @as([*]types.EventInfo_T, @ptrCast(event_info))[0..1];
+    allocators.sba.allocator.free(slice) catch return types.EventErr_T.FreeEventFailed;
+    event_buses[event.bus].line[event.line] = null;
 }
 
 pub fn install_listener_event(
@@ -115,6 +134,7 @@ pub fn install_listener_event(
     const event_info = ret_event(bus, line);
     event_info.listeners.push_in_list(&allocators.sba.allocator, listener)
         catch return types.EventErr_T.NoNListenerInstall;
+    listener.flags.internal.listen = 1;
 }
 
 pub fn remove_listener_event(
@@ -138,12 +158,15 @@ pub fn remove_listener_event(
     const event_info = ret_event(bus, line);
     listeners_iterator(
         event_info,
+        null,
+        listener,
         &opaque {
-            pub fn handler(listener_iterator: *types.EventListener_T, index: usize) anyerror!void {
-                if(listener_iterator == listener) {
+            pub fn handler(ite_event: *types.EventInfo_T, listener_iterator: *types.EventListener_T, index: usize, _: ?types.EventOut_T, listener_real: ?*types.EventListener_T) types.EventErr_T!void {
+                if(listener_iterator == listener_real) {
                     // o allocator passado libera o no da lista, nao o que tem nela
-                    event_info.listeners.drop_on_list(index, &allocators.sba.allocator);
-                    return error.Found;
+                    ite_event.listeners.drop_on_list(index, &allocators.sba.allocator)
+                        catch return types.EventErr_T.DropListFailed;
+                    return types.EventErr_T.IteratorForceExit;
                 }
             }
         }.handler,

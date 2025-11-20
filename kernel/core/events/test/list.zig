@@ -146,5 +146,13 @@ pub fn BuildList(comptime T: type) type {
             private_casted.interator = private_casted.interator.?.next;
             return current_interator.data;
         }
+
+        pub fn iterator_reset(self: *@This()) ListErr_T!void {
+            if(self.private == null) return ListErr_T.NoNInitialized;
+            const private_casted: *Private_T = @call(.always_inline, cast_private, .{
+                self.private.?
+            });
+            private_casted.interator = private_casted.root;
+        }
     };
 }

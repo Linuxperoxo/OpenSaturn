@@ -307,11 +307,11 @@ pub fn buildByteAllocator(
             }
             if(comptime personality.resize) {
                 return @call(.always_inline, free_resized_frame, .{
-                    self, ptr
+                    self, @as([]u8, @alignCast(@ptrCast(ptr)))
                 });
             }
             return @call(.always_inline, free_single_frame, .{
-                self, ptr
+                self, @as([]u8, @alignCast(@ptrCast(ptr)))
             });
         }
     };
