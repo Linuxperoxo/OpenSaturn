@@ -66,6 +66,10 @@ pub fn install_event(event: *types.Event_T, comptime default: ?types.EventDefaul
     event_buses[bus].line[line] = &(allocators.sba.allocator.alloc(
         types.EventInfo_T, 1
     ) catch return types.EventErr_T.AllocFailed)[0];
+    if(default != null) {
+        event.bus = bus;
+        event.line = line;
+    }
     event_buses[bus].line[line].?.event = event;
     event_buses[bus].line[line].?.listeners.private = null; // garantindo uma lista vazia
     event_buses[bus].line[line].?.listeners.init(&allocators.sba.allocator) catch

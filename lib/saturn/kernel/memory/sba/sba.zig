@@ -308,23 +308,34 @@ pub fn buildByteAllocator(
         }
 
         pub fn free(self: *@This(), ptr: anytype) err_T!void {
-            comptime {
-                sw: switch(@typeInfo(@TypeOf(ptr))) {
-                    .pointer => |ptr_info| {
-                        if(ptr_info.size != .slice) continue :sw @typeInfo(void);
-                    },
-                    else => @compileError(
-                        \\ expect slice to free
-                    ),
-                }
-            }
+            const byte_slice_fn = comptime sw0: switch(@typeInfo(@TypeOf(ptr))) {
+                .pointer => |ptr_info| {
+                    switch(ptr_info.size) {
+                        .slice => break :sw0 opaque {
+                            pub fn cast(slice: []ptr_info.child) []u8 {
+                                return @as([]u8, @ptrCast(slice));
+                            }
+                        }.cast,
+                        .one => break :sw0 opaque {
+                            pub fn cast(single: *ptr_info.child) []u8 {
+                                return @as([]u8, @ptrCast(@as([*]ptr_info.child, @ptrCast(single))[0..1]));
+                            }
+                        }.cast,
+                        else => continue :sw0 @typeInfo(void),
+                    }
+                },
+                else => @compileError("expect slice to free or single pointer"),
+            };
+            const byte_slice = @call(.always_inline, byte_slice_fn, .{
+                ptr
+            });
             if(comptime personality.resize) {
                 return @call(.always_inline, free_resized_frame, .{
-                    self, @as([]u8, @alignCast(@ptrCast(ptr)))
+                    self, byte_slice
                 });
             }
             return @call(.always_inline, free_single_frame, .{
-                self, @as([]u8, @alignCast(@ptrCast(ptr)))
+                self, byte_slice
             });
         }
     };

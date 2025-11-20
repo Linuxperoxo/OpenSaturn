@@ -21,36 +21,21 @@ pub const sba: type = struct {
     pub var allocator: Allocator_T = .{};
     var firts_call: bool = true;
 
-    fn alloc(bytes: u32) AllocatorErr_T![]u8 {
-        // apenas para evitar problema do ponteiro
-        // iniciar apontando para um lugar invalido
+    pub fn alloc_type_single(comptime T: type) AllocatorErr_T!*T {
         firts_call = r: {
             if(firts_call)
                 allocator.root.bytes = null;
             break :r false;
         };
-        return @call(.always_inline, Allocator_T.alloc, .{
-            &allocator, bytes
-        });
-    }
-
-    fn free(ptr: []u8) AllocatorErr_T!void {
-        return @call(.always_inline, Allocator_T.free, .{
-            &allocator, ptr
-        });
-    }
-
-    pub fn alloc_type_single(comptime T: type) AllocatorErr_T!*T {
-        return @alignCast(@ptrCast(
-            (try @call(.never_inline, alloc, .{
-                @sizeOf(T)
-            })).ptr
-        ));
+        return &(try @call(.never_inline, Allocator_T.alloc, .{
+            &allocator, T, 1
+        }))[0];
     }
 
     pub fn free_type_single(comptime T: type, ptr: *T) AllocatorErr_T!void {
-        return @call(.never_inline, free, .{
-            @as([*]u8, @ptrCast(ptr))[0..@sizeOf(T)]
+        const slice: []T = @as([*]T, @ptrCast(ptr))[0..1];
+        return @call(.never_inline, Allocator_T.free, .{
+            &allocator, slice
         });
     }
 };
