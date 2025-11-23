@@ -3,9 +3,6 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-// Kernel Arch Infos
-const target_T: type = @import("root").arch.target_T;
-
 // kernel Modules Types
 const Mod_T: type = @import("root").interfaces.module.Mod_T;
 const ModErr_T: type = @import("root").interfaces.module.ModErr_T;
@@ -41,12 +38,15 @@ const rootfsMod: *const Mod_T = &Mod_T {
     .name = "ke_m_rootfs",
     .desc = "Core Kernel Root Filesystem",
     .author = "Linuxperoxo",
-    .version = "1.0-1",
+    .version = "0.1.0",
+    .license = .{
+        .know = .GPL2_only,
+    },
     .type = .filesystem,
     .init = &init,
     .exit = &exit,
-    .private = @constCast(&@import("root").interfaces.fs.Fs_T {
-        .name = "ke_m_rootfs",
+    .private = @constCast(&Fs_T {
+        .name = "rootfs",
         .flags = .R,
         .mount = rootfs_mount,
         .unmount = rootfs_umount,

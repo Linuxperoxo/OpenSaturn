@@ -11,6 +11,7 @@ pub const Mod_T: type = struct {
     desc: []const u8,
     version: []const u8,
     author: []const u8,
+    license: []const u8,
     type: ModType_T,
     init: *const fn() ModErr_T!void,
     exit: *const fn() ModErr_T!void,
@@ -23,6 +24,21 @@ pub const ModType_T: type = enum {
     interrupt,
     irq,
     filesystem,
+};
+
+pub const ModLicense_T: type = union {
+    know: enum {
+        GPL2_only,
+        GPL2_or_later,
+        GPL3_only,
+        GPL3_or_later,
+        BSD_2_Clause,
+        BSD_3_Clause,
+        MIT,
+        APACHE_2_0,
+        PROPRIETARY,
+    },
+    custom: []const u8,
 };
 
 pub const ModErr_T: type = error {
