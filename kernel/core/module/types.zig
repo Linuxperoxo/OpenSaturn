@@ -55,6 +55,7 @@ pub const ModuleDescription_T: type = struct {
     load: enum { linkable, dinamic, unlinkable },
     init: *const fn() anyerror!void, // ponteiro para a funcao init
     arch: []const ModuleDescriptionTarget_T, // arch suportadas
+    deps: ?[][]const u8,
     type: union(ModType_T) {
         driver: void,
         syscall: void,

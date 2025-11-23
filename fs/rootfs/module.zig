@@ -19,6 +19,7 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .name = "ke_m_rootfs",
     .load = .unlinkable,
     .init = &init,
+    .deps = null,
     .type = .{
         .filesystem = .{
             .compile = "/"
