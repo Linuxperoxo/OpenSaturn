@@ -9,28 +9,76 @@ const config: type = @import("root").config;
 const interfaces: type = @import("root").interfaces;
 const kernel: type = @import("root").kernel;
 
+const saturn_modules = r: {
+    const aux: type = opaque {
+        pub fn check_module_arch(mod: *const interfaces.module.ModuleDescription_T) anyerror!void {
+            for(mod.arch) |mod_arch| {
+                if(config.arch.options.Target == mod_arch) return;
+            }
+            if(!config.modules.options.IgnoreModuleWithArchNotSupported) {
+                @compileError("module name " ++
+                    mod.name ++
+                    " is not supported by target architecture " ++
+                    @tagName(config.arch.options.Target)
+                );
+            }
+            return error.IgnoreThis;
+        }
+
+        pub fn check_module_in_menuconfig(mod: *const interfaces.module.ModuleDescription_T) void {
+            if(!@hasField(config.modules.menuconfig.Menuconfig_T, mod.name))  @compileError(
+                "module " ++
+                mod.name ++
+                " needs to be added in Menuconfig_T"
+            );
+        }
+
+        pub fn check_module_load(mod: *const interfaces.module.ModuleDescription_T) anyerror!void {
+            return if(mod.load == .unlinkable) return error.IgnoreThis else {};
+        }
+    };
+    // logica de verificacao:
+    var modules_check_index: usize = 0;
+    var modules_check = [_]?interfaces.module.ModuleDescription_T {
+        null
+    } ** modules.__SaturnAllMods__.len;
+    for(modules.__SaturnAllMods__) |mod| {
+        if(!decls.container_decl_exist(mod, .module)) {
+            @compileError(
+                decls.what_is_decl(.module) ++
+                " is not defined in the module file " ++
+                @typeName(mod)
+            );
+        }
+        if(!decls.container_decl_type(@TypeOf(mod.__SaturnModuleDescription__), .module)) {
+            @compileError(
+                "declaration " ++
+                decls.what_is_decl(.module) ++
+                " for module " ++
+                @typeName(mod) ++
+                " must be type: " ++
+                @typeName(decls.what_is_decl_type(.module))
+            );
+        }
+        aux.check_module_load(&mod.__SaturnModuleDescription__) catch continue;
+        aux.check_module_in_menuconfig(&mod.__SaturnModuleDescription__);
+        aux.check_module_arch(&mod.__SaturnModuleDescription__) catch continue;
+        modules_check[modules_check_index] = mod.__SaturnModuleDescription__; modules_check_index += 1;
+    }
+    break :r t: {
+        var satisfied_modules: [modules_check_index]interfaces.module.ModuleDescription_T = undefined;
+        for(0..modules_check_index) |i| {
+            satisfied_modules[i] = modules_check[i].?;
+        }
+        break :t satisfied_modules;
+    };
+};
+
 // saturn_modules ja tem os modulos organizados, respeitando suas dependencias
 // de inicializacao. Essa resolucao deve sempre ser resolvida em comptime
-const saturn_modules = r: {
+const saturn_modules_resolved = r: {
     // e aqui onde resolvemos as dependencias dos modulos
     const aux: type = opaque {
-        pub fn check_mod_exists(comptime name: []const u8) bool {
-            return (@hasField(config.modules.menuconfig.Menuconfig_T, name)
-                and @field(config.modules.menuconfig.ModulesSelection, name) == .yes);
-        }
-
-        fn count_comptime_mods_with_handler(comptime handler: *const fn(*const interfaces.module.ModuleDescription_T) bool) usize {
-            return t: {
-                var count: usize = 0;
-                for(modules.__SaturnAllMods__) |mod| {
-                    count += if(mod.__SaturnModuleDescription__.load == .linkable
-                        and check_mod_exists(mod.name)
-                        and handler(&mod.__SaturnModuleDescription__)) 1 else 0;
-                }
-                break :t count;
-            };
-        }
-
         const with_deps = count_comptime_mods_with_handler(
             &opaque {
                 pub fn @"with_deps?"(comptime mod: *const interfaces.module.ModuleDescription_T) bool {
@@ -46,32 +94,41 @@ const saturn_modules = r: {
             }.@"with_out_deps?"
         );
 
+        fn count_comptime_mods_with_handler(comptime handler: *const fn(comptime *const interfaces.module.ModuleDescription_T) bool) usize {
+            return t: {
+                var count: usize = 0;
+                for(0..saturn_modules.len) |i| {
+                    count += if(saturn_modules[i].load == .linkable and handler(&saturn_modules[i])) 1 else 0;
+                }
+                break :t count;
+            };
+        }
+
         pub fn comptime_mods_of_type(
             comptime mod_type: enum { with_deps, with_out_deps}
         ) ?[if(mod_type == .with_deps) with_deps else with_out_deps]interfaces.module.ModuleDescription_T {
             if((mod_type == .with_deps and with_deps == 0)
                 or (mod_type == .with_deps and with_deps == 0)) return null;
-            const handler: type = opaque {
-                var mods: [if(mod_type == .with_deps) with_deps else with_out_deps]interfaces.module.ModuleDescription_T = undefined;
-                var mods_index: usize = 0;
-
-                pub fn check(mod: *const interfaces.module.ModuleDescription_T) bool {
-                    if(if(mod_type == .with_deps) (mod.deps != null) else (mod.deps == null)) {
-                        mods[mods_index] = mod.*; mods_index += 1;
-                    }
-                    return true;
+            var mods: [if(mod_type == .with_deps) with_deps else with_out_deps]interfaces.module.ModuleDescription_T = undefined;
+            var mods_index: usize = 0;
+            for(saturn_modules) |mod| {
+                if(if(mod_type == .with_deps) (mod.deps != null) else (mod.deps == null)) {
+                    mods[mods_index] = mod; mods_index += 1;
                 }
-            };
-            _ = count_comptime_mods_with_handler(&handler.check); return handler.mods;
+            }
+            return mods;
         }
 
-        pub fn map_of_resolved_deps(comptime mods: *[with_out_deps]interfaces.module.ModuleDescription_T, comptime mod: *interfaces.module.ModuleDescription_T) [mod.deps.?.len]u1 {
+        pub fn map_of_resolved_deps(
+            comptime mods: *const [with_out_deps]interfaces.module.ModuleDescription_T,
+            comptime mod: *const interfaces.module.ModuleDescription_T
+        ) [mod.deps.?.len]u1 {
             var map =  [_]u1 {
                 0
             } ** mod.deps.?.len;
             for(mod.deps.?, 0..) |dep, i| {
                 for(mods) |m| {
-                    if(kernel.mem.eql(dep, m.name, .{
+                    if(kernel.utils.mem.eql(dep, m.name, .{
                         .len = true,
                         .case = false, // nao consideramos cases
                     })) map[i] = 1;
@@ -81,105 +138,50 @@ const saturn_modules = r: {
         }
     };
     const mods_with_out_deps = aux.comptime_mods_of_type(.with_out_deps);
-    const mods_with_deps = aux.comptime_mods_of_type(.with_deps);
+    var mods_with_deps = aux.comptime_mods_of_type(.with_deps);
+    _ = &mods_with_deps;
     if(mods_with_deps == null) break :r mods_with_out_deps; // sem resolucao de dependencia
-    for(mods_with_deps) |mod| {
-        var deps_map = aux.map_of_resolved_deps(&mods_with_out_deps, &mod);
+    for(mods_with_deps.?) |mod| {
+        const deps_map = aux.map_of_resolved_deps(&mods_with_out_deps.?, &mod);
         for(deps_map) |@"?"| {
             if(@"?" == 1) continue;
         }
     }
+    break :r mods_with_out_deps.? ++ mods_with_deps.?;
 };
 
-pub fn saturn_modules_verify() void {
-    for(modules.__SaturnAllMods__) |M| {
-        const decl = decls.saturn_especial_decls[
-            @intFromEnum(decls.DeclsOffset_T.module)
-        ];
-        if(!@hasDecl(M, decl)) {
-            @compileError(
-                decl ++ " is not defined in the module file " ++
-                @typeName(M)
-            );
-        }
-        const decl_type = @TypeOf(M.__SaturnModuleDescription__);
-        const decl_expect_type = decls.saturn_especial_decls_types[
-            @intFromEnum(decls.DeclsOffset_T.module)
-        ];
-        if(decl_type != decl_expect_type) {
-            if(decl_type != decl_expect_type) {
-                @compileError(
-                    "declaration " ++ decl ++ " for module " ++
-                    @typeName(M) ++
-                    " must be type: " ++
-                    @typeName(decls.saturn_especial_decls_types[
-                        @intFromEnum(decls.DeclsOffset_T.module)
-                    ])
-                );
-            }
-        }
-    }
-}
-
 pub fn saturn_modules_loader() void {
-    inline for(modules.__SaturnAllMods__) |M| {
-        // caso o modulo seja um modulo atualmente nao utilizavel, simplesmente damos skip
-        if(M.__SaturnModuleDescription__.load == .unlinkable) continue;
-        // Precisamos forçar um comptime aqui para evitar
-        // erro de compilacao
-        comptime arch: {
-            for(M.__SaturnModuleDescription__.arch) |A| {
-                if(config.arch.options.Target == A) {
-                    break :arch;
-                }
-            }
-            if(!config.modules.options.IgnoreModuleWithArchNotSupported) {
-                @compileError("module file " ++
-                    @typeName(M) ++
-                    " is not supported by target architecture " ++
-                    @tagName(config.arch.options.Target));
-            }
-            continue;
-        }
+    inline for(saturn_modules_resolved) |module| {
         // Skip nao pode ser comptime se nao vamos ter um
         // erro de compilacao, ja que ele vai tentar carregar
         // os modulos em comptime
         skip: {
-            switch(comptime M.__SaturnModuleDescription__.load) {
+            switch(comptime module.load) {
                 .dinamic => {},
                 .unlinkable => {},
                 .linkable => {
                     // comptime apenas para deixar explicito
                     comptime {
                         if(config.modules.options.UseMenuconfigAsRef) {
-                            if(!@hasField(config.modules.menuconfig.Menuconfig_T, M.__SaturnModuleDescription__.name)) {
-                                @compileError(
-                                    "module " ++
-                                    M.__SaturnModuleDescription__.name ++
-                                    " in file " ++
-                                    @typeName(M) ++
-                                    " needs to be added in Menuconfig_T"
-                                );
-                            }
-                            switch(@field(config.modules.menuconfig.ModulesSelection, M.__SaturnModuleDescription__.name)) {
+                            switch(@field(config.modules.menuconfig.ModulesSelection, module.name)) {
                                 .yes => {},
                                 .no => break :skip,
                             }
                         }
                     }
-                    @call(.never_inline, M.__SaturnModuleDescription__.init, .{}) catch {
+                    @call(.never_inline, module.init, .{}) catch {
                         // klog error
                     };
                 },
             }
             // resolvendo modulo com base no seu tipo
-            switch(comptime M.__SaturnModuleDescription__.type) {
+            switch(comptime module.type) {
                 .driver => {},
                 .syscall => {},
                 .interrupt => {},
                 .irq => {},
                 .filesystem => {
-                    switch(comptime M.__SaturnModuleDescription__.type.filesystem) {
+                    switch(comptime module.type.filesystem) {
                         // caso o modulo fs use compile, vamos fazer uma
                         // montagem do fs em tempo de compilacao
                         .compile => {}, // call mount

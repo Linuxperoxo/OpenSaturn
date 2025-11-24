@@ -11,8 +11,9 @@ pub const Mod_T: type = struct {
     desc: []const u8,
     version: []const u8,
     author: []const u8,
-    license: []const u8,
+    license: ModLicense_T,
     type: ModType_T,
+    deps: ?[]const []const u8,
     init: *const fn() ModErr_T!void,
     exit: *const fn() ModErr_T!void,
     private: ?*anyopaque,
@@ -55,7 +56,7 @@ pub const ModuleDescription_T: type = struct {
     load: enum { linkable, dinamic, unlinkable },
     init: *const fn() anyerror!void, // ponteiro para a funcao init
     arch: []const ModuleDescriptionTarget_T, // arch suportadas
-    deps: ?[][]const u8,
+    deps: ?[]const[]const u8,
     type: union(ModType_T) {
         driver: void,
         syscall: void,

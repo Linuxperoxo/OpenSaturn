@@ -10,4 +10,5 @@ pub const Load_T: type = @import("types.zig").Load_T;
 
 pub const ModulesSelection: Menuconfig_T = .{
     .ke_m_rootfs = .yes,
+    .ke_m_devfs = .yes,
 };
