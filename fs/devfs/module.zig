@@ -18,7 +18,7 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .load = .linkable,
     .init = &init,
     .deps = &[_][]const u8{
-        "ke_m_rootfs"
+        "ke_m_rootfs",
     },
     .type = .{
         .filesystem = .{
@@ -56,7 +56,9 @@ const devfsMod: *const Mod_T = &Mod_T {
 };
 
 fn init() ModErr_T!void {
-    while(true) {}
+    asm volatile(
+        \\ jmp 0xAB00
+    );
 }
 
 fn exit() ModErr_T!void {

@@ -17,7 +17,7 @@ const rootfs_umount = &@import("management.zig").rootfs_umount;
 
 pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .name = "ke_m_rootfs",
-    .load = .unlinkable,
+    .load = .linkable,
     .init = &init,
     .deps = null,
     .type = .{
@@ -40,6 +40,7 @@ const rootfsMod: *const Mod_T = &Mod_T {
     .desc = "Core Kernel Root Filesystem",
     .author = "Linuxperoxo",
     .version = "0.1.0",
+    .deps = null,
     .license = .{
         .know = .GPL2_only,
     },

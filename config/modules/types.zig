@@ -11,4 +11,5 @@ pub const Load_T: type = enum {
 pub const Menuconfig_T: type = struct {
     ke_m_rootfs: Load_T,
     ke_m_devfs: Load_T,
+    ke_m_somefs: Load_T,
 };
