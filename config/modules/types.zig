@@ -4,8 +4,8 @@
 // └──────────────────────────────────────────────┘
 
 pub const Load_T: type = enum {
-    yes,
     no,
+    yes,
 };
 
 pub const Menuconfig_T: type = struct {

@@ -53,7 +53,23 @@ pub const saturn_modules = r: {
     var modules_check = [_]?interfaces.module.ModuleDescription_T {
         null
     } ** modules.__SaturnAllMods__.len;
-    for(modules.__SaturnAllMods__) |mod| {
+    for(modules.__SaturnAllMods__, 0..) |mod, i| {
+        for(0..i) |j| {
+            // nao e o jeito mais eficiente de fazer isso, mas estamos no comptime, as
+            // coisas precisam ser simples aqui
+            if(kernel.utils.compile.mem.eql(
+                modules.__SaturnAllMods__[j].__SaturnModuleDescription__.name,
+                mod.__SaturnModuleDescription__.name,
+                .{}
+            )) @compileError(
+                "modsys: collision module name " ++
+                modules.__SaturnAllMods__[j].__SaturnModuleDescription__.name ++
+                " files " ++
+                @typeName(modules.__SaturnAllMods__[j]) ++
+                " " ++
+                @typeName(mod)
+            );
+        }
         if(!decls.container_decl_exist(mod, .module)) {
             @compileError(
                 decls.what_is_decl(.module) ++
