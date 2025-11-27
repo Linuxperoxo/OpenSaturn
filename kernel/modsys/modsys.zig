@@ -9,6 +9,7 @@ const config: type = @import("root").config;
 const interfaces: type = @import("root").interfaces;
 const kernel: type = @import("root").kernel;
 const deps: type = @import("deps.zig");
+const menuconfig: type = @import("menuconfig.zig");
 
 pub const saturn_modules = r: {
     const aux: type = opaque {
@@ -37,6 +38,15 @@ pub const saturn_modules = r: {
         pub fn check_module_load(mod: *const interfaces.module.ModuleDescription_T) anyerror!void {
             return if(mod.load == .unlinkable) return error.IgnoreThis else {};
         }
+
+        pub fn check_module_menuconfig_enable(mod: *const interfaces.module.ModuleDescription_T) anyerror!void {
+            if(config.modules.options.UseMenuconfigAsRef) {
+                switch(@field(menuconfig.ModulesSelection, mod.name)) {
+                    .yes => {},
+                    .no => return error.IgnoreThis,
+                }
+            }
+        }
     };
     // logica de verificacao:
     var modules_check_index: usize = 0;
@@ -63,6 +73,7 @@ pub const saturn_modules = r: {
         }
         aux.check_module_load(&mod.__SaturnModuleDescription__) catch continue;
         aux.check_module_in_menuconfig(&mod.__SaturnModuleDescription__);
+        aux.check_module_menuconfig_enable(&mod.__SaturnModuleDescription__) catch continue;
         aux.check_module_arch(&mod.__SaturnModuleDescription__) catch continue;
         modules_check[modules_check_index] = mod.__SaturnModuleDescription__; modules_check_index += 1;
     }
@@ -85,15 +96,6 @@ pub fn saturn_modules_loader() void {
                 .dinamic => {},
                 .unlinkable => {},
                 .linkable => {
-                    // comptime apenas para deixar explicito
-                    comptime {
-                        if(config.modules.options.UseMenuconfigAsRef) {
-                            switch(@field(config.modules.menuconfig.ModulesSelection, module.name)) {
-                                .yes => {},
-                                .no => break :skip,
-                            }
-                        }
-                    }
                     @call(.never_inline, module.init, .{}) catch {
                         // klog error
                     };

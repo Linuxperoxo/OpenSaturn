@@ -17,7 +17,18 @@
 //                            Modulos dinamicos seram carregados de forma separada dos
 //                            modulos linkados ao kernel direto na compilacao, isso e
 //                            importante para evitar possiveis problemas de seguranca
+//
+// * ForceModuleArchOverrider: Espera que a arquitetura tenha o field overrider != null,
+//                             o field e usado para sobreescrever o menuconfig
+//
+// * IgnoreOverriderIfNoExist: Caso ForceModuleArchOverrider = true mas a arquitetura nao tenha
+//                             o field overrider != null, essa configuracao diz ou nao se isso vai
+//                             causar erro de compilacao, caso IgnoreOverriderIfNoExist = false, simplesmente
+//                             ignoramos esse fato, e usamos o menuconfig do jeito que esta, caso contrario, temos
+//                             o erro de compilacao
 
 pub const UseMenuconfigAsRef: bool = true;
 pub const IgnoreModuleWithArchNotSupported: bool = true;
 pub const AllowDynamicModulesLoad: bool = true; // TODO:
+pub const ForceModuleArchOverrider: bool = true;
+pub const IgnoreOverriderIfNoExist: bool = true;
