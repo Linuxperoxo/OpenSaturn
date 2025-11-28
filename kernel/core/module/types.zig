@@ -3,7 +3,9 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
+const utils: type = @import("root").kernel.utils;
 const arch: type = @import("root").interfaces.arch;
+const fs: type = @import("root").interfaces.fs;
 
 // Interfaces
 pub const Mod_T: type = struct {
@@ -16,15 +18,24 @@ pub const Mod_T: type = struct {
     deps: ?[]const []const u8,
     init: *const fn() ModErr_T!void,
     exit: *const fn() ModErr_T!void,
-    private: ?*anyopaque,
+    private: union(ModType_T) {
+        filesystem: fs.Fs_T,
+    },
 };
 
 pub const ModType_T: type = enum {
-    driver,
-    syscall,
-    interrupt,
-    irq,
+    //driver,
+    //syscall,
+    //irq,
     filesystem,
+};
+
+pub const ModRoot_T: type = struct {
+    list: utils.list.BuildList(*const Mod_T),
+    type: ModType_T,
+    flags: packed struct(u8) {
+        init: u1,
+    },
 };
 
 pub const ModLicense_T: type = union {
@@ -43,10 +54,22 @@ pub const ModLicense_T: type = union {
 };
 
 pub const ModErr_T: type = error {
-    IsInitialized,
     NoNInitialized,
     AllocatorError,
-    InternalError,
+    SectionHandlerError,
+    InteratorFailed,
+    NoNFound,
+};
+
+pub const ModHandler_T: type = union(ModType_T) {
+    filesystem: default_struct(fs.Fs_T),
+
+    fn default_struct(comptime mod_struct: ?type) type {
+        return if(mod_struct == null) void else struct {
+            install: ?*const fn(*const mod_struct.?) anyerror!void,
+            remove: ?*const fn(*const mod_struct.?) anyerror!void,
+        };
+    }
 };
 
 pub const ModuleDescriptionTarget_T: type = arch.Target_T;

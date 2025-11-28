@@ -40,11 +40,7 @@ pub fn BuildList(comptime T: type) type {
             }
         }
 
-        pub fn cast_private(private: *anyopaque) *Private_T {
-            return @alignCast(@ptrCast(private));
-        }
-
-        pub fn find_index(self: *@This(), index: usize) ListErr_T!*ListNode_T {
+        fn find_index(self: *@This(), index: usize) ListErr_T!*ListNode_T {
             const private_casted: *Private_T = @call(.always_inline, cast_private, .{
                 self.private.?
             });
@@ -55,6 +51,10 @@ pub fn BuildList(comptime T: type) type {
                 current = current.next.?;
             }
             return current;
+        }
+
+        pub fn cast_private(private: *anyopaque) *Private_T {
+            return @alignCast(@ptrCast(private));
         }
 
         pub fn init(self: *@This(), allocator: anytype) ListErr_T!void {
@@ -125,6 +125,16 @@ pub fn BuildList(comptime T: type) type {
                 return ListErr_T.AllocatorErr;
             };
             private_casted.nodes -= 1;
+        }
+
+        pub fn put_in_index(self: *@This(), index: usize) ListErr_T!void {
+            const node = try @call(.always_inline, find_index, .{
+                self, index
+            });
+            const private_casted: *Private_T = @call(.always_inline, cast_private, .{
+                self.private.?
+            });
+            if(node == )
         }
 
         pub fn access_by_index(self: *@This(), index: usize) ListErr_T!T {
