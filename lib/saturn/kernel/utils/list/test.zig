@@ -18,14 +18,6 @@ const S: type = struct {
     f0: usize,
     f1: usize,
 };
-const TestErr_T: type = error {
-    InvalidIndexAccess,
-    DiferentDataInIndex,
-    IteratorDiferentData,
-    ReinteratorDiferentData,
-    IteratorIndexOutBounds,
-    PushedInDiferentIndex,
-};
 
 var allocator = sba.buildByteAllocator(null, .{}) {};
 
@@ -39,35 +31,61 @@ test "List All Tests" {
             .f1 = i,
         });
         const found = try test_list.access_by_index(i);
-        if(found.f0 != i) return TestErr_T.PushedInDiferentIndex;
+        if(found.f0 != i) return error.PushedInDiferentIndex;
     }
     for(0..128) |i| {
         const iterator = try test_list.iterator();
-        if(iterator.f0 != i) return TestErr_T.IteratorDiferentData;
+        if(iterator.f0 != i) return error.IteratorDiferentData;
     }
     r: {
         _ = test_list.iterator() catch |err| switch(err) {
             @TypeOf(test_list).ListErr_T.EndOfIterator => break :r {},
             else => {},
         };
-        return TestErr_T.IteratorIndexOutBounds;
+        return error.IteratorIndexOutBounds;
     }
     for(0..128) |i| {
+        if(try test_list.iterator_index() != i) return error.IteratorIndexFailed;
         const iterator = try test_list.iterator();
-        if(iterator.f0 != i) return TestErr_T.ReinteratorDiferentData;
+        if(iterator.f0 != i) return error.ReinteratorDiferentData;
     }
-    for(0..127) |i| {
+    for(0..126) |i| {
         var found = try test_list.access_by_index(0);
-        if(found.f0 != i) return TestErr_T.DiferentDataInIndex;
+        if(found.f0 != i) return error.DiferentDataInIndex;
         try test_list.drop_on_list(
             0,
             &allocator,
         );
         found = try test_list.access_by_index(0);
-        if(found.f0 != i + 1) return TestErr_T.DiferentDataInIndex;
+        if(found.f0 != i + 1) return error.DiferentDataInIndex;
     }
-    _ = test_list.access_by_index(0) catch |err| switch(err) {
-        @TypeOf(test_list).ListErr_T.IndexOutBounds => {},
-        else => return TestErr_T.InvalidIndexAccess,
-    };
+    try test_list.put_in_index(0, .{ .f0 = 0, .f1 = 0 }, &allocator);
+    try test_list.put_in_index(1, .{ .f0 = 1, .f1 = 1 }, &allocator);
+    try test_list.put_in_index(3, .{ .f0 = 3, .f1 = 3 }, &allocator);
+    if(test_list.access_by_index(0)) |found| {
+        if(found.f0 != 0) return error.DiferentDataIndex;
+    } else |err| {
+        return err;
+    }
+    if(test_list.access_by_index(1)) |found| {
+        if(found.f0 != 1) return error.DiferentDataIndex;
+    } else |err| {
+        return err;
+    }
+    if(test_list.access_by_index(2)) |found| {
+        if(found.f0 != 126) return error.DiferentDataIndex;
+    } else |err| {
+        return err;
+    }
+    if(test_list.access_by_index(3)) |found| {
+        if(found.f0 != 3) return error.DiferentDataIndex;
+    } else |err| {
+        return err;
+    }
+    if(test_list.access_by_index(4)) |found| {
+        if(found.f0 != 127) return error.DiferentDataIndex;
+    } else |err| {
+        return err;
+    }
+    if(test_list.how_many_nodes() != try test_list.last_index() + 1) return error.HowManyNodesError;
 }
