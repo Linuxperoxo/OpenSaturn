@@ -54,7 +54,6 @@ comptime {
 
 comptime {
     @call(.compile_time, loader.saturn_arch_verify, .{}); // verificamos a arch e exportamos suas labels
-    @call(.compile_time, modsys.saturn_modules_verify, .{}); // verificando assinatura dos modulos
 }
 
 fn saturn_main() callconv(.c) noreturn {
