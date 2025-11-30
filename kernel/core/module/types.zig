@@ -50,15 +50,20 @@ pub const ModLicense_T: type = union {
         APACHE_2_0,
         PROPRIETARY,
     },
-    custom: []const u8,
+    other: []const u8,
 };
 
 pub const ModErr_T: type = error {
-    NoNInitialized,
-    AllocatorError,
     SectionHandlerError,
-    InteratorFailed,
     NoNFound,
+    IteratorFailed,
+    ListInitFailed,
+    AllocatorError,
+};
+
+pub const ModErrInternal_T: type = error {
+    EndOfIterator,
+    IteratorInternalError,
 };
 
 pub const ModHandler_T: type = union(ModType_T) {

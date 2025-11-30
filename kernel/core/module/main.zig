@@ -8,6 +8,7 @@ const ModType_T: type = @import("types.zig").ModType_T;
 const ModErr_T: type = @import("types.zig").ModErr_T;
 const ModHandler_T: type = @import("types.zig").ModHandler_T;
 const ModRoot_T: type = @import("types.zig").ModRoot_T;
+const ModErrInternal_T: type = @import("types.zig").ModErrInternal_T;
 
 const allocator: type = @import("allocator.zig");
 const utils: type = @import("root").kernel.utils;
@@ -42,13 +43,13 @@ var modules_entries = [_]ModRoot_T {
     },
 };
 
-fn module_root_entry(mod_type: ModType_T) *ModRoot_T {
+inline fn module_root_entry(mod_type: ModType_T) *ModRoot_T {
     for(&modules_entries) |*entry| {
         if(entry.type == mod_type) return entry;
     }
 }
 
-fn find_handler(mod_type: ModType_T) *ModHandler_T {
+inline fn find_handler(mod_type: ModType_T) *ModHandler_T {
     for(&handlers) |*handler| {
         switch(handler) {
             .filesystem => if(mod_type == .filesystem) return handler else continue,
@@ -63,10 +64,28 @@ inline fn resolve_mod_type(mod: *const Mod_T) ModType_T {
     };
 }
 
-fn calling_handler(mod: *const Mod_T, comptime op: enum { install, remove }) ModErr_T!void {
-    const handler: ModHandler_T = @call(.always_inline, find_handler, .{
+inline fn module_iterator(
+    module_root: *ModRoot_T,
+    name: ?[]const u8,
+    comptime handler: *const fn(*const Mod_T, ?[]const u8) anyerror!void
+) ModErrInternal_T!*const Mod_T {
+    module_root.list.iterator_reset();
+    while(module_root.list.iterator()) |module| {
+        handler(
+            module,
+            name,
+        ) catch continue;
+        return module;
+    } else |err| return switch(err) {
+        @TypeOf(module_root).ListErr_T.EndOfIterator => ModErrInternal_T.EndOfIterator,
+        else => ModErrInternal_T.IteratorInternalError,
+    };
+}
+
+inline fn calling_handler(mod: *const Mod_T, comptime op: enum { install, remove }) ModErr_T!void {
+    const handler: ModHandler_T = find_handler(
         resolve_mod_type(mod)
-    });
+    );
     switch(handler) {
         .filesystem => |f| {
             switch(@typeInfo(@TypeOf(@field(f, @tagName(op))))) {
@@ -80,42 +99,70 @@ fn calling_handler(mod: *const Mod_T, comptime op: enum { install, remove }) Mod
     }
 }
 
+/// * search module by name and type
 pub fn srchmod(name: []const u8, mod_type: ModType_T) ModErr_T!*const Mod_T {
-    const module_root: ModRoot_T = @call(.always_inline, module_root_entry, .{
+    const module_root: ModRoot_T = module_root_entry(
         mod_type
-    });
-    if(module_root.flags.init == 0) return ModErr_T.NoNInitialized;
-    while(module_root.list.iterator()) |mod| {
-        // consideramos cases para modulos
-        if(utils.mem.eql(mod.name, name, .{ .case = true })) return mod;
-    } else |err| switch(err) {
-        @TypeOf(module_root.list).ListErr_T.EndOfIterator => return ModErr_T.NoNFound,
-        else => return ModErr_T.InteratorFailed,
-    }
+    );
+    if(module_root.flags.init == 0) return ModErr_T.NoNFound;
+    return module_iterator(
+        module_root,
+        name,
+        &opaque {
+            pub fn handler(
+                module: *const Mod_T,
+                module_name: ?[]const u8,
+            ) anyerror!void {
+                return if(!utils.mem.eql(module.name, module_name, .{ .case = true })) error.NoNFoundContinue
+                    else {};
+            }
+        }.handler,
+    ) catch ModErr_T.IteratorFailed;
 }
 
+/// * install module
 pub fn inmod(mod: *const Mod_T) ModErr_T!void {
-    const module_root: ModRoot_T = @call(.always_inline, module_root_entry, .{
+    const module_root: ModRoot_T = module_root_entry(
         resolve_mod_type(mod)
-    });
+    );
+    module_root.flags.init = if(module_root.flags.init == 1) module_root.flags.init else r: {
+        module_root.list.init(&allocator.sba.allocator)
+            catch return ModErr_T.ListInitFailed;
+        break :r 1;
+    };
     module_root.list.push_in_list(
-        allocator.sba.allocator,
+        &allocator.sba.allocator,
         mod
     );
-    @call(.always_inline, calling_handler, .{
-        mod, .install
-    });
+    calling_handler(mod, .install);
 }
 
+/// * remove module
 pub fn rmmod(mod: *const Mod_T) ModErr_T!void {
-    const module_root: ModRoot_T = @call(.always_inline, module_root_entry, .{
+    const module_root: ModRoot_T = module_root_entry(
         resolve_mod_type(mod)
-    });
-    module_root.list.drop_on_list(
-        ?,
-        allocator.sba.allocator,
     );
-    @call(.always_inline, calling_handler, .{
-        mod, .remove
-    });
+    // esse iterator serve para colocar o index do iterator exatamente
+    // no modulo que queremos
+    _ = module_iterator(
+        module_root,
+        null,
+        &opaque {
+            pub fn handler(module: *const Mod_T, _: ?[]const u8) anyerror!void {
+                return if(mod != module) error.NoNFoundContinue
+                    else {};
+            }
+        }.handler,
+    ) catch |err| return switch(err) {
+        ModErrInternal_T.EndOfIterator => ModErr_T.NoNFound,
+        ModErrInternal_T.IteratorInternalError => ModErr_T.IteratorFailed,
+    };
+    module_root.list.drop_on_list(
+        // o index do iterator - 1 vai estar exatamente no modulo
+        // que queremos
+        (module_root.list.iterator_index() catch unreachable) - 1,
+        &allocator.sba.allocator,
+    ) catch return ModErr_T.AllocatorError; // aqui so pode dar erro do alocador
+    module_root.flags.init = @intFromBool(module_root.list.how_many_nodes() > 0);
+    calling_handler(mod, .remove);
 }
