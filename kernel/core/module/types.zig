@@ -3,7 +3,8 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const utils: type = @import("root").kernel.utils;
+const builtin: type = @import("builtin");
+const list: type = @import("test/list.zig");
 const arch: type = @import("root").interfaces.arch;
 const fs: type = @import("root").interfaces.fs;
 
@@ -19,7 +20,7 @@ pub const Mod_T: type = struct {
     init: *const fn() ModErr_T!void,
     exit: *const fn() ModErr_T!void,
     private: union(ModType_T) {
-        filesystem: fs.Fs_T,
+        filesystem: if(!builtin.is_test) fs.Fs_T else void,
     },
 };
 
@@ -31,10 +32,11 @@ pub const ModType_T: type = enum {
 };
 
 pub const ModRoot_T: type = struct {
-    list: utils.list.BuildList(*const Mod_T),
+    list: list.BuildList(*const Mod_T),
     type: ModType_T,
     flags: packed struct(u8) {
         init: u1,
+        reserved: u7 = 0,
     },
 };
 
@@ -59,6 +61,8 @@ pub const ModErr_T: type = error {
     IteratorFailed,
     ListInitFailed,
     AllocatorError,
+    ListOperationError,
+    RemovedButWithHandlerError,
 };
 
 pub const ModErrInternal_T: type = error {
@@ -67,7 +71,7 @@ pub const ModErrInternal_T: type = error {
 };
 
 pub const ModHandler_T: type = union(ModType_T) {
-    filesystem: default_struct(fs.Fs_T),
+    filesystem: default_struct(if(!builtin.is_test) fs.Fs_T else null),
 
     fn default_struct(comptime mod_struct: ?type) type {
         return if(mod_struct == null) void else struct {

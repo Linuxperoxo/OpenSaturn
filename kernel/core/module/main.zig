@@ -10,8 +10,9 @@ const ModHandler_T: type = @import("types.zig").ModHandler_T;
 const ModRoot_T: type = @import("types.zig").ModRoot_T;
 const ModErrInternal_T: type = @import("types.zig").ModErrInternal_T;
 
+const builtin: type = @import("builtin");
 const allocator: type = @import("allocator.zig");
-const utils: type = @import("root").kernel.utils;
+const mem: type = if(!builtin.is_test) @import("root").kernel.utils.mem else @import("test/mem.zig");
 const fs: type = @import("root").interfaces.fs;
 
 // poderiamos colocar os tipos nos index
@@ -21,11 +22,11 @@ const fs: type = @import("root").interfaces.fs;
 
 const handlers = [_]ModHandler_T {
     .{
-        .filesystem = .{
-            .install = &fs.registerfs,
-            .remove = &fs.unregisterfs,
+        .filesystem = if(builtin.is_test) {} else .{
+            .install = fs.registerfs,
+            .remove = fs.unregisterfs,
         },
-    }
+    },
 };
 
 // nenhuma das outras partes do kernel tem obrigacao de salvar
@@ -43,15 +44,22 @@ var modules_entries = [_]ModRoot_T {
     },
 };
 
+pub const test_fn = if(!builtin.is_test) @compileError("only in tests") else opaque {
+    pub fn entry_init_flag(index: usize) u1 {
+        return modules_entries[index].flags.init;
+    }
+};
+
 inline fn module_root_entry(mod_type: ModType_T) *ModRoot_T {
     for(&modules_entries) |*entry| {
         if(entry.type == mod_type) return entry;
     }
+    unreachable;
 }
 
-inline fn find_handler(mod_type: ModType_T) *ModHandler_T {
+inline fn find_handler(mod_type: ModType_T) *const ModHandler_T {
     for(&handlers) |*handler| {
-        switch(handler) {
+        switch(handler.*) {
             .filesystem => if(mod_type == .filesystem) return handler else continue,
         }
     }
@@ -67,28 +75,30 @@ inline fn resolve_mod_type(mod: *const Mod_T) ModType_T {
 inline fn module_iterator(
     module_root: *ModRoot_T,
     name: ?[]const u8,
-    comptime handler: *const fn(*const Mod_T, ?[]const u8) anyerror!void
+    cmp: ?*const Mod_T,
+    comptime handler: *const fn(*const Mod_T, ?*const Mod_T, ?[]const u8) anyerror!void
 ) ModErrInternal_T!*const Mod_T {
-    module_root.list.iterator_reset();
+    module_root.list.iterator_reset() catch unreachable;
     while(module_root.list.iterator()) |module| {
         handler(
             module,
+            cmp,
             name,
         ) catch continue;
         return module;
     } else |err| return switch(err) {
-        @TypeOf(module_root).ListErr_T.EndOfIterator => ModErrInternal_T.EndOfIterator,
+        @TypeOf(module_root.list).ListErr_T.EndOfIterator => ModErrInternal_T.EndOfIterator,
         else => ModErrInternal_T.IteratorInternalError,
     };
 }
 
 inline fn calling_handler(mod: *const Mod_T, comptime op: enum { install, remove }) ModErr_T!void {
-    const handler: ModHandler_T = find_handler(
+    const handler: *const ModHandler_T = find_handler(
         resolve_mod_type(mod)
     );
-    switch(handler) {
+    switch(handler.*) {
         .filesystem => |f| {
-            switch(@typeInfo(@TypeOf(@field(f, @tagName(op))))) {
+            switch(@typeInfo(@TypeOf(f))) {
                 .void => return,
                 else => {},
             }
@@ -101,28 +111,33 @@ inline fn calling_handler(mod: *const Mod_T, comptime op: enum { install, remove
 
 /// * search module by name and type
 pub fn srchmod(name: []const u8, mod_type: ModType_T) ModErr_T!*const Mod_T {
-    const module_root: ModRoot_T = module_root_entry(
+    const module_root: *ModRoot_T = module_root_entry(
         mod_type
     );
     if(module_root.flags.init == 0) return ModErr_T.NoNFound;
     return module_iterator(
-        module_root,
+        @constCast(module_root),
         name,
+        null,
         &opaque {
             pub fn handler(
                 module: *const Mod_T,
+                _: ?*const Mod_T,
                 module_name: ?[]const u8,
             ) anyerror!void {
-                return if(!utils.mem.eql(module.name, module_name, .{ .case = true })) error.NoNFoundContinue
+                return if(!mem.eql(module.name, module_name.?, .{ .case = true })) error.NoNFoundContinue
                     else {};
             }
         }.handler,
-    ) catch ModErr_T.IteratorFailed;
+    ) catch |err| return switch(err) {
+        ModErrInternal_T.EndOfIterator => ModErr_T.NoNFound,
+        ModErrInternal_T.IteratorInternalError => ModErr_T.IteratorFailed,
+    };
 }
 
 /// * install module
 pub fn inmod(mod: *const Mod_T) ModErr_T!void {
-    const module_root: ModRoot_T = module_root_entry(
+    const module_root: *ModRoot_T = module_root_entry(
         resolve_mod_type(mod)
     );
     module_root.flags.init = if(module_root.flags.init == 1) module_root.flags.init else r: {
@@ -133,13 +148,21 @@ pub fn inmod(mod: *const Mod_T) ModErr_T!void {
     module_root.list.push_in_list(
         &allocator.sba.allocator,
         mod
-    );
-    calling_handler(mod, .install);
+    ) catch return ModErr_T.ListOperationError;
+    calling_handler(mod, .install) catch {
+        @branchHint(.unlikely);
+        module_root.list.drop_on_list(
+            // last vai retornar justamente o modulo que acabou de
+            // ser adicionado a lista
+            module_root.list.last_index(),
+            &allocator.sba.allocator,
+        ) catch return ModErr_T.ListOperationError;
+    };
 }
 
 /// * remove module
 pub fn rmmod(mod: *const Mod_T) ModErr_T!void {
-    const module_root: ModRoot_T = module_root_entry(
+    const module_root: *ModRoot_T = module_root_entry(
         resolve_mod_type(mod)
     );
     // esse iterator serve para colocar o index do iterator exatamente
@@ -147,9 +170,14 @@ pub fn rmmod(mod: *const Mod_T) ModErr_T!void {
     _ = module_iterator(
         module_root,
         null,
+        mod,
         &opaque {
-            pub fn handler(module: *const Mod_T, _: ?[]const u8) anyerror!void {
-                return if(mod != module) error.NoNFoundContinue
+            pub fn handler(
+                module: *const Mod_T,
+                module_to_find: ?*const Mod_T,
+                _: ?[]const u8,
+            ) anyerror!void {
+                return if(module_to_find.? != module) error.NoNFoundContinue
                     else {};
             }
         }.handler,
@@ -164,5 +192,8 @@ pub fn rmmod(mod: *const Mod_T) ModErr_T!void {
         &allocator.sba.allocator,
     ) catch return ModErr_T.AllocatorError; // aqui so pode dar erro do alocador
     module_root.flags.init = @intFromBool(module_root.list.how_many_nodes() > 0);
-    calling_handler(mod, .remove);
+    calling_handler(mod, .remove) catch {
+        @branchHint(.unlikely);
+        return ModErr_T.RemovedButWithHandlerError;
+    };
 }
