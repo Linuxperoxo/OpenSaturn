@@ -110,7 +110,6 @@ pub const linker: type = cpu.linker;
 pub const mm: type = cpu.mm;
 pub const core: type = struct {
     pub const module: type = @import("kernel/core/module/module.zig");
-    pub const paging: type = @import("kernel/core/paging/paging.zig");
     pub const vfs: type = @import("kernel/core/vfs/vfs.zig");
     pub const devices: type = @import("kernel/core/devices/devices.zig");
     pub const fs: type = @import("kernel/core/fs/fs.zig");

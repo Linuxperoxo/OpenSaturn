@@ -82,5 +82,12 @@ fn saturn_main() callconv(.c) noreturn {
     @call(.always_inline, saturn.step.saturn_set_phase, .{
         .runtime
     });
-    @call(.always_inline, loader.saturn_running, .{}); // noreturn fn
+    //@call(.always_inline, loader.saturn_running, .{}); // noreturn fn
+    const module_found = core.module.srchmod("ke_m_devfs", .filesystem) catch unreachable;
+    asm volatile(
+        \\ jmp .
+        :
+        :[_] "{eax}" (module_found.name.ptr)
+    );
+    unreachable;
 }

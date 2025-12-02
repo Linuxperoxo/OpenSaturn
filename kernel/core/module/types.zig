@@ -68,11 +68,6 @@ pub const ModErr_T: type = error {
     RemovedButWithHandlerError,
 };
 
-pub const ModErrInternal_T: type = error {
-    EndOfIterator,
-    IteratorInternalError,
-};
-
 pub const ModHandler_T: type = union(ModType_T) {
     driver: default_struct(null),
     syscall: default_struct(null),
@@ -104,22 +99,4 @@ pub const ModuleDescription_T: type = struct {
             dinamic: void, // sera adicionado ao kernel, mas sua montagem acontece em runtime
         },
     },
-};
-
-// Internal
-pub const ModMajorStatus_T: type = enum {
-    running,
-    sleeping,
-};
-
-pub const ModMajor_T: type = struct {
-    next: ?*@This(),
-    status: ?ModMajorStatus_T,
-    module: ?Mod_T,
-};
-
-pub const MajorInfo_T: type = struct {
-    majors: ?*ModMajor_T,
-    in: *const fn(*const Mod_T) ModErr_T!void,
-    rm: *const fn(*const Mod_T) ModErr_T!void,
 };

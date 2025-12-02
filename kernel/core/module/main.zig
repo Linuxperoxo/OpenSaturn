@@ -74,26 +74,6 @@ inline fn resolve_mod_type(mod: *const Mod_T) ModType_T {
     };
 }
 
-inline fn module_iterator(
-    module_root: *ModRoot_T,
-    name: ?[]const u8,
-    cmp: ?*const Mod_T,
-    comptime handler: *const fn(*const Mod_T, ?*const Mod_T, ?[]const u8) anyerror!void
-) ModErrInternal_T!*const Mod_T {
-    module_root.list.iterator_reset() catch unreachable;
-    while(module_root.list.iterator()) |module| {
-        handler(
-            module,
-            cmp,
-            name,
-        ) catch continue;
-        return module;
-    } else |err| return switch(err) {
-        @TypeOf(module_root.list).ListErr_T.EndOfIterator => ModErrInternal_T.EndOfIterator,
-        else => ModErrInternal_T.IteratorInternalError,
-    };
-}
-
 inline fn calling_handler(mod: *const Mod_T, comptime op: enum { install, remove }) ModErr_T!void {
     const handler: *const ModHandler_T = find_handler(
         resolve_mod_type(mod)
@@ -120,23 +100,23 @@ pub fn srchmod(name: []const u8, mod_type: ModType_T) ModErr_T!*const Mod_T {
         mod_type
     );
     if(module_root.flags.init == 0) return ModErr_T.NoNFound;
-    return module_iterator(
-        @constCast(module_root),
-        name,
-        null,
+    const iterator_handler_param: struct { find: []const u8 } = .{
+        .find = name,
+    };
+    return module_root.list.iterator_handler(
+        iterator_handler_param,
         &opaque {
             pub fn handler(
                 module: *const Mod_T,
-                _: ?*const Mod_T,
-                module_name: ?[]const u8,
+                struct_param: @TypeOf(iterator_handler_param),
             ) anyerror!void {
-                return if(!mem.eql(module.name, module_name.?, .{ .case = true })) error.NoNFoundContinue
+                return if(!mem.eql(module.name, struct_param.find, .{ .case = true })) error.NoNFoundContinue
                     else {};
             }
         }.handler,
     ) catch |err| return switch(err) {
-        ModErrInternal_T.EndOfIterator => ModErr_T.NoNFound,
-        ModErrInternal_T.IteratorInternalError => ModErr_T.IteratorFailed,
+        @TypeOf(module_root.list).ListErr_T.EndOfIterator => ModErr_T.NoNFound,
+        else => ModErr_T.IteratorFailed,
     };
 }
 
@@ -170,25 +150,25 @@ pub fn rmmod(mod: *const Mod_T) ModErr_T!void {
     const module_root: *ModRoot_T = module_root_entry(
         resolve_mod_type(mod)
     );
+    const iterator_handler_param: struct { find: *const Mod_T } = .{
+        .find = mod,
+    };
     // esse iterator serve para colocar o index do iterator exatamente
     // no modulo que queremos
-    _ = module_iterator(
-        module_root,
-        null,
-        mod,
+    _ = module_root.list.iterator_handler(
+        iterator_handler_param,
         &opaque {
             pub fn handler(
                 module: *const Mod_T,
-                module_to_find: ?*const Mod_T,
-                _: ?[]const u8,
+                struct_param: @TypeOf(iterator_handler_param)
             ) anyerror!void {
-                return if(module_to_find.? != module) error.NoNFoundContinue
+                return if(struct_param.find != module) error.NoNFoundContinue
                     else {};
             }
         }.handler,
     ) catch |err| return switch(err) {
-        ModErrInternal_T.EndOfIterator => ModErr_T.NoNFound,
-        ModErrInternal_T.IteratorInternalError => ModErr_T.IteratorFailed,
+        @TypeOf(module_root.list).ListErr_T.EndOfIterator => ModErr_T.NoNFound,
+        else => ModErr_T.IteratorFailed,
     };
     module_root.list.drop_on_list(
         // o index do iterator - 1 vai estar exatamente no modulo
