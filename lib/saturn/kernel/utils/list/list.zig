@@ -30,6 +30,7 @@ pub fn BuildList(comptime T: type) type {
             EndOfIterator,
             NoNNodes,
             NoNNodeFound,
+            IteratorEarlyReturn,
         };
 
         fn check_allocator(comptime AT: type) void {
@@ -202,6 +203,31 @@ pub fn BuildList(comptime T: type) type {
         pub fn iterator_index(self: *@This()) ListErr_T!usize {
             return if(self.check_init(false)) |_| cast_private(self.private.?).iterator_index
                 else |err| return err;
+        }
+
+        /// * iterator based on a handler
+        ///     - If the handler returns an error, the iterator
+        ///     continues until EndOfIterator
+        ///     -  If it does not return an error, iterator
+        ///     returns what is stored in the current node, if it
+        ///     doesn't return an error, iterator returns what is
+        ///     stored in the current node
+        ///     - any is used as a parameter for the handler
+        pub fn iterator_handler(
+            self: *@This(),
+            any: anytype,
+            comptime handler: *const fn(T, anytype) anyerror!void
+        ) ListErr_T!T {
+            try self.check_init(true);
+            try self.iterator_reset();
+            while(self.iterator()) |node_data| {
+                @call(.never_inline, handler, .{
+                    node_data, any
+                }) catch continue;
+                return node_data;
+            } else |err| {
+                return err;
+            }
         }
 
         /// * reset the iterator pointer to the first index
