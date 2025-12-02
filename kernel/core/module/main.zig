@@ -8,7 +8,6 @@ const ModType_T: type = @import("types.zig").ModType_T;
 const ModErr_T: type = @import("types.zig").ModErr_T;
 const ModHandler_T: type = @import("types.zig").ModHandler_T;
 const ModRoot_T: type = @import("types.zig").ModRoot_T;
-const ModErrInternal_T: type = @import("types.zig").ModErrInternal_T;
 
 const builtin: type = @import("builtin");
 const allocator: type = @import("allocator.zig");
