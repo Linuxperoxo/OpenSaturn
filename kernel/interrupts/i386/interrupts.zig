@@ -25,7 +25,7 @@ const exceptionsMessagens = @import("idt.zig").cpuExceptionsMessagens;
 pub var idt_entries = [_]IDTEntry_T {
     IDTEntry_T {
         .segment = 0x08,
-        .flags =  0x8E,
+        .flags =  0x8E | 0x60,
         .always0 = 0,
         .high = 0,
         .low = 0,
@@ -54,5 +54,8 @@ pub fn idt_init() linksection(section_text_loader) callconv(.c) void {
             .eax = true,
             .edi = true,
         }
+    );
+    asm volatile(
+        \\ int $0
     );
 }

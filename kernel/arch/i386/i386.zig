@@ -47,7 +47,7 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
         .{
             .maintainer = "Linuxperoxo",
             .label = ".i386.gdt",
-            .entry = &physio.physio_init,
+            .entry = &init.gdt.gdt_config,
         },
         .{
             .maintainer = "Linuxperoxo",
