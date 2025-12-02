@@ -20,14 +20,17 @@ pub const Mod_T: type = struct {
     init: *const fn() ModErr_T!void,
     exit: *const fn() ModErr_T!void,
     private: union(ModType_T) {
+        driver: void,
+        syscall: void,
+        irq: void,
         filesystem: if(!builtin.is_test) fs.Fs_T else void,
     },
 };
 
-pub const ModType_T: type = enum {
-    //driver,
-    //syscall,
-    //irq,
+pub const ModType_T: type = enum(u2) {
+    driver,
+    syscall,
+    irq,
     filesystem,
 };
 
@@ -71,6 +74,9 @@ pub const ModErrInternal_T: type = error {
 };
 
 pub const ModHandler_T: type = union(ModType_T) {
+    driver: default_struct(null),
+    syscall: default_struct(null),
+    irq: default_struct(null),
     filesystem: default_struct(if(!builtin.is_test) fs.Fs_T else null),
 
     fn default_struct(comptime mod_struct: ?type) type {
@@ -92,9 +98,8 @@ pub const ModuleDescription_T: type = struct {
     type: union(ModType_T) {
         driver: void,
         syscall: void,
-        interrupt: void,
         irq: void,
-        filesystem: union(enum) {
+        filesystem: union(enum(u1)) {
             compile: []const u8, // faz a montagem de forma direta no kernel (fstab permanente)
             dinamic: void, // sera adicionado ao kernel, mas sua montagem acontece em runtime
         },

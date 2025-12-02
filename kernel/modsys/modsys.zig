@@ -121,7 +121,6 @@ pub fn saturn_modules_loader() void {
             switch(comptime module.type) {
                 .driver => {},
                 .syscall => {},
-                .interrupt => {},
                 .irq => {},
                 .filesystem => {
                     switch(comptime module.type.filesystem) {

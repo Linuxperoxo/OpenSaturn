@@ -61,6 +61,7 @@ inline fn find_handler(mod_type: ModType_T) *const ModHandler_T {
     for(&handlers) |*handler| {
         switch(handler.*) {
             .filesystem => if(mod_type == .filesystem) return handler else continue,
+            else => unreachable,
         }
     }
     unreachable;
@@ -69,6 +70,7 @@ inline fn find_handler(mod_type: ModType_T) *const ModHandler_T {
 inline fn resolve_mod_type(mod: *const Mod_T) ModType_T {
     return switch(mod.private) {
         .filesystem => ModType_T.filesystem,
+        else => unreachable,
     };
 }
 
@@ -102,10 +104,13 @@ inline fn calling_handler(mod: *const Mod_T, comptime op: enum { install, remove
                 .void => return,
                 else => {},
             }
-            @call(.never_inline, @field(f, @tagName(op)), .{
-                &mod.private.filesystem
-            }) catch return ModErr_T.SectionHandlerError;
+            if(@field(f, @tagName(op)) != null) {
+                @call(.never_inline, @field(f, @tagName(op)).?, .{
+                    &mod.private.filesystem
+                }) catch return ModErr_T.SectionHandlerError;
+            }
         },
+        else => unreachable,
     }
 }
 
@@ -154,7 +159,7 @@ pub fn inmod(mod: *const Mod_T) ModErr_T!void {
         module_root.list.drop_on_list(
             // last vai retornar justamente o modulo que acabou de
             // ser adicionado a lista
-            module_root.list.last_index(),
+            module_root.list.last_index() catch unreachable,
             &allocator.sba.allocator,
         ) catch return ModErr_T.ListOperationError;
     };

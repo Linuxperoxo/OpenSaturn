@@ -50,12 +50,14 @@ const devfsMod: *const Mod_T = &Mod_T {
     .type = .filesystem,
     .init = &init,
     .exit = &exit,
-    .private = @constCast(&Fs_T {
-        .name = "devfs",
-        .flags = .RW,
-        .mount = devfs_mount,
-        .unmount = devfs_umount,
-    }),
+    .private = .{ 
+        .filesystem = .{
+            .name = "devfs",
+            .flags = .RW,
+            .mount = devfs_mount,
+            .unmount = devfs_umount,
+        },
+    },
 };
 
 fn init() ModErr_T!void {

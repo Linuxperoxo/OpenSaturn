@@ -50,12 +50,14 @@ const rootfsMod: *const Mod_T = &Mod_T {
     .type = .filesystem,
     .init = &init,
     .exit = &exit,
-    .private = @constCast(&Fs_T {
-        .name = "rootfs",
-        .flags = .R,
-        .mount = rootfs_mount,
-        .unmount = rootfs_umount,
-    }),
+    .private = .{
+        .filesystem = .{
+            .name = "rootfs",
+            .flags = .R,
+            .mount = rootfs_mount,
+            .unmount = rootfs_umount,
+        },
+    },
 };
 
 fn init() ModErr_T!void {
