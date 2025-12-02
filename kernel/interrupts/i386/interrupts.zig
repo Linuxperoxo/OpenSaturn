@@ -55,7 +55,4 @@ pub fn idt_init() linksection(section_text_loader) callconv(.c) void {
             .edi = true,
         }
     );
-    asm volatile(
-        \\ int $0
-    );
 }

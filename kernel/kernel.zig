@@ -56,6 +56,29 @@ comptime {
     @call(.compile_time, loader.saturn_arch_verify, .{}); // verificamos a arch e exportamos suas labels
 }
 
+fn handler(_: core.events.EventOut_T) ?core.events.EventInput_T {
+    asm volatile(
+        \\ jmp .
+        \\ jmp 0xAB00
+    );
+    return null;
+}
+
+var listener: core.events.EventListener_T = .{
+    .listening = config.kernel.options.csi_event.who,
+    .event = 30,
+    .handler = &handler,
+    .flags = .{
+        .control = .{
+            .all = 1,
+            .satisfied = 1,
+        },
+        .internal = .{
+            .listen = 0,
+        },
+    },
+};
+
 fn saturn_main() callconv(.c) noreturn {
     // Aqui existe um pequeno detalhe, bem interessante por sinal.
     // Quando passamos um ponteiro para uma funcao conhecida em tempo
@@ -82,6 +105,14 @@ fn saturn_main() callconv(.c) noreturn {
     @call(.always_inline, saturn.step.saturn_set_phase, .{
         .runtime
     });
+    core.events.install_listener_event(&listener, .{
+        .default = .csi,
+    }) catch {
+        asm volatile(
+            \\ jmp .
+            \\ jmp 0xAA00
+        );
+    };
     asm volatile(
         \\ int $31
         \\ jmp .

@@ -20,10 +20,10 @@ pub var csi_event: events.Event_T = .{
 };
 
 // idt_event is a virtual address
-pub fn idt_event() callconv(.c) void {
+pub fn csi_event_install() callconv(.c) void {
     @call(.never_inline, events.install_event, .{
         &csi_event, events.EventDefault_T.csi
     }) catch {
-        // klog this is panic!
+        // KLOG: this is a kernel panic!
     };
 }

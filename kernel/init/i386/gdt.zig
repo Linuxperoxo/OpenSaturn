@@ -202,7 +202,7 @@ pub var gdt_struct: [6]u8 align(4) = .{
     0
 } ** @sizeOf(GDTStruct_T);
 
-pub fn gdt_config() linksection(section_text_loader) callconv(.c) void {
+pub fn gdt_config() linksection(section_text_loader) callconv(.naked) void {
     asm volatile(
         \\ movl $gdt_entries, %eax
         \\ movl $gdt_struct, %edi
@@ -217,6 +217,7 @@ pub fn gdt_config() linksection(section_text_loader) callconv(.c) void {
         \\ movw %ax, %es
         \\ ljmp %[kernel_code_seg], $1f
         \\ 1:
+        \\ ret
         :
         :[kernel_code_seg] "i" (GDTSegments_T.kernelcode),
          [kernel_data_seg] "i" (GDTSegments_T.kerneldata),

@@ -47,17 +47,29 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
         .{
             .maintainer = "Linuxperoxo",
             .label = ".i386.gdt",
-            .entry = &init.gdt.gdt_config,
+            .entry = .{
+                .naked = &init.gdt.gdt_config,
+            },
         },
         .{
             .maintainer = "Linuxperoxo",
             .label = ".i386.idt.csi",
-            .entry = interrupts.csi.idt_event,
+            .entry = .{
+                .c = &interrupts.csi.csi_event_install,
+            },
         },
         .{
             .maintainer = "Linuxperoxo",
             .label = ".i386.csi.handler",
-            .entry = interrupts.handler.csi_handler,
+            .entry = .{
+                // podemos fazer esse @ptrCast sem nenhum problema, o kernel
+                // nao chama diretamente essa funcao, apenas usa o ponteiro
+                // para o @export, entao, nao tem nenhum problema caso seja
+                // fn(u32) ou fn(), o unico problema seria se a funcao for
+                // chamada por esse ponteiro, nesse caso, poderiamos ter problema
+                // por causa da ABI
+                .c = @ptrCast(&interrupts.handler.csi_handler),
+            },
         },
     },
     .data = &[_]interfaces.arch.ArchDescription_T.Data_T {

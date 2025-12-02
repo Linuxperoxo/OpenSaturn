@@ -5,7 +5,6 @@
 // └──────────────────────────────────────────────┘
 
 pub fn intFromArray(comptime num: usize) [r: {
-    if(num == 0) break :r 1;
     break :r numSize(num);
 }]u8 {
     const size = numSize(num);
@@ -22,6 +21,7 @@ pub fn intFromArray(comptime num: usize) [r: {
 }
 
 fn numSize(comptime num: usize) usize {
+    if(num < 10) return 1;
     var context: usize = num;
     var size: usize = 0;
     while(context != 0) : (context /= 10) {

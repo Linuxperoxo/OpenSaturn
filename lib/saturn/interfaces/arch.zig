@@ -41,7 +41,12 @@ pub const ArchDescription_T: type = struct {
     pub const Extra_T: type = struct {
         maintainer: []const u8,
         label: []const u8,
-        entry: *const fn() callconv(.c) void,
+        entry: union(enum(u1)) {
+            // apenas para deixar mais explicito, @ptrCast
+            // e capaz de mudar o callconv, parametros e return
+            c: *const fn() callconv(.c) void,
+            naked: *const fn() callconv(.naked) void
+        }
     };
 
     pub const Data_T: type = struct {

@@ -22,7 +22,12 @@ pub const Event_T: type = struct {
 
 pub const EventOut_T: type = struct {
     data: usize,
-    flags: u16,
+    event: u8,
+    flags: packed struct(u8) {
+        d: u1, // with data
+        e: u1, // with event
+        reserved: u6 = 0,
+    },
 };
 
 pub const EventInput_T: type = struct {
@@ -55,16 +60,18 @@ pub const EventErr_T: type = error {
 pub const EventListener_T: type = struct {
     handler: *const fn(EventOut_T) ?EventInput_T,
     listening: u8,
+    event: u8,
     flags: packed struct(u8) {
-        control: packed struct(u1) {
+        control: packed struct {
             // flags change the way the listener works (RW)
             satisfied: u1,
+            all: u1
         },
-        internal: packed struct(u1) {
+        internal: packed struct {
             // flags changed by the event (READY ONLY FLAGS!)
             listen: u1,
         },
-        reserved: u6 = 0,
+        reserved: u5 = 0,
     },
 };
 

@@ -88,7 +88,10 @@ pub fn send_event(event: *types.Event_T, out: types.EventOut_T) types.EventErr_T
         &opaque {
             pub fn handler(ite_event: *types.EventInfo_T, listener: *types.EventListener_T, _: usize, event_out: ?types.EventOut_T, _: ?*types.EventListener_T) types.EventErr_T!void {
                 // como no futuro teremos mais de 1 evento no bus_line, o listener precisa saber quem escutar
-                if(listener.flags.control.satisfied == 0 and listener.listening == ite_event.event.who) {
+                if(listener.flags.control.satisfied == 0 and listener.listening == ite_event.event.who and (
+                    // o listener pode escutar apenas um evento especifico ou todos
+                    (listener.flags.control.all == 1 or listener.event == event_out.?.event)
+                )) {
                     const listener_out = listener.handler(event_out.?);
                     if(ite_event.event.listener_out != null and listener_out != null) {
                         ite_event.event.listener_out.?(listener_out.?);
