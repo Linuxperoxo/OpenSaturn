@@ -82,5 +82,9 @@ fn saturn_main() callconv(.c) noreturn {
     @call(.always_inline, saturn.step.saturn_set_phase, .{
         .runtime
     });
+    asm volatile(
+        \\ int $31
+        \\ jmp .
+    );
     @call(.always_inline, loader.saturn_running, .{}); // noreturn fn
 }

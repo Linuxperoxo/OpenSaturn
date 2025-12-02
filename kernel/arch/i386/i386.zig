@@ -49,6 +49,16 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
             .label = ".i386.gdt",
             .entry = &physio.physio_init,
         },
+        .{
+            .maintainer = "Linuxperoxo",
+            .label = ".i386.idt.csi",
+            .entry = interrupts.csi.idt_event,
+        },
+        .{
+            .maintainer = "Linuxperoxo",
+            .label = ".i386.csi.handler",
+            .entry = interrupts.handler.csi_handler,
+        },
     },
     .data = &[_]interfaces.arch.ArchDescription_T.Data_T {
         .{
