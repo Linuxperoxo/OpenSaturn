@@ -106,6 +106,7 @@ pub fn saturn_arch_verify() void {
                     }
                     continue;
                 }
+                if(field.type == ?[]const decl_expect_type.Overrider_T) continue;
                 break :sw true;
             },
             else => break :sw false,

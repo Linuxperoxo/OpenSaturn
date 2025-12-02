@@ -3,9 +3,6 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-// Kernel Arch Infos
-const target_T: type = @import("root").arch.target_T;
-
 // kernel Modules Types
 const Mod_T: type = @import("root").interfaces.module.Mod_T;
 const ModErr_T: type = @import("root").interfaces.module.ModErr_T;
@@ -15,13 +12,17 @@ const ModuleDescriptionTarget_T: type = @import("root").interfaces.module.Module
 // Kernel FS Types
 const Fs_T: type = @import("root").interfaces.fs.Fs_T;
 
+const inmod = @import("root").interfaces.module.inmod;
+const rmmod = @import("root").interfaces.module.rmmod;
+
 const rootfs_mount = &@import("management.zig").rootfs_mount;
 const rootfs_umount = &@import("management.zig").rootfs_umount;
 
 pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .name = "ke_m_rootfs",
-    .load = .unlinkable,
+    .load = .linkable,
     .init = &init,
+    .deps = null,
     .type = .{
         .filesystem = .{
             .compile = "/"
@@ -38,33 +39,35 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
 };
 
 const rootfsMod: *const Mod_T = &Mod_T {
-    .name = "ke_m_rootfs",
+    .name = __SaturnModuleDescription__.name,
     .desc = "Core Kernel Root Filesystem",
     .author = "Linuxperoxo",
-    .version = "1.0-1",
+    .version = "0.1.0",
+    .deps = null,
+    .license = .{
+        .know = .GPL2_only,
+    },
     .type = .filesystem,
     .init = &init,
     .exit = &exit,
-    .private = @constCast(&@import("root").interfaces.fs.Fs_T {
-        .name = "ke_m_rootfs",
-        .flags = .R,
-        .mount = rootfs_mount,
-        .unmount = rootfs_umount,
-    }),
+    .private = .{
+        .filesystem = .{
+            .name = "rootfs",
+            .flags = .R,
+            .mount = rootfs_mount,
+            .unmount = rootfs_umount,
+        },
+    },
 };
 
 fn init() ModErr_T!void {
-    @call(.never_inline, &@import("root").interfaces.module.inmod, .{
+    return @call(.never_inline, inmod, .{
         rootfsMod
-    }) catch |err| {
-        return err;
-    };
+    });
 }
 
 fn exit() ModErr_T!void {
-    @call(.never_inline, &@import("root").interfaces.module.rmmod, .{
+    return @call(.never_inline, rmmod, .{
         rootfsMod
-    }) catch |err| {
-        return err;
-    };
+    });
 }

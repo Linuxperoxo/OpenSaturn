@@ -89,17 +89,13 @@ fn registerOtherFs(fs: *Fs_T) FsErr_T!void {
 // isso ai mesmo
 var slcRegFn: u1 = 0;
 pub fn registerfs(
-    fs: Fs_T
+    _: *const Fs_T
 ) FsErr_T!void {
-    const fnRegister: [2]*const fn(*Fs_T) FsErr_T!void = comptime .{
-        &registerFirstFs,
-        &registerOtherFs,
-    };
-    return @call(.never_inline, fnRegister[slcRegFn], .{@constCast(&fs)});
+
 }
 
 pub fn unregisterfs(
-    _: []const u8
+    _: *const Fs_T
 ) FsErr_T!void {
-    
+
 }
