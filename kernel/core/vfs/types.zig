@@ -1,7 +1,10 @@
-// ┌────────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: interfaces.zig │
-// │            Author: Linuxperoxo                 │
-// └────────────────────────────────────────────────┘
+// ┌─────────────────────────────────────────────┐
+// │  (c) 2025 Linuxperoxo  •  FILE: types.zig   │
+// │            Author: Linuxperoxo              │
+// └─────────────────────────────────────────────┘
+
+const kernel: type = @import("root").lib.kernel;
+const fs: type = @import("root").core.fs;
 
 pub const FileType_T: type = enum {
     char,
@@ -12,11 +15,11 @@ pub const FileType_T: type = enum {
 };
 
 pub const InodeOp_T: type = struct {
-    // Responsavel por fazer a resoluçao de arquivos,
+    // Responsavel por fazer a resoluçao de arquivos, 
     // arquivos ja resolvidos uma vez serao colocados na arvore
     // do vfs
     lookup: *fn(
-        parent: *Dentry_T,
+        parent: *Dentry_T, 
         name: []const u8
     ) anyerror!*Dentry_T,
 
@@ -56,6 +59,11 @@ pub const InodeOp_T: type = struct {
     ) []const *Dentry_T,
 };
 
+pub const Dentry_T: type = struct {
+    name: []const u8, // Nome do arquivo/diretorio
+    inode: ?*Inode_T, // Inode associado
+};
+
 pub const Inode_T: type = struct {
     ino: usize, // Numero do inode
     type: FileType_T, // Tipo do arquivo
@@ -64,13 +72,9 @@ pub const Inode_T: type = struct {
     mode: u16, // Permissoes do arquivo
     nlinks: u16, // Quantidade de links que apontam para esse inode
     data_block: usize, // Aponta para qual bloco inicial estao os dados desse arquivo 
+    // dados nao gravado no disco
     private: ?*anyopaque, // Dados internos do FS
     ops: ?*InodeOp_T, // Operaçoes para esse inode
-};
-
-pub const Dentry_T: type = struct {
-    name: []const u8, // Nome do arquivo/diretorio
-    inode: ?*Inode_T, // Inode associado
 };
 
 pub const Superblock_T: type = struct {
@@ -84,9 +88,22 @@ pub const Superblock_T: type = struct {
     private_data: ?*anyopaque, // Dados internos do FS (cast dinamico)
 };
 
+pub const TreeBranch_T: type = struct {
+    fs: ?*fs.interfaces.Fs_T,
+    sblock: ?*Superblock_T,
+    parent: ?*@This(),
+    child: ?*@This(),
+    brother: kernel.utils.list.BuildList(*@This()),
+    flags: packed struct(u8) {
+        init: u1,
+        reserved: u7,
+    },
+};
+
 pub const VfsErr_T: type = error {
     NoNFound,
     UnreachablePath,
     MountCollision,
-    NoNMounted
+    NoNMounted,
+    ImpossiblePath,
 };
