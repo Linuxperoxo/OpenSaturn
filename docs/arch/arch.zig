@@ -1,26 +1,26 @@
-// a forma como o OpenSaturn lita com a multiarch e um grande desafio,
-// organizar o kernel para que funciona para diferentes arquiteturas
-// e um trabalho que sempre esta sendo aperfeicoado dentro do kernel,
-// atualmente, a arquitetura ainda precisa implementar varias partes do
-// kernel, caso voce queira criar uma nova arquitetura para o OpenSaturn
+// a forma como o OpenSaturn lida com a multiarch é um grande desafio,
+// organizar o kernel para que funcione para diferentes arquiteturas
+// é um trabalho que sempre está sendo aperfeiçoado dentro do kernel,
+// atualmente, a arquitetura ainda precisa implementar várias partes do
+// kernel, caso você queira criar uma nova arquitetura para o OpenSaturn,
 // esse arquivo vai lhe ajudar bastante na sua jornada, pelo menos, espero
 // que ajude
 
-// vamos la, fazer um suporte para uma nova arquitetura para um kernel, sem
-// duvidas, e um grande desafio, voce precisa conhecer bem a arquitetura do
-// microprocessador, e mais ainda do kernel, aqui no OpenSaturn voce vai precisar
-// se preocupar apenas para a arquitetura. O OpenSaturn possui um header exclusivo
-// para declaracoes de arquitetura, adicionar a arquitetura exige mais passos que
-// adicionar um modulo, mas ainda sim, nao sao tantos passos
+// vamos lá, fazer um suporte para uma nova arquitetura para um kernel, sem
+// dúvidas, é um grande desafio, você precisa conhecer bem a arquitetura do
+// microprocessador, e mais ainda do kernel, aqui no OpenSaturn você vai precisar
+// se preocupar apenas com a arquitetura. O OpenSaturn possui um header exclusivo
+// para declarações de arquitetura, adicionar a arquitetura exige mais passos que
+// adicionar um módulo, mas ainda assim, não são tantos passos
 
-// a primeira coisa antes de comecar, e saber onde voce vai colocar seus arquivos,
-// isso e uma coisa bem importante para o projeto se manter organizado e totalmente
-// isolado. Por padrao, usamos o diretorio kernel/arch/{arch} para colocar o header da
-// arquitetura, usamos os diretorios kernel/entries/{arch}, kernel/interrupts/{arch},
-// kernel/physio/{arch} e mm/{arch} como entrada do kernel para arquela arquitetura,
-// interrupcoes da arquitetura, gerenciamento de IO e gerenciamento de memoria, mas como
-// dito acima, isso sao detalhe da arquitetura, o kernel e responsavel por tentar padronizar
-// o maximo possivel esses detalhes da arquitetura.
+// a primeira coisa antes de começar, é saber onde você vai colocar seus arquivos,
+// isso é uma coisa bem importante para o projeto se manter organizado e totalmente
+// isolado. Por padrão, usamos o diretório kernel/arch/{arch} para colocar o header da
+// arquitetura, usamos os diretórios kernel/entries/{arch}, kernel/interrupts/{arch},
+// kernel/physio/{arch} e mm/{arch} como entrada do kernel para aquela arquitetura,
+// interrupções da arquitetura, gerenciamento de IO e gerenciamento de memória, mas como
+// dito acima, isso são detalhes da arquitetura, o kernel é responsável por tentar padronizar
+// o máximo possível esses detalhes da arquitetura.
 
 // vou usar de exemplo a arquitetura i386. Vamos comecar observando o primeiro arquivo:
 
@@ -39,7 +39,7 @@ const interfaces: type = root.interfaces;
 pub const linker: type = @import("linker.zig");
 pub const sections: type = @import("sections.zig");
 
-// assim como modulo, o nome precisa ser exatamente assim, usando o mesmo
+// assim como os modulos, o nome precisa ser exatamente assim, usando o mesmo
 // tipo, tudo isso e verificado durante a compilacoa
 pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
     // caso .usable = false, voce esta falando para o kernel que sua arquitetura
@@ -47,32 +47,32 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
     // ela ira ocorrer um erro
     .usable = true,
     // observe que agora temos coisas iguais, mas que fazem
-    // coisas completamente diferente
+    // coisas completamente diferentes
     //
-    // * entry: responsavel por ligar o entry da arquitetura,
-    // esse entry e extremamente importante, ja que e o primeiro
-    // codigo, apos o bootloader, a ser executado. Aqui e um lugar
-    // bem importante, ja que o kernel em si, nao chama nenhuma funcao
-    // da arquitetura, isso e importante para que a arquitetura tenha
-    // total controle sobre ela mesmo, entao a unica responsabilidade
-    // o kernel e usar os arquivos da arquitetura, e restante e com
-    // ela propria
+    // * entry: responsável por ligar o entry da arquitetura,
+    // esse entry é extremamente importante, já que é o primeiro
+    // código, após o bootloader, a ser executado. Aqui é um lugar
+    // bem importante, já que o kernel em si não chama nenhuma função
+    // da arquitetura, isso é importante para que a arquitetura tenha
+    // total controle sobre ela mesma, então a única responsabilidade
+    // do kernel é usar os arquivos da arquitetura, o restante é com
+    // ela própria
     .entry = .{
         // como cada parte da arquitetura pode ser bem grande e complexa,
         // deixei o field .maintainer para deixar uma assinatura da pessoa
-        // responsavel por aquela parte
+        // responsável por aquela parte
         .maintainer = "Linuxperoxo",
-        // esses proximos 2 fields servem para que o kernel ajude a arquitetura,
-        // como? Da seguinte forma, no zig temos um builtin @export(), ele serve
-        // para criarmos labels no assembly para variaveis e funcoes la no assembly,
-        // no compilador faz isso, mas vai saber o nome da label que ele deu, fazendo
+        // esses próximos 2 fields servem para que o kernel ajude a arquitetura,
+        // como? Da seguinte forma: no Zig temos um builtin @export(), ele serve
+        // para criarmos labels no assembly para variáveis e funções lá no assembly,
+        // o compilador faz isso, mas não vai saber o nome da label que ele deu. Fazendo
         // isso, podemos simplesmente usar .i386.entry no assembly livremente
         .label = ".i386.entry",
         .entry = &entry.entry,
     },
-    // * init: e bem parecida com o entry, mas no caso do i386, usamos
-    // o init para certos detalhe, novamente, nada disso e realmente obrigatorio,
-    // tirando o proprio entry, todos os outros sao opcionais, isso deixa justamente,
+    // * init: é bem parecida com o entry, mas no caso do i386, usamos
+    // o init para certos detalhes, novamente, nada disso é realmente obrigatório,
+    // tirando o próprio entry, todos os outros são opcionais, isso deixa justamente
     // a arquitetura tendo total controle sobre si
     .init = .{
         .maintainer = "Linuxperoxo",
@@ -106,16 +106,19 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
         .{
             .maintainer = "Linuxperoxo",
             .label = ".i386.gdt",
-            .entry = &physio.physio_init,
+            .entry = .{
+                .c = &physio.physio_init,
+                // ou .naked
+            },
         },
     },
-    // esse .extra e .data resolve um problema bem especifico. O compilador
-    // nao resolve bloco comptime de container nao usados diretamente,
-    // ou seja, se voce apenas uma o @import() e nao usa nada dentro
-    // daquele container, o bloco comptime nunca sera executado, isso
-    // pode causar confusao caso voce use um @export() dentro de um bloco
-    // comptime que nunca sera executado, isso provavelmente vai dar erro
-    // de symbol not found quando voce tentar usar no assembly. Com esses 2
+    // esse .extra e .data resolve um problema bem específico. O compilador
+    // não resolve bloco comptime de container não usados diretamente,
+    // ou seja, se você apenas usa o @import() e não usa nada dentro
+    // daquele container, o bloco comptime nunca será executado, isso
+    // pode causar confusão caso você use um @export() dentro de um bloco
+    // comptime que nunca será executado, isso provavelmente vai dar erro
+    // de symbol not found quando você tentar usar no assembly. Com esses 2
     // fields a arquitetura evita usar em 100% dos casos o @export diretamente
     .data = &[_]interfaces.arch.ArchDescription_T.Data_T {
         .{
@@ -137,6 +140,23 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
             .label = "idt_entries",
             .section = sections.section_data_persist,
             .ptr = &interrupts.idt_entries,
+        },
+    },
+    // outra novidade da 0.2.*. Agora a arquitetura pode forcar
+    // um modulo ser habilitado e desabilitado, esse modulo precisa
+    // realmente existir e ser suportado pela arquitetura
+    .overrider = &[_]interfaces.arch.ArchDescription_T.Overrider_T {
+        // esse overrider e muito bom ja que tira a necessidade de alterar
+        // diretamente o menuconfig que e global.
+        // junto do overrider, temos 2 novas configuracoes config.module
+        //
+        // * ForceModuleArchOverrider: isso realmente habilita o overrider
+        // * IgnoreOverriderIfNoExist: caso seja true, so ignora se um modulo
+        // nao existe, mas te tentando ser substituido, caso seja false, isso
+        // vai causar um erro de comptime
+        .{
+            .module = "ke_m_pci",
+            .value = .yes, // ou .no para desabilitar
         },
     },
 };
@@ -284,10 +304,10 @@ const SelectedArch: type = switch(config.arch.options.Target) {
     .amd64 => Architectures.amd64,
 };
 
-// agora a arquitetura ja existe, e ja e reconhecida pelo kernel, agora so precisa
-// de um detalhe, modificar o build.zig, essa parte nao vai mais ser necessaria em
-// versoes futuras, nao gosto da ideia de modificar o build.zig, e ainda mais deixa-lo
-// complexo. O que voce deve fazer e exatamente o que voce fez com SelectedArch arch
+// agora a arquitetura já existe, e já é reconhecida pelo kernel, agora só precisa
+// de um detalhe: modificar o build.zig, essa parte não vai mais ser necessária em
+// versões futuras, não gosto da ideia de modificar o build.zig, e ainda mais deixá-lo
+// complexo. O que você deve fazer é exatamente o que você fez com SelectedArch arch
 
 pub const target: std.Target.Cpu.Arch = switch(SaturnArchConfig.options.Target) {
     // voce pode olhar std.Target.Cpu.Arch, e ver qual arquitetura deve ser passada
