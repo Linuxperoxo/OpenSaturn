@@ -216,7 +216,7 @@ pub fn BuildList(comptime T: type) type {
         pub fn iterator_handler(
             self: *@This(),
             any: anytype,
-            comptime handler: *const fn(T, anytype) anyerror!void
+            comptime handler: *const fn(T, @TypeOf(any)) anyerror!void
         ) ListErr_T!T {
             try self.check_init(true);
             try self.iterator_reset();

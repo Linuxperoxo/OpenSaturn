@@ -18,8 +18,9 @@ pub var csi_isr =  r: {
                 });
             }
             pub fn isr_handler() callconv(.naked) void {
+                // nao precisamos de cli e sti ja que
+                // usando o gate type 0xE aqui
                 asm volatile(
-                    \\ cli
                     \\ pushl %[int]
                     \\ calll .i386.csi.handler
                     \\ leal 4(%esp), %esp

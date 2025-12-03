@@ -25,7 +25,7 @@ const exceptionsMessagens = @import("idt.zig").cpuExceptionsMessagens;
 pub var idt_entries = [_]IDTEntry_T {
     IDTEntry_T {
         .segment = 0x08,
-        .flags =  0x8E | 0x60,
+        .flags =  0,
         .always0 = 0,
         .high = 0,
         .low = 0,
@@ -41,6 +41,7 @@ pub fn idt_init() linksection(section_text_loader) callconv(.c) void {
     for(0..handler.csi_isr.len) |i| {
         idt_entries[i].high = @intCast(@intFromPtr(handler.csi_isr[i]) >> 16);
         idt_entries[i].low = @intCast(@intFromPtr(handler.csi_isr[i]) & 0xFFFF);
+        idt_entries[i].flags = 0b1000_1110;
     }
     asm volatile(
         \\ movl $idt_entries, %eax
