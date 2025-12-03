@@ -96,7 +96,11 @@ pub fn saturn_arch_verify() void {
                 if(@field(arch.__SaturnArchDescription__, field.name) == null) continue;
                 if(field.type == ?[]const decl_expect_type.Extra_T) {
                     for((@field(arch.__SaturnArchDescription__, field.name)).?) |extra| {
-                        aux.export_this(extra.entry, extra.label, null);
+                        const union_field = switch(extra.entry) {
+                            .c => |c| c,
+                            .naked => |naked| naked,
+                        };
+                        aux.export_this(union_field, extra.label, null);
                     }
                     continue;
                 }
@@ -106,6 +110,7 @@ pub fn saturn_arch_verify() void {
                     }
                     continue;
                 }
+                if(field.type == ?[]const decl_expect_type.Overrider_T) continue;
                 break :sw true;
             },
             else => break :sw false,

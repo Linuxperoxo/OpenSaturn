@@ -110,11 +110,11 @@ pub const linker: type = cpu.linker;
 pub const mm: type = cpu.mm;
 pub const core: type = struct {
     pub const module: type = @import("kernel/core/module/module.zig");
-    pub const paging: type = @import("kernel/core/paging/paging.zig");
     pub const vfs: type = @import("kernel/core/vfs/vfs.zig");
     pub const devices: type = @import("kernel/core/devices/devices.zig");
     pub const fs: type = @import("kernel/core/fs/fs.zig");
     pub const drivers: type = @import("kernel/core/drivers/drivers.zig");
+    pub const events: type = @import("kernel/core/events/events.zig");
 };
 // no futuro o ioreg sera usado para todas as arquiteturas como uma forma
 // de procurar devices, cada arch vai ter sua implementacao, mas ioreg
@@ -122,7 +122,7 @@ pub const core: type = struct {
 //pub const ioreg: type = @import("kernel/core/ioreg/ioreg.zig");
 pub const loader: type = @import("kernel/loader.zig");
 pub const modules: type = @import("modules.zig");
-pub const modsys: type = @import("kernel/modsys.zig");
+pub const modsys: type = @import("kernel/modsys/modsys.zig");
 pub const interfaces: type = struct {
     pub const devices: type = @import("lib/saturn/interfaces/devices.zig");
     pub const fs: type = @import("lib/saturn/interfaces/fs.zig");

@@ -3,14 +3,20 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const PhysIoSaturnRef_T: type = struct {
-    did: usize,
-    state: PhysIoSaturnRefState_T,
-    private: *anyopaque,
+const mm: type = @import("root").mm;
+const config: type = @import("root").config;
+
+pub const Personality_T: type = struct {
+    resize: bool = true,
+    resizeErr: bool = false,
 };
 
-pub const PhysIoSaturnRefState_T: type = enum {
-    missing,
-    active,
-    blocked,
-};
+//pub const Cache_T: type = struct {
+//    size: CacheSize_T = .auto,
+//
+//    pub const CacheSize_T: type = enum(u3) {
+//        small = 4,
+//        large = 2,
+//        huge = 1,
+//    };
+//};

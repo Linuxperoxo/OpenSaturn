@@ -1,49 +1,18 @@
-OpenSaturn 0.1.0 - Change Log
+OpenSaturn 0.2.0 - Change Log
 =============================
 
---- Kernel
-* A descrição dos módulos do OpenSaturn foi aprimorada.
-* A descrição da arquitetura foi completamente reformulada. 
-  Agora todas as partes da arquitetura são definidas em uma única struct.
-* Foram adicionados os alocadores SBA e SOA, projetados para funcionar em todas as arquiteturas.
-* Todo o código foi reorganizado para melhor legibilidade e manutenção.
-* Adicionado o arquivo saturn.zig, responsável por reunir todas as partes do kernel em um único ponto.
-* Adicionadas diversas opções de configuração para diferentes partes do kernel.
-  Essas configurações são utilizadas para codegen na compilação e para modificar o runtime.
-* As arquiteturas agora podem definir suas próprias configurações específicas,
-  substituindo as configurações padrão do kernel.
-* Adicionado o conceito de major e minor version.
-* O Supervisor foi temporariamente removido do kernel, mas retornará em versões futuras.
-* Código atualizado para compatibilidade com Zig 0.15.*.
-* Várias configurações relacionadas ao layout de memória agora são definidas no assembly,
-  facilitando a implementação de código específico por arquitetura.
-* Introduzido o conceito de STEP, permitindo que determinadas partes do kernel
-  saibam em qual estágio de inicialização o kernel se encontra.
+--- KERNEL
+* descrição dos módulos agora tem um novo field deps.
+* modsys foi melhorado
+* dependência de módulos
+* descrição da arquitetura teve uma modificação no field extra
+* descrição da arquitetura agora conta com um novo field overrider
+* melhoria no kernel/utils
+* refatoração no kernel/core/modules
+* melhorias no código kernel/core/events
 
---- Arch
+--- ARCH
   i386:
-    * Suporte a memória virtual.
-    * Implementação do gerenciador de páginas.
-    * Melhorias no linker.ld
-    * Nome renomeado x86 -> i386
-    * Ajustes no código de entry
-    * Revisão do sistema de interrupções
-    * Melhorias no init
-    * Atualizações na configuração da GDT
-    * Correções no código do PCI
-
---- AtlasB
-* Adicionada uma nova flag no cabeçalho do Atlas (Debug flag).
-* Diversas correções e melhorias no código.
-
---- TODO
-  i386:
-    * physio deve detectar os dispositivos que nao existe mais no PCI, e chamar o disconnect() do physio
-
-  core:
-    * arquiteturas devem sobreescrever o menuconfig
-    * rework no gerenciamento de modulos no runtime
-    * adicionar dependencia de modulos, para ser resolvido no comptime
-    * rework do fs
-    * varias outras coisas :^)
-
+    * correção de bug grave no gdt
+    * event CSI adicionado ao i386
+    * idt configurado e funcionando isr0–isr31

@@ -24,9 +24,9 @@ const rootfsSuperblock: *Superblock_T = @constCast(&Superblock_T {
 });
 
 pub fn devfs_mount() FsErr_T!Superblock_T {
-    
+    return FsErr_T.InternalError;
 }
 
 pub fn devfs_umount() FsErr_T!void {
-
+    return FsErr_T.InternalError;
 }

@@ -21,9 +21,9 @@ pub const IDTEntry_T: type = packed struct {
 // Task Gate(0b0101): CPU Troca para uma task diferente (Task State Segment)
 
 // Forca alinhamento correto para a struct
-pub const IDTStruct_T: type = struct {
-    limit: u16 align(1), // Offset maximo de entradas em bytes
-    entries: u32 align(1), // Endereço para as entradas IDT
+pub const IDTStruct_T: type = packed struct {
+    limit: u16, // Offset maximo de entradas em bytes
+    entries: u32, // Endereço para as entradas IDT
 };
 
 // Exceção 0 - Division By Zero:

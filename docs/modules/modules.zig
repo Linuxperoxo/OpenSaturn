@@ -1,10 +1,10 @@
-// atribuir um modulo ao OpenSaturn e uma tarefa
-// que nao exige tantos passos, mas deve ser feito
-// com atencao
+// atribuir um módulo ao OpenSaturn é uma tarefa
+// que não exige tantos passos, mas deve ser feita
+// com atenção
 
-// a primeira coisa que voce deve fazer e descrever seu
-// modulo, voce pode fazer isso declarando __SaturnModuleDescription__,
-// ele deve ser do tipo ModuleDescription_T, voce pode olhar essa struct
+// a primeira coisa que você deve fazer é descrever seu
+// módulo, você pode fazer isso declarando __SaturnModuleDescription__,
+// ele deve ser do tipo ModuleDescription_T, você pode olhar essa struct
 // em lib/saturn/kernel/interfaces/modules.zig
 
 // seu modulo runtime fica asim
@@ -55,6 +55,16 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
             .compile = "/" // pode dar erro caso um sistema de arquivo ja esteja montado em /
         }
     },
+    // isso aqui e novidade na versao 0.2.*, agora voce pode garantir
+    // que seu modulo vai ser carregado depois de todos os outros, basta
+    // colocar aqui, isso tambem vai garantir que esses modulos existam
+    .deps = &[_][]const u8 { // caso nao tenha dep so deixar .deps = null,
+        // cuidado com deps circular, como tudo e resolvido no comptime,
+        // ele precisa ser simples o suficiente e tambem e uma parte que
+        // esta funcionando perfeitamente, mas sempre vai exitir melhorias,
+        // e uma delas e adicionar detect de deps circular de mais niveis
+        "my_other_fs",
+    },
     // aqui voce descreve quais arquiteturas tem suporte ao seu modulo, nao se preocupe com
     // arquiteturas nao suportadas, seu modulo nem sera carregado para elas, o sistema de modulos
     // se encarrega dessa preocupacao
@@ -75,7 +85,15 @@ const my_module: *const Mod_T = &Mod_T {
     .desc = "My Module For OpenSaturn :^)",
     .author = "Linuxperoxo",
     .version = "1.0-1",
-
+    // atualmente somente para informacao
+    .deps = &[_][]const u8 {
+        "my_other_fs",
+    },
+    // tambem apenas para informacao
+    .license = .{
+        .know = .GPL2_only,
+        // ou .other = "{license}"
+    },
     .type = .filesystem,
     // funcao chamada na inicializacao do modulo
     .init = &init,
