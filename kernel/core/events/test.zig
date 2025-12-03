@@ -34,6 +34,7 @@ test "Event" {
     };
     var test_listener0: types.EventListener_T = .{
         .listening = 10,
+        .event = 0,
         .handler = &opaque {
             pub fn handler(_: types.EventOut_T) ?types.EventInput_T {
                 listeners_hits[0] += 1;
@@ -43,6 +44,7 @@ test "Event" {
         .flags = .{
             .control = .{
                 .satisfied = 0,
+                .all = 1,
             },
             .internal = .{
                  .listen = 0,
@@ -51,6 +53,7 @@ test "Event" {
     };
     var test_listener1: types.EventListener_T = .{
         .listening = 10,
+        .event = 0,
         .handler = &opaque {
             pub fn handler(_: types.EventOut_T) ?types.EventInput_T {
                 listeners_hits[1] += 1;
@@ -60,6 +63,7 @@ test "Event" {
         .flags = .{
             .control = .{
                 .satisfied = 0,
+                .all = 1,
             },
             .internal = .{
                 .listen = 0,
@@ -91,7 +95,11 @@ test "Event" {
     });
     try main.send_event(&test_event, .{
         .data = 1,
-        .flags = 2,
+        .event = 0,
+        .flags = .{
+            .d = 1,
+            .e = 0,
+        }
     });
     for(&listeners_hits) |*hit| {
         if(hit.* != 1) return error.NonHit;
@@ -105,21 +113,33 @@ test "Event" {
     });
     try main.send_event(&test_event, .{
         .data = 1,
-        .flags = 2,
+        .event = 0,
+        .flags = .{
+            .d = 1,
+            .e = 0,
+        }
     });
     if(listeners_hits[1] != 0 and listeners_hits[0] != 1) return error.UndefinedHit;
     listeners_hits[0] = 0;
     test_listener0.flags.control.satisfied = 1;
     try main.send_event(&test_event, .{
         .data = 1,
-        .flags = 2,
+        .event = 0,
+        .flags = .{
+            .d = 1,
+            .e = 0,
+        }
     });
     if(listeners_hits[0] != 0) return error.UndefinedHit;
     try main.remove_event(&test_event);
     if(test_listener0.flags.internal.listen != 0) return error.ListernerInternalFlagError;
     main.send_event(&test_event, .{
         .data = 1,
-        .flags = 2,
+        .event = 0,
+        .flags = .{
+            .d = 1,
+            .e = 0,
+        }
     }) catch |err| switch(err) {
         types.EventErr_T.NoNEvent => return,
         else => {},

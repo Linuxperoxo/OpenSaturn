@@ -30,33 +30,6 @@ inline fn ret_event(bus: u2, line: u3) *types.EventInfo_T {
     return event_buses[bus].line[line].?;
 }
 
-inline fn listeners_iterator(
-    event_info: *types.EventInfo_T,
-    event_out: ?types.EventOut_T,
-    event_listener: ?*types.EventListener_T,
-    comptime handler: *const fn(*types.EventInfo_T, *types.EventListener_T, usize, ?types.EventOut_T, ?*types.EventListener_T) types.EventErr_T!void,
-) types.EventErr_T!void {
-    var i: usize = 0;
-    while(event_info.listeners.iterator()) |listener| {
-        @call(.always_inline, handler, .{
-            event_info, listener, i, event_out, event_listener
-        }) catch |err| {
-            event_info.listeners.iterator_reset() catch unreachable;
-            return err;
-        };
-        i += 1;
-    } else |err| {
-        switch(err) {
-            @TypeOf(event_info.listeners).ListErr_T.EndOfIterator => {},
-            else => {
-                event_info.listeners.iterator_reset() catch unreachable;
-                return types.EventErr_T.ListenerInteratorFailed;
-            },
-        }
-    }
-    event_info.listeners.iterator_reset() catch unreachable;
-}
-
 pub fn install_event(event: *types.Event_T, comptime default: ?types.EventDefault_T) types.EventErr_T!void {
     const bus, const line = if(default != null) aux.default_bus(default.?) else .{
         event.bus,
@@ -81,37 +54,49 @@ pub fn install_event(event: *types.Event_T, comptime default: ?types.EventDefaul
 pub fn send_event(event: *types.Event_T, out: types.EventOut_T) types.EventErr_T!void {
     if(!check_path(event.bus, event.line)) return types.EventErr_T.NoNEvent;
     const event_info = ret_event(event.bus, event.line);
-    try listeners_iterator(
-        event_info,
-        out,
-        null,
+    const iterator_param: struct { ite_event: *types.EventInfo_T, event_out: types.EventOut_T } = .{
+        .ite_event = event_info,
+        .event_out = out,
+    };
+    _ = event_info.listeners.iterator_handler(
+        iterator_param,
         &opaque {
-            pub fn handler(ite_event: *types.EventInfo_T, listener: *types.EventListener_T, _: usize, event_out: ?types.EventOut_T, _: ?*types.EventListener_T) types.EventErr_T!void {
+            pub fn handler(listener: *types.EventListener_T, param: @TypeOf(iterator_param)) anyerror!void {
                 // como no futuro teremos mais de 1 evento no bus_line, o listener precisa saber quem escutar
-                if(listener.flags.control.satisfied == 0 and listener.listening == ite_event.event.who) {
-                    const listener_out = listener.handler(event_out.?);
-                    if(ite_event.event.listener_out != null and listener_out != null) {
-                        ite_event.event.listener_out.?(listener_out.?);
+                if(listener.flags.control.satisfied == 0 and listener.listening == param.ite_event.event.who and (
+                    // o listener pode escutar apenas um evento especifico ou todos
+                    (listener.flags.control.all == 1 or listener.event == param.event_out.event)
+                )) {
+                    const listener_out = listener.handler(param.event_out);
+                    if(param.ite_event.event.listener_out != null and listener_out != null) {
+                        param.ite_event.event.listener_out.?(listener_out.?);
                     }
                 }
+                return error.Continue;
             }
         }.handler,
-    );
+    ) catch |err| return switch(err) {
+        @TypeOf(event_info.listeners).ListErr_T.EndOfIterator => {},
+        else => return types.EventErr_T.ListenerInteratorFailed,
+    };
 }
 
 pub fn remove_event(event: *types.Event_T) types.EventErr_T!void {
     if(!check_path(event.bus, event.line)) return types.EventErr_T.NoNEvent;
     const event_info = ret_event(event.bus, event.line);
-    try listeners_iterator(
-        event_info,
-        null,
-        null,
+    const iterator_param: void = {};
+    _ = event_info.listeners.iterator_handler(
+        iterator_param,
         &opaque {
-            pub fn handler(_: *types.EventInfo_T, listener: *types.EventListener_T, _: usize, _: ?types.EventOut_T, _: ?*types.EventListener_T) types.EventErr_T!void {
+            pub fn handler(listener: *types.EventListener_T, _: @TypeOf(iterator_param)) anyerror!void {
                 listener.flags.internal.listen = 0;
+                return error.Continue;
             }
         }.handler,
-    );
+    ) catch |err| switch(err) {
+        @TypeOf(event_info.listeners).ListErr_T.EndOfIterator => {},
+        else => return types.EventErr_T.ListenerInteratorFailed,
+    };
     const slice: []types.EventInfo_T = @as([*]types.EventInfo_T, @ptrCast(event_info))[0..1];
     allocators.sba.allocator.free(slice) catch return types.EventErr_T.FreeEventFailed;
     event_buses[event.bus].line[event.line] = null;
@@ -160,23 +145,27 @@ pub fn remove_listener_event(
     };
     if(!check_path(bus, line)) return types.EventErr_T.NoNEvent;
     const event_info = ret_event(bus, line);
-    listeners_iterator(
-        event_info,
-        null,
-        listener,
+    const iterator_param: struct { ite_event: *types.EventInfo_T, listener_to_found: *types.EventListener_T } = .{
+        .ite_event = event_info,
+        .listener_to_found = listener,
+    };
+    _ = event_info.listeners.iterator_handler(
+        iterator_param,
         &opaque {
-            pub fn handler(ite_event: *types.EventInfo_T, listener_iterator: *types.EventListener_T, index: usize, _: ?types.EventOut_T, listener_real: ?*types.EventListener_T) types.EventErr_T!void {
-                if(listener_iterator == listener_real) {
+            pub fn handler(listener_iterator: *types.EventListener_T, param: @TypeOf(iterator_param)) anyerror!void {
+                if(listener_iterator == param.listener_to_found) {
                     // o allocator passado libera o no da lista, nao o que tem nela
-                    ite_event.listeners.drop_on_list(index, &allocators.sba.allocator)
-                        catch return types.EventErr_T.DropListFailed;
-                    return types.EventErr_T.IteratorForceExit;
+                    param.ite_event.listeners.drop_on_list(
+                        (param.ite_event.listeners.iterator_index() catch unreachable) - 1,
+                        &allocators.sba.allocator
+                    ) catch {};
+                    return;
                 }
+                return error.Continue;
             }
         }.handler,
-    ) catch |err| switch(err) {
-        types.EventErr_T.IteratorForceExit => return,
-        else => return types.EventErr_T.RemoveListenerInternalError
+    ) catch |err| return switch(err) {
+        @TypeOf(event_info.listeners).ListErr_T.EndOfIterator => return types.EventErr_T.NoNListenerInstall,
+        else => return types.EventErr_T.ListenerInteratorFailed,
     };
-    return types.EventErr_T.NoNListenerInstall;
 }
