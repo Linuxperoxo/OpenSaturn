@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo              │
 // └─────────────────────────────────────────────┘
 
-const kernel: type = @import("root").lib.kernel;
+const builtin: type = @import("builtin");
 const fs: type = @import("root").core.fs;
 
 pub const FileType_T: type = enum {
@@ -15,53 +15,35 @@ pub const FileType_T: type = enum {
 };
 
 pub const InodeOp_T: type = struct {
-    // Responsavel por fazer a resoluçao de arquivos, 
-    // arquivos ja resolvidos uma vez serao colocados na arvore
-    // do vfs
-    lookup: *fn(
-        parent: *Dentry_T, 
-        name: []const u8
-    ) anyerror!*Dentry_T,
-
-    // Responsavel por criar um novo diretorio
-    mkdir: *fn(
-        parent: *Dentry_T, 
-        name: []const u8,
+    lookup: *const fn(*Dentry_T, []const u8) anyerror!*Dentry_T,
+    mkdir: ?*fn(
+        *Inode_T,
+        []const u8,
         uid: u16,
         gid: u32,
         mode: u16
-    ) anyerror!*Dentry_T,
-
-    // Responsavel por criar um novo arquivo
-    create: *fn(
-        parent: *Dentry_T, 
-        name: []const u8, 
-        uid: u16, 
-        gid: u32, 
+    ) anyerror!*Inode_T,
+    create: ?*fn(
+        *Inode_T,
+        []const u8,
+        uid: u16,
+        gid: u32,
         mode: u16
-    ) anyerror!*Dentry_T,
-
-    // Responsavel por criar um novo link simbolico
-    // TODO: link: *fn()
-
-    // Responsavel por resolver links simbolicos
-    // TODO: readlink: *fn(node: *Dentry) anyerror!*Dentry,
-
-    // Responsavel por remover um arquivo
-    unlink: *fn(
-        parent: *Dentry_T,
-        name: []const u8
-    ) anyerror!void,
-
-    // Responsavel por listar os arquivos de um diretorio
-    interator: *fn(
-            parent: *Dentry_T,
-    ) []const *Dentry_T,
+    ) anyerror!*Inode_T,
+    unlink: ?*fn(*Inode_T, []const u8) anyerror!void,
+    iterator: ?*fn(*Inode_T) []const *Inode_T,
 };
 
 pub const Dentry_T: type = struct {
-    name: []const u8, // Nome do arquivo/diretorio
-    inode: ?*Inode_T, // Inode associado
+    d_name: []const u8,
+    d_inode: ?*Inode_T,
+    d_sblock: ?*Superblock_T,
+    d_op: ?*InodeOp_T,
+    d_private: ?*anyopaque,
+    //fs: if(!builtin.is_test) ?*fs.interfaces.Fs_T else void = {},
+    child: ?*@This(),
+    brother: ?*@This(),
+    parent: ?*@This(),
 };
 
 pub const Inode_T: type = struct {
@@ -71,10 +53,7 @@ pub const Inode_T: type = struct {
     gid: u32, // ID do grupo
     mode: u16, // Permissoes do arquivo
     nlinks: u16, // Quantidade de links que apontam para esse inode
-    data_block: usize, // Aponta para qual bloco inicial estao os dados desse arquivo 
-    // dados nao gravado no disco
-    private: ?*anyopaque, // Dados internos do FS
-    ops: ?*InodeOp_T, // Operaçoes para esse inode
+    data_block: usize, // Aponta para qual bloco inicial estao os dados desse arquivo
 };
 
 pub const Superblock_T: type = struct {
@@ -84,20 +63,16 @@ pub const Superblock_T: type = struct {
     total_inodes: usize, // Numero total de inodes disponiveis
     inode_table_start: usize, // Offset(em blocos) de onde começa a tabela de inodes
     data_block_start: usize, // Offset no disco onde começa a area de dados dos arquivos
-    root_inode: ?*Inode_T, // Ponteiro para o inode raiz do sistema de arquivos
+    root_inode: *Inode_T, // Ponteiro para o inode raiz do sistema de arquivos
     private_data: ?*anyopaque, // Dados internos do FS (cast dinamico)
 };
 
 pub const TreeBranch_T: type = struct {
-    fs: ?*fs.interfaces.Fs_T,
+    inode: ?*Inode_T,
     sblock: ?*Superblock_T,
-    parent: ?*@This(),
+    parent: *@This(),
     child: ?*@This(),
-    brother: kernel.utils.list.BuildList(*@This()),
-    flags: packed struct(u8) {
-        init: u1,
-        reserved: u7,
-    },
+    brother: ?*@This(),
 };
 
 pub const VfsErr_T: type = error {
@@ -106,4 +81,6 @@ pub const VfsErr_T: type = error {
     MountCollision,
     NoNMounted,
     ImpossiblePath,
+    CorruptedTree,
+    InodeAllocFailed,
 };
