@@ -17,7 +17,7 @@ pub const FsFlags_T: type = enum(u2) {
 pub const Fs_T: type = struct {
     name: []const u8, // nome so sistema de arquivos, usado no mount -t "fs name"
     flags: FsFlags_T, // permissoes
-    mount: *const fn() FsErr_T!Vfs.interfaces.Superblock_T, // funcao chamada quando um mount e executado
+    mount: *const fn() FsErr_T!*const Vfs.interfaces.Superblock_T, // funcao chamada quando um mount e executado
     unmount: *const fn() FsErr_T!void, // funcao chamada quando um unmount e executado
 };
 

@@ -40,10 +40,13 @@ pub fn resolve_path(path: []const u8, current: ?*Dentry_T) VfsErr_T!*Dentry_T {
     for(dentries, 0..) |dentry, i| {
         sw: switch((enum { step0, step1 }).step0) {
             .step0 => {
+                @branchHint(.likely);
                 var next: ?*Dentry_T = current_dentry;
                 while(next != null) : (next = next.?.brother) {
                     if(mem.eql(next.?.d_name, dentry, .{ .case = true })) {
+                        @branchHint(.cold);
                         if(next.?.child == null) {
+                            @branchHint(.cold);
                             if(i + 1 >= dentries.len) return next.?;
                             next.?.child = next.?.d_op.?.lookup(next.?, dentries[i + 1]) catch
                                 return VfsErr_T.NoNFound;
@@ -56,6 +59,7 @@ pub fn resolve_path(path: []const u8, current: ?*Dentry_T) VfsErr_T!*Dentry_T {
                 continue :sw .step1;
             },
             .step1 => {
+                @branchHint(.unlikely);
                 current_dentry.brother = current_dentry.parent.?.d_op.?.lookup(current_dentry.parent.?, dentry) catch
                     return VfsErr_T.NoNFound;
                 current_dentry = current_dentry.brother.?;
@@ -71,13 +75,14 @@ pub fn resolve_path(path: []const u8, current: ?*Dentry_T) VfsErr_T!*Dentry_T {
 
 pub fn mount(
     path: []const u8,
-    current: ?*Inode_T,
+    current: ?*Dentry_T,
     //fs_struct: *const fs.interfaces.Fs_T
 ) VfsErr_T!void {
-    _ = path;
-    _ = current;
-    //tree_branch.sblock = fs_struct.mount();
-    //tree_branch.inode = tree_branch.sblock.?.root_inode;
+    const dentry_mount: *Dentry_T = try resolve_path(path, current);
+    if(dentry_mount.d_sblock != null) return VfsErr_T.AlreadyMounted;
+    //const sblock = fs_struct.mount() catch return VfsErr_T.FilesystemMountError;
+    //dentry_mount.d_sblock = sblock;
+    //dentry_mount.d_op = sblock.inode_op;
 }
 
 pub fn umount(_: []const u8) VfsErr_T!void {

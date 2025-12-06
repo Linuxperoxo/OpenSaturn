@@ -88,9 +88,11 @@ var sblock: types.Superblock_T = .{
     .private_data = null,
     .total_blocks = 10,
     .total_inodes = 10,
+    .inode_op = &geral_op,
 };
 
 test "VFS Tree" {
+    try main.mount("/", null);
     const root_branch = try main.resolve_path("/", null);
     root_branch.d_sblock = &sblock;
     root_branch.d_op = dev_dentry.d_op.?;

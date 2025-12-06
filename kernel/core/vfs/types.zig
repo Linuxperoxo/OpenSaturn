@@ -36,10 +36,10 @@ pub const InodeOp_T: type = struct {
 
 pub const Dentry_T: type = struct {
     d_name: []const u8,
-    d_inode: ?*Inode_T,
-    d_sblock: ?*Superblock_T,
-    d_op: ?*InodeOp_T,
-    d_private: ?*anyopaque,
+    d_inode: ?*const Inode_T,
+    d_sblock: ?*const Superblock_T,
+    d_op: ?*const InodeOp_T,
+    d_private: ?*const anyopaque,
     //fs: if(!builtin.is_test) ?*fs.interfaces.Fs_T else void = {},
     child: ?*@This(),
     brother: ?*@This(),
@@ -64,15 +64,8 @@ pub const Superblock_T: type = struct {
     inode_table_start: usize, // Offset(em blocos) de onde começa a tabela de inodes
     data_block_start: usize, // Offset no disco onde começa a area de dados dos arquivos
     root_inode: *Inode_T, // Ponteiro para o inode raiz do sistema de arquivos
+    inode_op: *InodeOp_T,
     private_data: ?*anyopaque, // Dados internos do FS (cast dinamico)
-};
-
-pub const TreeBranch_T: type = struct {
-    inode: ?*Inode_T,
-    sblock: ?*Superblock_T,
-    parent: *@This(),
-    child: ?*@This(),
-    brother: ?*@This(),
 };
 
 pub const VfsErr_T: type = error {
@@ -84,4 +77,6 @@ pub const VfsErr_T: type = error {
     CorruptedTree,
     InodeAllocFailed,
     PathResolveError,
+    AlreadyMounted,
+    FilesystemMountError,
 };
