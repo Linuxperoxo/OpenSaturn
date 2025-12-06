@@ -8,7 +8,9 @@ const builtin: type = @import("builtin");
 const types: type = @import("types.zig");
 const allocator: type = @import("allocator.zig");
 const kernel: type = @import("root").kernel;
+
 const mem: type = @import("test/mem.zig");
+const fmt: type = @import("test/fmt.zig");
 
 const Inode_T: type = types.Inode_T;
 const InodeOp_T: type = types.InodeOp_T;
@@ -27,44 +29,44 @@ var root: Dentry_T = .{
     .parent = null,
 };
 
-inline fn broken_path(path: []const u8) []const[]const u8 {
-    const final_offset, var dentry_count = path_len(path);
-    var path_sequence: [dentry_count][]const u8 = undefined;
-    var i: usize = 0;
-    while(i < final_offset) : (i += 1) {
-        @branchHint(.likely);
-        if(path[i] == '/') {
-            @branchHint(.cold);
-            continue;
-        }
-        var end: usize = i;
-        while(path[end] != '/' and end < final_offset) : (end += 1) {
-            @branchHint(.likely);
-        }
-        path_sequence[dentry_count - 1] = path[i..end];
-        dentry_count -= 1;
-        i = end;
-    }
-    return path_sequence;
-}
-
-inline fn path_len(path: []const u8) struct { usize, usize }{
-    var final_offset: usize = path.len;
-    while(path[final_offset - 1] == '/') : (final_offset -= 1) {}
-    return .{
-        final_offset,
-        r: {
-            var dentry_count: usize = 0;
-            for(0..final_offset) |i| {
-                if(path[i] == '/') continue;
-                dentry_count += 1;
-            }
-            break :r dentry_count;
-        },
+pub fn resolve_path(path: []const u8, current: ?*Dentry_T) VfsErr_T!*Dentry_T {
+    const dentries = fmt.broken_str(path, '/', &allocator.sba.allocator)
+    catch |err| switch(err) {
+        error.WithoutSub => return &root,
+        else => return VfsErr_T.PathResolveError,
     };
-}
-
-pub fn resolve_path(path: []const u8, current: ?*Inode_T) VfsErr_T!*Dentry_T {
+    if(root.child == null) return VfsErr_T.NoNFound;
+    var current_dentry: *Dentry_T = if(current != null) current.? else root.child.?;
+    for(dentries, 0..) |dentry, i| {
+        sw: switch((enum { step0, step1 }).step0) {
+            .step0 => {
+                var next: ?*Dentry_T = current_dentry;
+                while(next != null) : (next = next.?.brother) {
+                    if(mem.eql(next.?.d_name, dentry, .{ .case = true })) {
+                        if(next.?.child == null) {
+                            if(i + 1 >= dentries.len) return next.?;
+                            next.?.child = next.?.d_op.?.lookup(next.?, dentries[i + 1]) catch
+                                return VfsErr_T.NoNFound;
+                            next.?.child.?.parent = next;
+                        }
+                        current_dentry = next.?.child.?;
+                        break :sw {};
+                    }
+                }
+                continue :sw .step1;
+            },
+            .step1 => {
+                current_dentry.brother = current_dentry.parent.?.d_op.?.lookup(current_dentry.parent.?, dentry) catch
+                    return VfsErr_T.NoNFound;
+                current_dentry = current_dentry.brother.?;
+                continue :sw .step0;
+            },
+        }
+    }
+    allocator.sba.allocator.free(dentries) catch {
+        // klog()
+    };
+    return current_dentry;
 }
 
 pub fn mount(

@@ -83,4 +83,5 @@ pub const VfsErr_T: type = error {
     ImpossiblePath,
     CorruptedTree,
     InodeAllocFailed,
+    PathResolveError,
 };

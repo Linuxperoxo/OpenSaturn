@@ -11,9 +11,10 @@ var geral_op: types.InodeOp_T = .{
     .lookup = &opaque {
         pub fn lookup(_: *types.Dentry_T, name: []const u8) anyerror!*types.Dentry_T {
             if(name[0] == 'd') return &dev_dentry;
-            if(name[0] != 's' and name[0] != 'n') return types.VfsErr_T.NoNFound;
+            if(name[0] != 's' and name[0] != 'n' and name[0] != 'p') return types.VfsErr_T.NoNFound;
             if(name[0] == 's') return &sda_dentry;
-            if(name[0] == 'n') return &nvme_entry;
+            if(name[0] == 'n') return &nvme_dentry;
+            if(name[0] == 'p') return &proc_dentry;
             unreachable;
             
         }
@@ -35,6 +36,17 @@ var dev_dentry: types.Dentry_T = .{
     .brother = null,
 };
 
+var proc_dentry: types.Dentry_T = .{
+    .d_name = "proc",
+    .d_inode = &geral_inode,
+    .d_sblock = null,
+    .d_op = &geral_op,
+    .d_private = null,
+    .child = null,
+    .parent = null,
+    .brother = null,
+};
+
 var sda_dentry: types.Dentry_T = .{
     .d_name = "sba",
     .d_inode = &geral_inode,
@@ -46,7 +58,7 @@ var sda_dentry: types.Dentry_T = .{
     .brother = null,
 };
 
-var nvme_entry: types.Dentry_T = .{
+var nvme_dentry: types.Dentry_T = .{
     .d_name = "nvme",
     .d_inode = &geral_inode,
     .d_sblock = null,
@@ -85,11 +97,17 @@ test "VFS Tree" {
     root_branch.child = &dev_dentry;
     dev_dentry.parent = root_branch;
     _ = try main.resolve_path("/dev/sba", null);
+    _ = try main.resolve_path("/proc/sba", null);
     _ = try main.resolve_path("/dev/nvme", null);
     std.debug.print("{s}, {s}, {s}, {s}\n", .{
         root_branch.d_name,
         root_branch.child.?.d_name,
         root_branch.child.?.child.?.d_name,
         root_branch.child.?.child.?.brother.?.d_name
+    });
+    std.debug.print("{s}, {s}, {s}\n", .{
+        root_branch.d_name,
+        root_branch.child.?.brother.?.d_name,
+        root_branch.child.?.brother.?.child.?.d_name
     });
 }
