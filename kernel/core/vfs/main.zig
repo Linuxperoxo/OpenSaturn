@@ -4,13 +4,10 @@
 // └──────────────────────────────────────────────┘
 
 const builtin: type = @import("builtin");
-//const fs: type = @import("root").core.fs;
+const fs: type = @import("root").core.fs;
 const types: type = @import("types.zig");
 const allocator: type = @import("allocator.zig");
-const kernel: type = @import("root").kernel;
-
-const mem: type = @import("test/mem.zig");
-const fmt: type = @import("test/fmt.zig");
+const aux: type = @import("aux.zig");
 
 const Inode_T: type = types.Inode_T;
 const InodeOp_T: type = types.InodeOp_T;
@@ -29,64 +26,71 @@ var root: Dentry_T = .{
     .parent = null,
 };
 
-pub fn resolve_path(path: []const u8, current: ?*Dentry_T) VfsErr_T!*Dentry_T {
-    const dentries = fmt.broken_str(path, '/', &allocator.sba.allocator)
-    catch |err| switch(err) {
-        error.WithoutSub => return &root,
-        else => return VfsErr_T.PathResolveError,
-    };
-    if(root.child == null) return VfsErr_T.NoNFound;
-    var current_dentry: *Dentry_T = if(current != null) current.? else root.child.?;
-    for(dentries, 0..) |dentry, i| {
-        sw: switch((enum { step0, step1 }).step0) {
-            .step0 => {
-                @branchHint(.likely);
-                var next: ?*Dentry_T = current_dentry;
-                while(next != null) : (next = next.?.brother) {
-                    if(mem.eql(next.?.d_name, dentry, .{ .case = true })) {
-                        @branchHint(.cold);
-                        if(next.?.child == null) {
-                            @branchHint(.cold);
-                            if(i + 1 >= dentries.len) return next.?;
-                            next.?.child = next.?.d_op.?.lookup(next.?, dentries[i + 1]) catch
-                                return VfsErr_T.NoNFound;
-                            next.?.child.?.parent = next;
-                        }
-                        current_dentry = next.?.child.?;
-                        break :sw {};
-                    }
-                }
-                continue :sw .step1;
-            },
-            .step1 => {
-                @branchHint(.unlikely);
-                current_dentry.brother = current_dentry.parent.?.d_op.?.lookup(current_dentry.parent.?, dentry) catch
-                    return VfsErr_T.NoNFound;
-                current_dentry = current_dentry.brother.?;
-                continue :sw .step0;
-            },
-        }
-    }
-    allocator.sba.allocator.free(dentries) catch {
-        // klog()
-    };
-    return current_dentry;
-}
+// TODO: por enquanto nao vamos fazer isso, mas quando tivermos
+// userspace, para cada operacao do vfs, precisamos verificar
+// as permissoes
 
 pub fn mount(
     path: []const u8,
     current: ?*Dentry_T,
-    //fs_struct: *const fs.interfaces.Fs_T
+    fs_struct: if(!builtin.is_test) *const fs.interfaces.Fs_T else void
 ) VfsErr_T!void {
-    const dentry_mount: *Dentry_T = try resolve_path(path, current);
+    const dentry_mount: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{ 
+        path, current, &root
+    });
     if(dentry_mount.d_sblock != null) return VfsErr_T.AlreadyMounted;
-    //const sblock = fs_struct.mount() catch return VfsErr_T.FilesystemMountError;
-    //dentry_mount.d_sblock = sblock;
-    //dentry_mount.d_op = sblock.inode_op;
+    if(builtin.is_test) return; // for test
+    const sblock = fs_struct.mount() catch return VfsErr_T.FilesystemMountError;
+    dentry_mount.d_sblock = sblock;
+    dentry_mount.d_op = sblock.inode_op;
 }
 
-pub fn umount(_: []const u8) VfsErr_T!void {
-
+pub fn umount(path: []const u8, current: ?*Dentry_T) VfsErr_T!void {
+    const dentry_umount: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{ 
+        path, current, &root
+    });
+    if(dentry_umount.d_sblock == null) return VfsErr_T.NothingToUmount;
+    @call(.never_inline, dentry_umount.d_sblock.?.fs.unmount, .{});
+    dentry_umount.child = null;
+    dentry_umount.d_sblock = null;
+    dentry_umount.d_op = dentry_umount.parent.?.d_op;
 }
 
+// NOTE: apenas quando tivermos task
+//pub fn open(path: []const u8, current: ?*Dentry_T) VfsErr_T!*Dentry_T {}
+
+pub fn read(path: []const u8, current: ?*Dentry_T) VfsErr_T![]u8 {
+    const dentry_read: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{ 
+        path, current, &root
+    });
+    try aux.cmp_op(dentry_read, .read);
+    return @call(.never_inline,dentry_read.d_op.?.read, .{}) catch {
+        // klog()
+        return VfsErr_T.OperationFailed;
+    };
+}
+
+pub fn write(path: []const u8, current: ?*Dentry_T, src: []const u8) VfsErr_T!void {
+    const dentry_write: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{ 
+        path, current, &root
+    });
+    try aux.cmp_op(dentry_write, .write);
+    @call(.never_inline,dentry_write.d_op.?.write, .{ src }) catch {
+        // klog()
+        return VfsErr_T.OperationFailed;
+    };
+}
+
+pub fn unlink(path: []const u8, current: ?*Dentry_T) VfsErr_T!void {
+    const dentry_unlink: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{ 
+        path, current, &root
+    });
+    try aux.cmp_op(dentry_unlink, .unlink);
+    @call(.never_inline,dentry_unlink.d_op.?.unlink, .{
+        dentry_unlink.parent.?, dentry_unlink.d_name
+    }) catch {
+        // klog()
+        return VfsErr_T.OperationFailed;
+    };
+}
 

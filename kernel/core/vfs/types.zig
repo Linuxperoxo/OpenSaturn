@@ -6,32 +6,49 @@
 const builtin: type = @import("builtin");
 const fs: type = @import("root").core.fs;
 
+pub const uid_T: type = if(@bitSizeOf(usize) >= 16) u16 else u8;
+pub const gid_T: type = if(@bitSizeOf(usize) >= 32) u32 else uid_T;
+
+pub const perm_T: type = packed struct(u3) {
+    r: u1,
+    w: u1,
+    x: u1,
+};
+
+pub const mode_T: type = packed struct(u9) {
+    owner: perm_T,
+    group: perm_T,
+    other: perm_T,
+};
+
 pub const FileType_T: type = enum {
     char,
     block,
-    directory,
     regular,
+    directory,
     link,
 };
 
 pub const InodeOp_T: type = struct {
-    lookup: *const fn(*Dentry_T, []const u8) anyerror!*Dentry_T,
+    read: ?*const fn() anyerror![]u8,
+    write: ?*const fn([]const u8) anyerror!void,
+    lookup: ?*const fn(*Dentry_T, []const u8) anyerror!*Dentry_T,
     mkdir: ?*fn(
-        *Inode_T,
+        *Dentry_T,
         []const u8,
-        uid: u16,
-        gid: u32,
-        mode: u16
-    ) anyerror!*Inode_T,
+        uid: uid_T,
+        gid: gid_T,
+        mode: mode_T
+    ) anyerror!*Dentry_T,
     create: ?*fn(
-        *Inode_T,
+        *Dentry_T,
         []const u8,
-        uid: u16,
-        gid: u32,
-        mode: u16
-    ) anyerror!*Inode_T,
-    unlink: ?*fn(*Inode_T, []const u8) anyerror!void,
-    iterator: ?*fn(*Inode_T) []const *Inode_T,
+        uid: uid_T,
+        gid: gid_T,
+        mode: mode_T
+    ) anyerror!*Dentry_T,
+    unlink: *fn(*Dentry_T, []const u8) anyerror!void,
+    iterator: ?*fn(*Dentry_T) []const *Dentry_T,
 };
 
 pub const Dentry_T: type = struct {
@@ -40,31 +57,33 @@ pub const Dentry_T: type = struct {
     d_sblock: ?*const Superblock_T,
     d_op: ?*const InodeOp_T,
     d_private: ?*const anyopaque,
-    //fs: if(!builtin.is_test) ?*fs.interfaces.Fs_T else void = {},
     child: ?*@This(),
-    brother: ?*@This(),
+    younger_brother: ?*@This(),
+    older_brother: ?*@This(),
     parent: ?*@This(),
 };
 
 pub const Inode_T: type = struct {
-    ino: usize, // Numero do inode
-    type: FileType_T, // Tipo do arquivo
-    uid: u16, // ID do usuario
-    gid: u32, // ID do grupo
-    mode: u16, // Permissoes do arquivo
-    nlinks: u16, // Quantidade de links que apontam para esse inode
-    data_block: usize, // Aponta para qual bloco inicial estao os dados desse arquivo
+    inode: usize, // numero do inode
+    type: FileType_T, // tipo do arquivo
+    uid: uid_T, // ID do usuario
+    gid: gid_T, // ID do grupo
+    mode: mode_T, // permissoes do arquivo
+    nlinks: usize, // quantidade de links que apontam para esse inode
+    data_block: usize, // aponta para qual bloco inicial estao os dados desse arquivo
+    data_inode: usize, // aponta para o inode de dados (apenas para symlink)
 };
 
 pub const Superblock_T: type = struct {
-    magic: u32, // Flag magica
-    block_size: usize, // Tamanho em bytes de cada bloco do disco
-    total_blocks: usize, // Quantidade total de blocos disponiveis no dispositivo
-    total_inodes: usize, // Numero total de inodes disponiveis
-    inode_table_start: usize, // Offset(em blocos) de onde começa a tabela de inodes
-    data_block_start: usize, // Offset no disco onde começa a area de dados dos arquivos
-    root_inode: *Inode_T, // Ponteiro para o inode raiz do sistema de arquivos
-    inode_op: *InodeOp_T,
+    magic: u32, // flag magica
+    block_size: usize, // tamanho em bytes de cada bloco do disco
+    total_blocks: usize, // quantidade total de blocos disponiveis no dispositivo
+    total_inodes: usize, // numero total de inodes disponiveis
+    inode_table_start: usize, // offset(em blocos) de onde começa a tabela de inodes
+    data_block_start: usize, // offset no disco onde começa a area de dados dos arquivos
+    root_inode: *Inode_T, // ponteiro para o inode raiz do sistema de arquivos
+    inode_op: *InodeOp_T, // ponteiro para operacoes do dentry montado
+    fs: if(!builtin.is_test) *fs.interfaces.Fs_T else void, // informacoes do fs montado no dentry
     private_data: ?*anyopaque, // Dados internos do FS (cast dinamico)
 };
 
@@ -74,9 +93,12 @@ pub const VfsErr_T: type = error {
     MountCollision,
     NoNMounted,
     ImpossiblePath,
-    CorruptedTree,
     InodeAllocFailed,
     PathResolveError,
     AlreadyMounted,
     FilesystemMountError,
+    NothingToUmount,
+    InvalidOperation,
+    OperationFailed,
+    InvalidDentry,
 };

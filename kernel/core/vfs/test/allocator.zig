@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo                 │
 // └────────────────────────────────────────────────┘
 
-const buildByteAllocator = @import("root").lib.kernel.memory.sba.buildByteAllocator;
+const buildByteAllocator = @import("sba.zig").buildByteAllocator;
 
 pub const sba: type = struct {
     pub var allocator = buildByteAllocator(null, .{
