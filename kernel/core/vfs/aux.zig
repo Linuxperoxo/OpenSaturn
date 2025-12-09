@@ -19,6 +19,16 @@ const InodeOp_T: type = types.InodeOp_T;
 const SuperBlock_T: type = types.Superblock_T;
 const Dentry_T: type = types.Dentry_T;
 const VfsErr_T: type = types.VfsErr_T;
+const Op_T: type = enum {
+    read,
+    write,
+    exec,
+    unlink,
+    create,
+    mkdir,
+    chmod,
+    chown,
+};
 
 var call: usize = 0;
 
@@ -60,6 +70,7 @@ pub fn resolve_path(path: []const u8, current: ?*Dentry_T, root: *Dentry_T) VfsE
                                 return VfsErr_T.NoNFound;
                             next.?.child.?.parent = next;
                         }
+                        if(next.?.d_inode.?.type != .directory) return VfsErr_T.NoNFound;
                         current_dentry = next.?.child.?;
                         break :sw {};
                     }
@@ -91,23 +102,27 @@ pub inline fn perm_decode(dentry: *Dentry_T, gid: []const types.gid_T, uid: type
     return dentry.d_inode.?.mode.other;
 }
 
-pub inline fn cmp_op(dentry: *Dentry_T, op: enum { read, write, exec, unlink }) VfsErr_T!void {
-    if(dentry.d_inode == null or dentry.d_op == null) {
-        // klog()
-        return VfsErr_T.InvalidDentry;
-    }
+pub inline fn is_valid_op(dentry: *Dentry_T, op: Op_T) VfsErr_T!void {
+    if(dentry.d_inode == null or dentry.d_op == null) return VfsErr_T.InvalidDentry;
     switch(dentry.d_inode.?.type) {
         .block, .char, .regular => {
             return switch(op) {
                 .read => if(dentry.d_op.?.read == null) VfsErr_T.InvalidOperation,
                 .write => if(dentry.d_op.?.write == null) VfsErr_T.InvalidOperation,
                 .unlink => if(dentry.d_op.?.unlink == null) VfsErr_T.InvalidOperation,
+                .chmod => if(dentry.d_op.?.chmod == null) VfsErr_T.InvalidOperation,
+                .chown => if(dentry.d_op.?.chown == null) VfsErr_T.InvalidOperation,
                 .exec => unreachable, // TODO:
+                else => VfsErr_T.InvalidOperation,
             };
         },
         .directory, .link => {
             return switch(op) {
                 .unlink => if(dentry.d_op.?.unlink == null) VfsErr_T.InvalidOperation,
+                .create => if(dentry.d_op.?.create == null) VfsErr_T.InvalidOperation,
+                .mkdir => if(dentry.d_op.?.mkdir == null) VfsErr_T.InvalidOperation,
+                .chmod => if(dentry.d_op.?.chmod == null) VfsErr_T.InvalidOperation,
+                .chown => if(dentry.d_op.?.chown == null) VfsErr_T.InvalidOperation,
                 else => VfsErr_T.InvalidOperation,
             };
         },

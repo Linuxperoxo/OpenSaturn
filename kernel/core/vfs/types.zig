@@ -30,25 +30,15 @@ pub const FileType_T: type = enum {
 };
 
 pub const InodeOp_T: type = struct {
-    read: ?*const fn() anyerror![]u8,
-    write: ?*const fn([]const u8) anyerror!void,
+    read: ?*const fn(*Dentry_T) anyerror![]u8,
+    write: ?*const fn(*Dentry_T, []const u8) anyerror!void,
     lookup: ?*const fn(*Dentry_T, []const u8) anyerror!*Dentry_T,
-    mkdir: ?*fn(
-        *Dentry_T,
-        []const u8,
-        uid: uid_T,
-        gid: gid_T,
-        mode: mode_T
-    ) anyerror!*Dentry_T,
-    create: ?*fn(
-        *Dentry_T,
-        []const u8,
-        uid: uid_T,
-        gid: gid_T,
-        mode: mode_T
-    ) anyerror!*Dentry_T,
-    unlink: ?*fn(*Dentry_T, []const u8) anyerror!void,
-    iterator: ?*fn(*Dentry_T) []const *Dentry_T,
+    mkdir: ?*const fn(*Dentry_T, []const u8, uid_T, gid_T, mode_T) anyerror!void,
+    create: ?*const fn(*Dentry_T, []const u8, uid_T, gid_T, mode_T) anyerror!void,
+    unlink: ?*const fn(*Dentry_T) anyerror!void,
+    chmod: ?*const fn(*Dentry_T, mode_T) anyerror!void,
+    chown: ?*const fn(*Dentry_T, uid_T, gid_T) anyerror!void,
+    iterator: ?*const fn(*Dentry_T) []const *Dentry_T,
 };
 
 pub const Dentry_T: type = struct {

@@ -14,6 +14,9 @@ const InodeOp_T: type = types.InodeOp_T;
 const SuperBlock_T: type = types.Superblock_T;
 const Dentry_T: type = types.Dentry_T;
 const VfsErr_T: type = types.VfsErr_T;
+const uid_T: type = types.uid_T;
+const gid_T: type = types.gid_T;
+const mode_T: type = types.mode_T;
 
 pub var root: Dentry_T = .{
     .d_name = "/",
@@ -41,7 +44,6 @@ pub fn mount(
         path, current, &root
     });
     if(dentry_mount.d_sblock != null) return VfsErr_T.AlreadyMounted;
-    if(builtin.is_test) return; // for test
     const sblock = fs_struct.mount() catch return VfsErr_T.FilesystemMountError;
     dentry_mount.d_sblock = sblock;
     dentry_mount.d_op = sblock.inode_op;
@@ -61,36 +63,104 @@ pub fn umount(path: []const u8, current: ?*Dentry_T) VfsErr_T!void {
 // NOTE: apenas quando tivermos task
 //pub fn open(path: []const u8, current: ?*Dentry_T) VfsErr_T!*Dentry_T {}
 
-pub fn read(path: []const u8, current: ?*Dentry_T) VfsErr_T![]u8 {
-    const dentry_read: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{ 
+// preferi deixar create/mkdir e chmod/chown em funcoes diferentes por mais que a logica
+// seja exatamente a mesma, isso facilita achar problemas
+
+pub fn create(
+    parent: []const u8,
+    name: []const u8,
+    current: ?*Dentry_T,
+    uid: uid_T,
+    gid: gid_T,
+    mode: mode_T,
+) VfsErr_T!void {
+    const dentry_parent: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{ 
+        parent, current, &root
+    });
+    try aux.is_valid_op(dentry_parent, .create);
+    dentry_parent.d_op.?.create.?(dentry_parent, name, uid, gid, mode) catch {
+        // klog()
+        return VfsErr_T.OperationFailed;
+    };
+}
+
+pub fn mkdir(
+    parent: []const u8,
+    name: []const u8,
+    current: ?*Dentry_T,
+    uid: uid_T,
+    gid: gid_T,
+    mode: mode_T,
+) VfsErr_T!void {
+    const dentry_parent: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{ 
+        parent, current, &root
+    });
+    try aux.is_valid_op(dentry_parent, .mkdir);
+    return dentry_parent.d_op.?.mkdir.?(dentry_parent, name, uid, gid, mode) catch {
+        // klog()
+        return VfsErr_T.OperationFailed;
+    };
+}
+
+pub fn chmod(
+    path: []const u8,
+    current: ?*Dentry_T,
+    mode: mode_T,
+) VfsErr_T!void {
+    const dentry_chmod: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{
         path, current, &root
     });
-    try aux.cmp_op(dentry_read, .read);
-    return @call(.never_inline, dentry_read.d_op.?.read.?, .{}) catch {
+    try aux.is_valid_op(dentry_chmod, .chmod);
+    dentry_chmod.d_op.?.chmod(dentry_chmod, mode) catch {
+        // klog()
+        return VfsErr_T.OperationFailed;
+    };
+}
+
+pub fn chown(
+    path: []const u8,
+    current: ?*Dentry_T,
+    uid: uid_T,
+    gid: gid_T,
+) VfsErr_T!void {
+    const dentry_chown: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{
+        path, current, &root
+    });
+    try aux.is_valid_op(dentry_chown, .chown);
+    dentry_chown.d_op.?.chmod(dentry_chown, uid, gid) catch {
+        // klog()
+        return VfsErr_T.OperationFailed;
+    };
+}
+
+pub fn read(path: []const u8, current: ?*Dentry_T) VfsErr_T![]u8 {
+    const dentry_read: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{
+        path, current, &root
+    });
+    try aux.is_valid_op(dentry_read, .read);
+    return @call(.never_inline, dentry_read.d_op.?.read.?, .{ dentry_read }) catch {
         // klog()
         return VfsErr_T.OperationFailed;
     };
 }
 
 pub fn write(path: []const u8, current: ?*Dentry_T, src: []const u8) VfsErr_T!void {
-    const dentry_write: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{ 
+    const dentry_write: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{
         path, current, &root
     });
-    try aux.cmp_op(dentry_write, .write);
-    @call(.never_inline,dentry_write.d_op.?.write.?, .{ src }) catch {
+    try aux.is_valid_op(dentry_write, .write);
+    @call(.never_inline,dentry_write.d_op.?.write.?, .{ dentry_write, src }) catch {
         // klog()
         return VfsErr_T.OperationFailed;
     };
 }
 
 pub fn unlink(path: []const u8, current: ?*Dentry_T) VfsErr_T!void {
-    const dentry_unlink: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{ 
+    const dentry_unlink: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{
         path, current, &root
     });
-    try aux.cmp_op(dentry_unlink, .unlink);
-    @call(.never_inline,dentry_unlink.d_op.?.unlink, .{
-        dentry_unlink.parent.?, dentry_unlink.d_name
-    }) catch {
+    try aux.is_valid_op(dentry_unlink, .unlink);
+    @call(.never_inline,dentry_unlink.d_op.?.unlink.?, .{ dentry_unlink }) catch {
         // klog()
         return VfsErr_T.OperationFailed;
     };
