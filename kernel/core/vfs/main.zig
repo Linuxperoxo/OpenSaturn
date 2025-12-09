@@ -15,15 +15,17 @@ const SuperBlock_T: type = types.Superblock_T;
 const Dentry_T: type = types.Dentry_T;
 const VfsErr_T: type = types.VfsErr_T;
 
-var root: Dentry_T = .{
+pub var root: Dentry_T = .{
     .d_name = "/",
     .d_inode = null,
     .d_sblock = null,
     .d_op = null,
     .d_private = null,
     .child = null,
-    .brother = null,
+    .younger_brother = null,
+    .older_brother = null,
     .parent = null,
+    .private = null,
 };
 
 // TODO: por enquanto nao vamos fazer isso, mas quando tivermos
@@ -64,7 +66,7 @@ pub fn read(path: []const u8, current: ?*Dentry_T) VfsErr_T![]u8 {
         path, current, &root
     });
     try aux.cmp_op(dentry_read, .read);
-    return @call(.never_inline,dentry_read.d_op.?.read, .{}) catch {
+    return @call(.never_inline, dentry_read.d_op.?.read.?, .{}) catch {
         // klog()
         return VfsErr_T.OperationFailed;
     };
@@ -75,7 +77,7 @@ pub fn write(path: []const u8, current: ?*Dentry_T, src: []const u8) VfsErr_T!vo
         path, current, &root
     });
     try aux.cmp_op(dentry_write, .write);
-    @call(.never_inline,dentry_write.d_op.?.write, .{ src }) catch {
+    @call(.never_inline,dentry_write.d_op.?.write.?, .{ src }) catch {
         // klog()
         return VfsErr_T.OperationFailed;
     };

@@ -47,7 +47,7 @@ pub const InodeOp_T: type = struct {
         gid: gid_T,
         mode: mode_T
     ) anyerror!*Dentry_T,
-    unlink: *fn(*Dentry_T, []const u8) anyerror!void,
+    unlink: ?*fn(*Dentry_T, []const u8) anyerror!void,
     iterator: ?*fn(*Dentry_T) []const *Dentry_T,
 };
 
@@ -61,6 +61,7 @@ pub const Dentry_T: type = struct {
     younger_brother: ?*@This(),
     older_brother: ?*@This(),
     parent: ?*@This(),
+    private: ?*anyopaque,
 };
 
 pub const Inode_T: type = struct {
@@ -81,10 +82,10 @@ pub const Superblock_T: type = struct {
     total_inodes: usize, // numero total de inodes disponiveis
     inode_table_start: usize, // offset(em blocos) de onde começa a tabela de inodes
     data_block_start: usize, // offset no disco onde começa a area de dados dos arquivos
-    root_inode: *Inode_T, // ponteiro para o inode raiz do sistema de arquivos
-    inode_op: *InodeOp_T, // ponteiro para operacoes do dentry montado
+    root_inode: *const Inode_T, // ponteiro para o inode raiz do sistema de arquivos
+    inode_op: *const InodeOp_T, // ponteiro para operacoes do dentry montado
     fs: if(!builtin.is_test) *fs.interfaces.Fs_T else void, // informacoes do fs montado no dentry
-    private_data: ?*anyopaque, // Dados internos do FS (cast dinamico)
+    private_data: ?*const anyopaque, // Dados internos do FS (cast dinamico)
 };
 
 pub const VfsErr_T: type = error {

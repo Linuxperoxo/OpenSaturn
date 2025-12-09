@@ -3,84 +3,171 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
+const std: type = @import("std");
 const types: type = @import("types.zig");
 const main: type = @import("main.zig");
-const std: type = @import("std");
+const aux: type = @import("aux.zig");
 
-var geral_op: types.InodeOp_T = .{
-    .lookup = &opaque {
-        pub fn lookup(_: *types.Dentry_T, name: []const u8) anyerror!*types.Dentry_T {
-            if(name[0] == 'd') return &dev_dentry;
-            if(name[0] != 's' and name[0] != 'n' and name[0] != 'p') return types.VfsErr_T.NoNFound;
-            if(name[0] == 's') return &sda_dentry;
-            if(name[0] == 'n') return &nvme_dentry;
-            if(name[0] == 'p') return &proc_dentry;
-            unreachable;
-            
-        }
-    }.lookup,
-    .create = null,
-    .iterator = null,
-    .mkdir = null,
-    .unlink = null,
+const OpCall_T: type = struct {
+    read: bool = false,
+    write: bool = false,
+};
+
+var nvme: OpCall_T = .{};
+var sba: OpCall_T = .{};
+var self: OpCall_T = .{};
+
+const all_call = [_]*const OpCall_T {
+    &nvme,
+    &sba,
+    &self
 };
 
 var dev_dentry: types.Dentry_T = .{
     .d_name = "dev",
-    .d_inode = &geral_inode,
+    .d_inode = &dir_inode,
     .d_sblock = null,
-    .d_op = &geral_op,
+    .d_op = &types.InodeOp_T {
+        .lookup = &opaque {
+            pub fn lookup(_: *types.Dentry_T, name: []const u8) anyerror!*types.Dentry_T {
+                if(name[0] == 's') return &sda_dentry;
+                if(name[0] == 'n') return &nvme_dentry;
+                return types.VfsErr_T.NoNFound;
+            }
+        }.lookup,
+        .create = null,
+        .iterator = null,
+        .mkdir = null,
+        .read = null,
+        .write = null,
+        .unlink = null,
+    },
     .d_private = null,
     .child = null,
     .parent = null,
-    .brother = null,
+    .younger_brother = null,
+    .older_brother = null,
+    .private = null,
 };
 
 var proc_dentry: types.Dentry_T = .{
     .d_name = "proc",
-    .d_inode = &geral_inode,
+    .d_inode = &dir_inode,
     .d_sblock = null,
-    .d_op = &geral_op,
+    .d_op = &types.InodeOp_T {
+        .lookup = &opaque {
+            pub fn lookup(_: *types.Dentry_T, name: []const u8) anyerror!*types.Dentry_T {
+                if(name[0] == 's') return &self_dentry;
+                return types.VfsErr_T.NoNFound;
+            }
+        }.lookup,
+        .create = null,
+        .iterator = null,
+        .mkdir = null,
+        .read = null,
+        .write = null,
+        .unlink = null,
+    },
     .d_private = null,
     .child = null,
     .parent = null,
-    .brother = null,
+    .younger_brother = null,
+    .older_brother = null,
+    .private = null,
 };
 
 var sda_dentry: types.Dentry_T = .{
     .d_name = "sba",
-    .d_inode = &geral_inode,
+    .d_inode = &block_inode,
     .d_sblock = null,
     .d_private = null,
-    .d_op = &geral_op,
+    .d_op = &types.InodeOp_T {
+        .lookup = null,
+        .create = null,
+        .iterator = null,
+        .mkdir = null,
+        .read = &opaque {
+            pub fn read() anyerror![]u8 {
+               sba.read = true;
+               return @constCast("Hello, World!");
+            }
+        }.read,
+        .write = &opaque {
+            pub fn write(_: []const u8) anyerror!void {
+               sba.write = true;
+            }
+        }.write,
+        .unlink = null,
+    },
     .child = null,
     .parent = null,
-    .brother = null,
+    .younger_brother = null,
+    .older_brother = null,
+    .private = null,
+};
+
+var self_dentry: types.Dentry_T = .{
+    .d_name = "self", // FIXME: renomear causa um segfault
+    .d_inode = &block_inode,
+    .d_sblock = null,
+    .d_private = null,
+    .d_op = &types.InodeOp_T {
+        .lookup = null,
+        .create = null,
+        .iterator = null,
+        .mkdir = null,
+        .read = &opaque {
+            pub fn read() anyerror![]u8 {
+               self.read = true;
+               return @constCast("Hello, World!");
+            }
+        }.read,
+        .write = &opaque {
+            pub fn write(_: []const u8) anyerror!void {
+               self.write = true;
+            }
+        }.write,
+        .unlink = null,
+    },
+    .child = null,
+    .parent = null,
+    .younger_brother = null,
+    .older_brother = null,
+    .private = null,
 };
 
 var nvme_dentry: types.Dentry_T = .{
     .d_name = "nvme",
-    .d_inode = &geral_inode,
+    .d_inode = &block_inode,
     .d_sblock = null,
     .d_private = null,
-    .d_op = &geral_op,
+    .d_op = &types.InodeOp_T {
+        .lookup = null,
+        .create = null,
+        .iterator = null,
+        .mkdir = null,
+        .read = &opaque {
+            pub fn read() anyerror![]u8 {
+               nvme.read = true;
+               return @constCast("Hello, World!");
+            }
+        }.read,
+        .write = &opaque {
+            pub fn write(_: []const u8) anyerror!void {
+               nvme.write = true;
+            }
+        }.write,
+        .unlink = null,
+    },
     .child = null,
     .parent = null,
-    .brother = null,
-};
-
-var geral_inode: types.Inode_T = .{
-    .data_block = 10,
-    .gid = 10,
-    .ino = 10,
-    .mode = 10,
-    .nlinks = 10,
-    .type = .directory,
-    .uid = 10,
+    .younger_brother = null,
+    .older_brother = null,
+    .private = null,
 };
 
 var sblock: types.Superblock_T = .{
-    .root_inode = &geral_inode,
+    .root_inode = &dir_inode,
     .block_size = 10,
     .data_block_start = 10,
     .inode_table_start = 10,
@@ -88,28 +175,97 @@ var sblock: types.Superblock_T = .{
     .private_data = null,
     .total_blocks = 10,
     .total_inodes = 10,
-    .inode_op = &geral_op,
+    .inode_op = &types.InodeOp_T {
+        .lookup = &opaque {
+            pub fn lookup(_: *types.Dentry_T, name: []const u8) anyerror!*types.Dentry_T {
+                if(name[0] == 'p') return &proc_dentry;
+                if(name[0] == 'd') return &dev_dentry;
+                return types.VfsErr_T.NoNFound;
+            }
+        }.lookup,
+        .create = null,
+        .iterator = null,
+        .mkdir = null,
+        .read = null,
+        .write = null,
+        .unlink = null,
+    },
+    .fs = {},
+};
+
+var dir_inode: types.Inode_T = .{
+    .data_block = 10,
+    .gid = 10,
+    .inode = 10,
+    .mode = .{
+        .owner = .{
+            .r = 1,
+            .w = 1,
+            .x = 1,
+        },
+        .group = .{
+            .r = 1,
+            .w = 1,
+            .x = 1,
+        },
+        .other = .{
+            .r = 1,
+            .w = 1,
+            .x = 1,
+        },
+    },
+    .nlinks = 10,
+    .type = .directory,
+    .uid = 10,
+    .data_inode = 0,
+};
+
+var block_inode: types.Inode_T = .{
+    .data_block = 10,
+    .gid = 10,
+    .inode = 10,
+    .mode = .{
+        .owner = .{
+            .r = 1,
+            .w = 1,
+            .x = 1,
+        },
+        .group = .{
+            .r = 1,
+            .w = 1,
+            .x = 1,
+        },
+        .other = .{
+            .r = 1,
+            .w = 1,
+            .x = 1,
+        },
+    },
+    .nlinks = 10,
+    .type = .block,
+    .uid = 10,
+    .data_inode = 0,
 };
 
 test "VFS Tree" {
-    try main.mount("/", null);
-    const root_branch = try main.resolve_path("/", null);
+    const root_branch = try aux.resolve_path("/", null, &main.root);
     root_branch.d_sblock = &sblock;
-    root_branch.d_op = dev_dentry.d_op.?;
-    root_branch.child = &dev_dentry;
-    dev_dentry.parent = root_branch;
-    _ = try main.resolve_path("/dev/sba", null);
-    _ = try main.resolve_path("/proc/sba", null);
-    _ = try main.resolve_path("/dev/nvme", null);
-    std.debug.print("{s}, {s}, {s}, {s}\n", .{
-        root_branch.d_name,
-        root_branch.child.?.d_name,
-        root_branch.child.?.child.?.d_name,
-        root_branch.child.?.child.?.brother.?.d_name
-    });
-    std.debug.print("{s}, {s}, {s}\n", .{
-        root_branch.d_name,
-        root_branch.child.?.brother.?.d_name,
-        root_branch.child.?.brother.?.child.?.d_name
-    });
+    root_branch.d_op = sblock.inode_op;
+    _ = try aux.resolve_path("/dev/sba", null, &main.root);
+    _ = try aux.resolve_path("/proc/self", null, &main.root);
+    _ = try aux.resolve_path("/dev/nvme", null, &main.root);
+    try main.write("/dev/sba", null, "Hello, World!");
+    try main.write("/proc/self", null, "Hello, World!");
+    try main.write("/dev/nvme", null, "Hello, World!");
+    _ = try main.read("/dev/sba", null);
+    _ = try main.read("/proc/self", null);
+    _ = try main.read("/dev/nvme", null);
+    if(main.write("/dev/", null, "Hello, World!")) |_| return error.WriteInDirectory else |err| { if(err != types.VfsErr_T.InvalidOperation) return err; }
+    if(main.write("/proc/", null, "Hello, World!")) |_| return error.WriteInDirectory else |err| { if(err != types.VfsErr_T.InvalidOperation) return err; }
+    if(main.read("/dev/", null)) |_| { return error.ReadInDirectory; } else |err| { if(err != types.VfsErr_T.InvalidOperation) return err; }
+    if(main.read("/proc/", null)) |_| { return error.ReadInDirectory; } else |err| { if(err != types.VfsErr_T.InvalidOperation) return err; }
+    for(all_call) |call| {
+        if(!call.read) return error.FailedToCallRead;
+        if(!call.write) return error.FailedToCallWrite;
+    }
 }
