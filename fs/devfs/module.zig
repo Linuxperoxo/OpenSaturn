@@ -13,8 +13,8 @@ const Fs_T: type = @import("root").interfaces.fs.Fs_T;
 const inmod = @import("root").interfaces.module.inmod;
 const rmmod = @import("root").interfaces.module.rmmod;
 
-const devfs_mount = &@import("management.zig").devfs_mount;
-const devfs_umount = &@import("management.zig").devfs_umount;
+const devfs_mount = &@import("main.zig").devfs_mount;
+const devfs_umount = &@import("main.zig").devfs_umount;
 
 pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .name = "ke_m_devfs",
@@ -38,7 +38,7 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     },
 };
 
-const devfsMod: *const Mod_T = &Mod_T {
+var devfs: Mod_T = .{
     .name = __SaturnModuleDescription__.name,
     .desc = "Core Kernel Devices Filesystem",
     .author = "Linuxperoxo",
@@ -50,24 +50,44 @@ const devfsMod: *const Mod_T = &Mod_T {
     .type = .filesystem,
     .init = &init,
     .exit = &exit,
-    .private = .{ 
+    .private = .{
         .filesystem = .{
             .name = "devfs",
-            .flags = .RW,
             .mount = devfs_mount,
-            .unmount = devfs_umount,
+            .umount = devfs_umount,
+            .flags = .{
+                .control = .{
+                    .nomount = 0,
+                    .noumount = 1,
+                    .readonly = 0,
+                    .anon = 0,
+                },
+                .internal = .{
+                    .mounted = 0,
+                    .registered = 0,
+                    .collision = .{
+                        .name = 0,
+                        .pointer = 0,
+                    },
+                    .fault = .{
+                        .mount = 0,
+                        .umount = 0,
+                        .write = 0,
+                    },
+                },
+            },
         },
     },
 };
 
 fn init() ModErr_T!void {
     return @call(.never_inline, inmod, .{
-        devfsMod
+        &devfs
     });
 }
 
 fn exit() ModErr_T!void {
     return @call(.never_inline, rmmod, .{
-        devfsMod
+        &devfs
     });
 }

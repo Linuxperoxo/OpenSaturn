@@ -1,15 +1,15 @@
-// ┌────────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: management.zig │
-// │            Author: Linuxperoxo                 │
-// └────────────────────────────────────────────────┘
+// ┌──────────────────────────────────────────────┐
+// │  (c) 2025 Linuxperoxo  •  FILE: main.zig     │
+// │            Author: Linuxperoxo               │
+// └──────────────────────────────────────────────┘
 
 // kernel vfs types
-const Dentry_T: type = @import("root").core.vfs.interfaces.Dentry_T;
-const Superblock_T: type = @import("root").core.vfs.interfaces.Superblock_T;
-const FileType_T: type = @import("root").core.vfs.interfaces.FileType_T;
-const InodeOp_T: type = @import("root").core.vfs.interfaces.InodeOp_T;
-const Inode_T: type = @import("root").core.vfs.interfaces.Inode_T;
-const VfsErr_T: type = @import("root").core.vfs.interfaces.VfsErr_T;
+const Dentry_T: type = @import("root").interface.vfs.Dentry_T;
+const Superblock_T: type = @import("root").interfaces.vfs.Superblock_T;
+const FileType_T: type = @import("root").interfaces.vfs.FileType_T;
+const InodeOp_T: type = @import("root").interfaces.vfs.InodeOp_T;
+const Inode_T: type = @import("root").interfaces.vfs.Inode_T;
+const VfsErr_T: type = @import("root").interfaces.vfs.VfsErr_T;
 
 // kernel fs types
 const FsErr_T: type = @import("root").interfaces.fs.FsErr_T;
@@ -50,8 +50,8 @@ fn cmp_name(
     return true;
 }
 
-pub fn rootfs_mount() FsErr_T!Superblock_T {
-    return FsErr_T.AllocInternal;
+pub fn rootfs_mount() anyerror!*const Superblock_T {
+    return error.AllocInternal;
 }
 
 pub fn rootfs_umount() FsErr_T!void {

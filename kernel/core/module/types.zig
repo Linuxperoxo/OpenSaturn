@@ -69,15 +69,18 @@ pub const ModErr_T: type = error {
 };
 
 pub const ModHandler_T: type = union(ModType_T) {
-    driver: default_struct(null),
-    syscall: default_struct(null),
-    irq: default_struct(null),
-    filesystem: default_struct(if(!builtin.is_test) fs.Fs_T else null),
+    driver: default_struct(null, null),
+    syscall: default_struct(null, null),
+    irq: default_struct(null, null),
+    filesystem: default_struct(
+        if(!builtin.is_test) *fs.Fs_T else null,
+        if(!builtin.is_test) fs.FsErr_T else null,
+    ),
 
-    fn default_struct(comptime mod_struct: ?type) type {
+    fn default_struct(comptime mod_struct: ?type, comptime mod_error: ?type) type {
         return if(mod_struct == null) void else struct {
-            install: ?*const fn(*const mod_struct.?) anyerror!void,
-            remove: ?*const fn(*const mod_struct.?) anyerror!void,
+            install: ?*const fn(mod_struct.?) if(mod_error != null) mod_error.?!void else anyerror!void,
+            remove: ?*const fn(mod_struct.?) if(mod_error != null) mod_error.?!void else anyerror!void,
         };
     }
 };

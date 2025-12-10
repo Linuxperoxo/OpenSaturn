@@ -22,8 +22,8 @@ const fs: type = @import("root").interfaces.fs;
 const handlers = [_]ModHandler_T {
     .{
         .filesystem = if(builtin.is_test) {} else .{
-            .install = fs.registerfs,
-            .remove = fs.unregisterfs,
+            .install = fs.register_fs,
+            .remove = fs.unregister_fs,
         },
     },
 };
@@ -73,7 +73,7 @@ inline fn resolve_mod_type(mod: *const Mod_T) ModType_T {
     };
 }
 
-inline fn calling_handler(mod: *const Mod_T, comptime op: enum { install, remove }) ModErr_T!void {
+inline fn calling_handler(mod: *Mod_T, comptime op: enum { install, remove }) ModErr_T!void {
     const handler: *const ModHandler_T = find_handler(
         resolve_mod_type(mod)
     );
@@ -120,7 +120,7 @@ pub fn srchmod(name: []const u8, mod_type: ModType_T) ModErr_T!*const Mod_T {
 }
 
 /// * install module
-pub fn inmod(mod: *const Mod_T) ModErr_T!void {
+pub fn inmod(mod: *Mod_T) ModErr_T!void {
     const module_root: *ModRoot_T = module_root_entry(
         resolve_mod_type(mod)
     );
@@ -145,7 +145,7 @@ pub fn inmod(mod: *const Mod_T) ModErr_T!void {
 }
 
 /// * remove module
-pub fn rmmod(mod: *const Mod_T) ModErr_T!void {
+pub fn rmmod(mod: *Mod_T) ModErr_T!void {
     const module_root: *ModRoot_T = module_root_entry(
         resolve_mod_type(mod)
     );
