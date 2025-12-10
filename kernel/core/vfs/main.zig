@@ -38,7 +38,7 @@ pub var root: Dentry_T = .{
 pub fn mount(
     path: []const u8,
     current: ?*Dentry_T,
-    fs_struct: if(!builtin.is_test) *const fs.interfaces.Fs_T else void
+    fs_name: []const u8,
 ) VfsErr_T!void {
     const dentry_mount: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{ 
         path, current, &root
