@@ -15,8 +15,8 @@ const Fs_T: type = @import("root").interfaces.fs.Fs_T;
 const inmod = @import("root").interfaces.module.inmod;
 const rmmod = @import("root").interfaces.module.rmmod;
 
-const rootfs_mount = &@import("management.zig").rootfs_mount;
-const rootfs_umount = &@import("management.zig").rootfs_umount;
+const rootfs_mount = &@import("main.zig").rootfs_mount;
+const rootfs_umount = &@import("main.zig").rootfs_umount;
 
 pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .name = "ke_m_rootfs",
@@ -38,7 +38,7 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     },
 };
 
-const rootfsMod: *const Mod_T = &Mod_T {
+var rootfs: Mod_T = .{
     .name = __SaturnModuleDescription__.name,
     .desc = "Core Kernel Root Filesystem",
     .author = "Linuxperoxo",
@@ -53,21 +53,41 @@ const rootfsMod: *const Mod_T = &Mod_T {
     .private = .{
         .filesystem = .{
             .name = "rootfs",
-            .flags = .R,
             .mount = rootfs_mount,
-            .unmount = rootfs_umount,
+            .umount = rootfs_umount,
+            .flags = .{
+                .control = .{
+                    .nomount = 0,
+                    .noumount = 1,
+                    .readonly = 0,
+                    .anon = 0,
+                },
+                .internal = .{
+                    .mounted = 0,
+                    .registered = 0,
+                    .collision = .{
+                        .name = 0,
+                        .pointer = 0,
+                    },
+                    .fault = .{
+                        .mount = 0,
+                        .umount = 0,
+                        .write = 0,
+                    },
+                },
+            },
         },
     },
 };
 
 fn init() ModErr_T!void {
     return @call(.never_inline, inmod, .{
-        rootfsMod
+        &rootfs
     });
 }
 
 fn exit() ModErr_T!void {
     return @call(.never_inline, rmmod, .{
-        rootfsMod
+        &rootfs
     });
 }

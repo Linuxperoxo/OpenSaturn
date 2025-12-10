@@ -7,19 +7,20 @@ const main: type = @import("main.zig");
 const types: type = @import("types.zig");
 const c: type = @import("root").kernel.utils.c;
 const mem: type = @import("root").kernel.utils.mem;
+const allocator: type = @import("allocator.zig");
 
 pub fn check_init() types.FsErr_T!void {
-    errdefer {
-        // critical error! klog()
-    }
     if(!c.c_bool(main.fs_register.flags.init)) {
-        try main.fs_register.fs.init();
+        main.fs_register.fs.init(&allocator.sba.allocator) catch {
+            // critical error! klog()
+            return types.FsErr_T.InitFailed;
+        };
         main.fs_register.flags.init = 1;
     }
 }
 
 pub fn search_by_fs(fs: ?*types.Fs_T, fs_name: ?[]const u8) types.FsErr_T!?struct { *types.Fs_T, ?types.Collision_T } {
-    if(!c.c_bool(main.fs_register.fs.how_many_nodes)) return null;
+    if(!c.c_bool(main.fs_register.fs.how_many_nodes())) return null;
     var param: struct {
         to_cmp_ptr: ?*types.Fs_T,
         to_cmp_name: ?[]const u8,
@@ -42,9 +43,9 @@ pub fn search_by_fs(fs: ?*types.Fs_T, fs_name: ?[]const u8) types.FsErr_T!?struc
                     }
                     return error.Continue;
                 }
-            },
+            }.handler,
         ) catch |err| switch(err) {
-            @TypeOf(main.fs_register.fs).ListErr_T.EndOfIterator => null,
+            @TypeOf(main.fs_register.fs).ListErr_T.EndOfIterator => return null,
             else => return types.FsErr_T.FsRegisterFailed,
         },
         param.collision,

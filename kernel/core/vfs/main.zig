@@ -44,6 +44,7 @@ pub fn mount(
         path, current, &root
     });
     if(dentry_mount.d_sblock != null) return VfsErr_T.AlreadyMounted;
+    const fs_struct = fs.search_fs(fs_name) catch return VfsErr_T.FilesystemMountError;
     const sblock = fs_struct.mount() catch return VfsErr_T.FilesystemMountError;
     dentry_mount.d_sblock = sblock;
     dentry_mount.d_op = sblock.inode_op;

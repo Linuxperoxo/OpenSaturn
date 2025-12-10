@@ -74,7 +74,7 @@ pub const Superblock_T: type = struct {
     data_block_start: usize, // offset no disco onde começa a area de dados dos arquivos
     root_inode: *const Inode_T, // ponteiro para o inode raiz do sistema de arquivos
     inode_op: *const InodeOp_T, // ponteiro para operacoes do dentry montado
-    fs: if(!builtin.is_test) *fs.interfaces.Fs_T else void, // informacoes do fs montado no dentry
+    fs: if(!builtin.is_test) *fs.Fs_T else void, // informacoes do fs montado no dentry
     private_data: ?*const anyopaque, // Dados internos do FS (cast dinamico)
 };
 

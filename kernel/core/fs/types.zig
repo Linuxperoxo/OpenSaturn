@@ -9,8 +9,8 @@ const list: type = @import("root").kernel.utils.list;
 
 pub const Fs_T: type = struct {
     name: []const u8,
-    mount: *const fn() FsErr_T!*const vfs.Superblock_T,
-    umount: *const fn() FsErr_T!void,
+    mount: *const fn() anyerror!*const vfs.Superblock_T,
+    umount: *const fn() anyerror!void,
     flags: packed struct {
         control: packed struct {
             noumount: u1, // se recusa a desmontar
@@ -66,6 +66,7 @@ pub const FsRegister_T: type = struct {
     fs: list.BuildList(*Fs_T),
     flags: packed struct(u8) {
         init: u1,
+        reserved: u7 = 0,
     },
 };
 
@@ -78,4 +79,5 @@ pub const FsErr_T: type = error {
     FsRegisterFailed,
     NoNFound,
     FsCollision,
+    InitFailed,
 };
