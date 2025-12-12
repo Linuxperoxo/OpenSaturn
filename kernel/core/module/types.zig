@@ -9,6 +9,15 @@ const arch: type = @import("root").interfaces.arch;
 const fs: type = @import("root").interfaces.fs;
 
 // Interfaces
+
+pub const ModuleDescriptionTarget_T: type = arch.Target_T;
+
+pub const ModuleDescriptionLoad_T: type = enum {
+    linkable,
+    dynamic,
+    unlinkable
+};
+
 pub const Mod_T: type = struct {
     name: []const u8,
     desc: []const u8,
@@ -17,13 +26,60 @@ pub const Mod_T: type = struct {
     license: ModLicense_T,
     type: ModType_T,
     deps: ?[]const []const u8,
-    init: *const fn() ModErr_T!void,
-    exit: *const fn() ModErr_T!void,
+    init: *const fn() anyerror!void,
+    after: ?*const fn() anyerror!void,
+    exit: *const fn() anyerror!void,
     private: union(ModType_T) {
         driver: void,
         syscall: void,
         irq: void,
         filesystem: if(!builtin.is_test) fs.Fs_T else void,
+    },
+    flags: packed struct(u16) {
+        control: packed struct {
+            anon: u1, // srchmod() nao expoe modulo
+            call: packed struct {
+                init: u1, // chama init logo no inmod()
+                after: u1, // chama o after logo no inmod() apos chamada de init
+                exit: u1, // chama exit logo no rmmod()
+                remove: u1, // modulo aceita ser removido
+            },
+        },
+        internal: packed struct {
+            installed: u1, // foi instalado
+            removed: u1, // foi removido
+            collision: packed struct {
+                name: u1, // nomes iguais
+                pointer: u1, // ponteiros iguais (double reg)
+            },
+            call: packed struct {
+                init: u1, // init foi chamado
+                after: u1, // after foi chamado
+                exit: u1, // exit foi chamado
+            },
+            fault: packed struct {
+                remove: u1, // tentativa de remover o modulo que nao aceita ser removido
+                // para saber se a operacao deu certo basta fazer
+                // (control.call.init & internal.call.init & ~internal.fault.call.init) == 1
+                call: packed struct {
+                    init: u1, // init retornou erro
+                    after: u1, // after retornou erro ou tentou ser chamado com ptr sendo null
+                    exit: u1, // exit retornou erro
+                },
+
+                pub fn status(self: *const @This()) u4 {
+                    return @as(*const u4, @alignCast(@ptrCast(self))).*;
+                }
+            },
+        },
+
+        pub inline fn check_op_status(self: *const @This(), comptime op: enum { init, after, exit }) u1 {
+            return switch (comptime op) {
+                .init => self.control.call.init & self.internal.call.init & (~self.internal.fault.call.init),
+                .after => self.control.call.after & self.internal.call.after & (~self.internal.fault.call.after),
+                .exit => self.control.call.exit & self.internal.call.exit & (~self.internal.fault.call.exit),
+            };
+        }
     },
 };
 
@@ -34,8 +90,13 @@ pub const ModType_T: type = enum(u2) {
     filesystem,
 };
 
+pub const ModFoundByType_T: type = enum(u2) {
+    name = 0b01,
+    pointer = 0b10,
+};
+
 pub const ModRoot_T: type = struct {
-    list: list.BuildList(*const Mod_T),
+    list: list.BuildList(*Mod_T),
     type: ModType_T,
     flags: packed struct(u8) {
         init: u1,
@@ -66,6 +127,8 @@ pub const ModErr_T: type = error {
     AllocatorError,
     ListOperationError,
     RemovedButWithHandlerError,
+    ModuleCollision,
+    OperationDenied,
 };
 
 pub const ModHandler_T: type = union(ModType_T) {
@@ -82,12 +145,11 @@ pub const ModHandler_T: type = union(ModType_T) {
     }
 };
 
-pub const ModuleDescriptionTarget_T: type = arch.Target_T;
-
 pub const ModuleDescription_T: type = struct {
     name: []const u8,
-    load: enum { linkable, dinamic, unlinkable },
+    load: ModuleDescriptionLoad_T,
     init: *const fn() anyerror!void, // ponteiro para a funcao init
+    after: ?*const fn() anyerror!void, // funcao executada apos init
     arch: []const ModuleDescriptionTarget_T, // arch suportadas
     deps: ?[]const[]const u8,
     type: union(ModType_T) {
@@ -96,7 +158,14 @@ pub const ModuleDescription_T: type = struct {
         irq: void,
         filesystem: union(enum(u1)) {
             compile: []const u8, // faz a montagem de forma direta no kernel (fstab permanente)
-            dinamic: void, // sera adicionado ao kernel, mas sua montagem acontece em runtime
+            dynamic: void, // sera adicionado ao kernel, mas sua montagem acontece em runtime
         },
+    },
+    flags: packed struct(u8) {
+        call: packed struct {
+            handler: u1, // chama handler responsavel pelo type do modulo, por exemplo, fs chama o handler fs
+            after: u1, // chama funcao after, caso after seja null e essa flag seja 1, obtemos um erro em comptime
+        },
+        reserved: u6 = 0,
     },
 };
