@@ -30,6 +30,8 @@ pub fn BuildList(comptime T: type) type {
             EndOfIterator,
             NoNNodes,
             NoNNodeFound,
+            HandlerForceExit,
+            WithoutNodes,
         };
 
         fn check_allocator(comptime AT: type) void {
@@ -55,11 +57,10 @@ pub fn BuildList(comptime T: type) type {
         }
 
         inline fn check_init(self: *@This(), comptime ignore_root: bool) ListErr_T!void {
-            return if(self.private == null
-                or r: {
-                    break :r
-                        if(!ignore_root) cast_private(self.private.?).root == null else false;
-                }) return ListErr_T.NoNInitialized else {};
+            if(self.private == null)
+                return ListErr_T.NoNInitialized;
+            if(!ignore_root and cast_private(self.private.?).root == null)
+                return ListErr_T.WithoutNodes;
         }
 
         inline fn cast_private(private: *anyopaque) *Private_T {
@@ -69,6 +70,7 @@ pub fn BuildList(comptime T: type) type {
         /// * init the list (use whenever the node quantity is 0)
         pub fn init(self: *@This(), allocator: anytype) ListErr_T!void {
             comptime check_allocator(@TypeOf(allocator));
+            if(self.private != null) return;
             self.private = &(allocator.alloc(Private_T, 1) catch return ListErr_T.AllocatorErr)[0];
             cast_private(self.private.?).* = .{
                 .root = null,
@@ -217,12 +219,15 @@ pub fn BuildList(comptime T: type) type {
             any: anytype,
             comptime handler: *const fn(T, @TypeOf(any)) anyerror!void
         ) ListErr_T!T {
-            try self.check_init(true);
+            try self.check_init(false);
             try self.iterator_reset();
             while(self.iterator()) |node_data| {
                 @call(.never_inline, handler, .{
                     node_data, any
-                }) catch continue;
+                }) catch |err| switch(err) {
+                    error.ForceExit => return ListErr_T.HandlerForceExit,
+                    else => continue,
+                };
                 return node_data;
             } else |err| {
                 return err;

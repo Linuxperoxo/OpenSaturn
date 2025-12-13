@@ -1,18 +1,12 @@
-OpenSaturn 0.2.0 - Change Log
+OpenSaturn 0.2.1 - Change Log
 =============================
 
 --- KERNEL
-* descrição dos módulos agora tem um novo field deps.
-* modsys foi melhorado
-* dependência de módulos
-* descrição da arquitetura teve uma modificação no field extra
-* descrição da arquitetura agora conta com um novo field overrider
-* melhoria no kernel/utils
-* refatoração no kernel/core/modules
-* melhorias no código kernel/core/events
-
---- ARCH
-  i386:
-    * correção de bug grave no gdt
-    * event CSI adicionado ao i386
-    * idt configurado e funcionando isr0–isr31
+* ModuleDescription_T agora tem um novo field after.
+* Mod_T agora tem um novo field flags, para controlar operações sobre o módulo.
+* Conceito de módulos anônimos adicionado.
+* Check de colisão de módulos por nome e ptr no runtime e no comptime do modsys.
+* Melhorias no código utils/list.
+* Melhorias no código kernel/core/module.
+* Nova option em config/modules (IgnoreModuleCollision)
+* Flags em ModuleDescription_T

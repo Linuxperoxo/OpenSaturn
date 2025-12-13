@@ -25,27 +25,3 @@ pub fn eql(noalias b0: []const u8, noalias b1: []const u8, comptime rule: struct
         break :r true;
     };
 }
-
-pub fn zero(comptime T: type) T {
-    @setEvalBranchQuota(4294967295);
-    switch(@typeInfo(T)) {
-        .int, .float => return @as(T, 0),
-        .pointer => |info| if(info.is_allowzero) return @intFromPtr(0) else return undefined,
-        .null, .optional => return null,
-        .array => |info| {
-            var array: T = undefined;
-            for(0..info.len) |i| {
-                array[i] = comptime zero(info.child);
-            }
-        },
-        .@"struct" => |info| {
-            var @"struct": T = undefined;
-            for(info.fields) |field| {
-                @field(@"struct", field.name) = comptime zero(field.type);
-            }
-            return @"struct";
-        },
-        else => {},
-    }
-    return undefined;
-}
