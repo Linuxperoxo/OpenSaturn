@@ -101,12 +101,15 @@ var rootfs: Mod_T = .{
 };
 
 fn init() ModErr_T!void {
-    return @call(.never_inline, inmod, .{
+    @call(.never_inline, inmod, .{
         &rootfs
-    });
+    }) catch unreachable;
 }
 
 fn after() ModErr_T!void {
+    if(rootfs.flags.check_op_status(.init) == 0) {
+        // klog()
+    }
     rootfs.flags.control.anon = 1;
 }
 
