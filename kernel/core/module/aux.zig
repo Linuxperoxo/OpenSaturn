@@ -84,6 +84,7 @@ pub fn search_by_module(module_root: *ModRoot_T, ptr: ?*const Mod_T, name: ?[]co
                         mod_to_found.mod_found = .pointer;
                         return;
                     }
+                    return error.Continue;
                 }
             }.handler,
         ) catch |err| return switch (err) {

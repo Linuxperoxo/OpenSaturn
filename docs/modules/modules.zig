@@ -36,7 +36,7 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     // aqui voce pode definir 2 coisas
     // * unlinkable: o modulo nao sera carregado, ele nem vai existir no kernel
     // * linkable: ele e carregado e inicializado
-    // * dinamic: ele e apenas carregado, mas para iniciar sera usando inmod
+    // * dynamic: ele e apenas carregado, mas para iniciar sera usando inmod
     .load = .linkable,
     // funcao chamada pelo sistema de modulos, e aqui onde voce
     // deve preparar seu modulo
@@ -53,7 +53,7 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
             // temos 2 possibilidades aqui
             // * compile: vai montar logo na compilacao, ou seja, o kernel vai iniciar ja com
             // esse fs montado, extremamente importante para rootfs por exemplo
-            // * dinamic: o fs nao e montado, apenas se voce executar o mount -t my_module /usr por exemplo
+            // * dynamic: o fs nao e montado, apenas se voce executar o mount -t my_module /usr por exemplo
             .compile = "/" // pode dar erro caso um sistema de arquivo ja esteja montado em /
         }
     },
