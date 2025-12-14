@@ -20,6 +20,7 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .name = "ke_m_devfs",
     .load = .linkable,
     .init = &init,
+    .after = &after,
     .deps = &[_][]const u8{
         "ke_m_rootfs",
     },
@@ -36,9 +37,15 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
         .riscv64,
         .xtensa,
     },
+    .flags = .{
+        .call = .{
+            .handler = 1,
+            .after = 1,
+        },
+    },
 };
 
-const devfsMod: *const Mod_T = &Mod_T {
+var devfs: Mod_T = .{
     .name = __SaturnModuleDescription__.name,
     .desc = "Core Kernel Devices Filesystem",
     .author = "Linuxperoxo",
@@ -49,8 +56,9 @@ const devfsMod: *const Mod_T = &Mod_T {
     },
     .type = .filesystem,
     .init = &init,
+    .after = null,
     .exit = &exit,
-    .private = .{ 
+    .private = .{
         .filesystem = .{
             .name = "devfs",
             .flags = .RW,
@@ -58,16 +66,55 @@ const devfsMod: *const Mod_T = &Mod_T {
             .unmount = devfs_umount,
         },
     },
+    .flags = .{
+        .control = .{
+            .anon = 0,
+            .call = .{
+                .exit = 0,
+                .remove = 0,
+                .after = 0,
+                .init = 0,
+            },
+        },
+        .internal = .{
+            .installed = 0,
+            .removed = 0,
+            .collision = .{
+                .name = 0,
+                .pointer = 0,
+            },
+            .call = .{
+                .init = 0,
+                .exit = 0,
+                .after = 0,
+            },
+            .fault = .{
+                .call = .{
+                    .init = 0,
+                    .after = 0,
+                    .exit = 0,
+                },
+                .remove = 0,
+            },
+        },
+    },
 };
 
 fn init() ModErr_T!void {
     return @call(.never_inline, inmod, .{
-        devfsMod
+        &devfs
     });
+}
+
+fn after() ModErr_T!void {
+    if(devfs.flags.check_op_status(.init) == 0) {
+        // klog()
+    }
+    devfs.flags.control.anon = 1;
 }
 
 fn exit() ModErr_T!void {
     return @call(.never_inline, rmmod, .{
-        devfsMod
+        &devfs
     });
 }
