@@ -46,16 +46,7 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
         },
     },
     .libs = .{
-        .mines = &[_]ModuleDescriptionLibMine_T {
-            .{
-                .name = "devfs_lib",
-                .lib = struct {
-                    pub fn some() void {
-                        @compileError("Hello, World!\n");
-                    }
-                },
-            },
-        },
+        .mines = null,
         .outside = null,
     },
 };
