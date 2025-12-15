@@ -22,11 +22,14 @@ pub const userspace: type = saturn.lib.userspace;
 pub const config: type = saturn.config;
 pub const modules: type = saturn.modules;
 pub const decls: type = saturn.decls;
+pub const modsys: type = struct {
+    const core: type = saturn.modsys.core;
+    pub const exposed: type = saturn.modsys.exposed;
+};
 pub const step: type = struct {
     pub const saturn_get_phase = saturn.step.saturn_get_phase;
 };
 
-const modsys: type = saturn.modsys;
 const loader: type = saturn.loader;
 
 // Para obter mais detalhes de como funciona a inicializacao do
@@ -78,7 +81,7 @@ fn saturn_main() callconv(.c) noreturn {
 
     // Depois da arquitetura resolver todos os seus detalhes, podemos iniciar
     // os modulos linkados ao kernel
-    @call(.always_inline, modsys.saturn_modules_loader, .{});
+    @call(.always_inline, modsys.core.saturn_modules_loader, .{});
     @call(.always_inline, saturn.step.saturn_set_phase, .{
         .runtime
     });

@@ -8,6 +8,8 @@ const Mod_T: type = @import("root").interfaces.module.Mod_T;
 const ModErr_T: type = @import("root").interfaces.module.ModErr_T;
 const ModuleDescription_T: type = @import("root").interfaces.module.ModuleDescription_T;
 const ModuleDescriptionTarget_T: type = @import("root").interfaces.module.ModuleDescriptionTarget_T;
+const ModuleDescriptionLibMine_T: type = @import("root").interfaces.module.ModuleDescriptionLibMine_T;
+const ModuleDescriptionLibOut_T: type = @import("root").interfaces.module.ModuleDescriptionLibOut_T;
 
 // Kernel FS Types
 const Fs_T: type = @import("root").interfaces.fs.Fs_T;
@@ -42,6 +44,10 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
             .handler = 1,
             .after = 1,
         },
+    },
+    .libs = .{
+        .mines = null,
+        .outside = null,
     },
 };
 

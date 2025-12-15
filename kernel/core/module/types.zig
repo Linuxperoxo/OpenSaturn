@@ -7,6 +7,7 @@ const builtin: type = @import("builtin");
 const list: type = @import("test/list.zig");
 const arch: type = @import("root").interfaces.arch;
 const fs: type = @import("root").interfaces.fs;
+const modsys: type = @import("root").modsys;
 
 // Interfaces
 
@@ -145,6 +146,22 @@ pub const ModHandler_T: type = union(ModType_T) {
     }
 };
 
+pub const ModuleDescriptionLibMine_T: type = struct {
+    name: []const u8,
+    whitelist: ?[]const []const u8,
+    lib: type,
+    flags: packed struct {
+        whitelist: u1, // usa whitelist
+        enable: u1, // pode ser usada
+    },
+    // versions: []type, TODO:
+};
+
+pub const ModuleDescriptionLibOut_T: type = struct {
+    lib: []const u8,
+    mod: []const u8,
+};
+
 pub const ModuleDescription_T: type = struct {
     name: []const u8,
     load: ModuleDescriptionLoad_T,
@@ -152,6 +169,10 @@ pub const ModuleDescription_T: type = struct {
     after: ?*const fn() anyerror!void, // funcao executada apos init
     arch: []const ModuleDescriptionTarget_T, // arch suportadas
     deps: ?[]const[]const u8,
+    libs: struct {
+        mines: ?[]const ModuleDescriptionLibMine_T,
+        outside: ?[]const ModuleDescriptionLibOut_T,
+    },
     type: union(ModType_T) {
         driver: void,
         syscall: void,
@@ -168,4 +189,12 @@ pub const ModuleDescription_T: type = struct {
         },
         reserved: u6 = 0,
     },
+
+    pub fn request_libs(self: *const @This()) anyerror!struct { [if(self.libs.outside != null) self.libs.outside.?.len else 0]?type, bool } {
+        return comptime modsys.exposed.search_by_libs(self);
+    }
+
+    pub fn abort_compile(self: *const @This(), comptime msg: []const u8) noreturn {
+        return comptime modsys.exposed.module_abort_compile(self, msg);
+    }
 };
