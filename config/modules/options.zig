@@ -26,9 +26,20 @@
 //                             causar erro de compilacao, caso IgnoreOverriderIfNoExist = false, simplesmente
 //                             ignoramos esse fato, e usamos o menuconfig do jeito que esta, caso contrario, temos
 //                             o erro de compilacao
+//
+// * IgnoreModulePointerCollision: Ignora modulos repetidos, caso contrario, ocorre um erro em comptime
+//
+// * IgnoreLibSearchNoExistentMod: Ignora caso um modulo faca request de uma lib para um modulo que nao esta no kernel,
+//                                 caso contrario, ocorre um erro em comptime
+//
+// * IgnoreFaultNoExistentLib: Funciona da mesma maneira que IgnoreLibSearchNoExistentMod, so que com a lib, caso o modulo
+//                             nao tenha aquela lib
 
 pub const UseMenuconfigAsRef: bool = true;
 pub const IgnoreModuleWithArchNotSupported: bool = true;
 pub const AllowDynamicModulesLoad: bool = true; // TODO:
 pub const ForceModuleArchOverrider: bool = true;
 pub const IgnoreOverriderIfNoExist: bool = true;
+pub const IgnoreModuleCollision: bool = false;
+pub const IgnoreLibSearchNoExistentMod: bool = true;
+pub const IgnoreFaultNoExistentLib: bool = true;

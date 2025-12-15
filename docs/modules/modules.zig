@@ -15,6 +15,9 @@ const ModuleDescription_T: type = @import("root").interfaces.module.ModuleDescri
 const ModuleDescriptionTarget_T: type = @import("root").interfaces.module.ModuleDescriptionTarget_T;
 // e para error de modulo:
 const ModErr_T: type = @import("root").interfaces.module.ModErr_T;
+// para implementacao de libs
+const ModuleDescriptionLibMine_T: type = @import("root").interfaces.module.ModuleDescriptionLibMine_T;
+const ModuleDescriptionLibOut_T: type = @import("root").interfaces.module.ModuleDescriptionLibOut_T;
 
 // tipos para modulo fs
 const Fs_T: type = @import("root").interfaces.fs.Fs_T;
@@ -36,22 +39,24 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     // aqui voce pode definir 2 coisas
     // * unlinkable: o modulo nao sera carregado, ele nem vai existir no kernel
     // * linkable: ele e carregado e inicializado
-    // * dinamic: ele e apenas carregado, mas para iniciar sera usando inmod
+    // * dynamic: ele e apenas carregado, mas para iniciar sera usando inmod
     .load = .linkable,
     // funcao chamada pelo sistema de modulos, e aqui onde voce
     // deve preparar seu modulo
     .init = &init,
+    // funcao chamada apos o init e o handler do tipo do modulo serem chamado
+    .after = &after, // ou null 
     // aqui e o tipo do seu modulo. Como o sistema de modulos foi feito totalmente
     // pensando no comptime, aqui e uma parte bem importante para ele saber que parte
     // do kernel e responsavel por esse modulo, essa union tem todos o tipos de modulos
-    // possiveis, voce pode olhar com mais detalhes em lib/saturn/interfaces/modules.zig. 
+    // possiveis, voce pode olhar com mais detalhes em lib/saturn/interfaces/modules.zig.
     // Aqui vou usar de exemplo um modulo de filesystem
     .type = .{
         .filesystem = .{
             // temos 2 possibilidades aqui
             // * compile: vai montar logo na compilacao, ou seja, o kernel vai iniciar ja com
             // esse fs montado, extremamente importante para rootfs por exemplo
-            // * dinamic: o fs nao e montado, apenas se voce executar o mount -t my_module /usr por exemplo
+            // * dynamic: o fs nao e montado, apenas se voce executar o mount -t my_module /usr por exemplo
             .compile = "/" // pode dar erro caso um sistema de arquivo ja esteja montado em /
         }
     },
@@ -76,6 +81,91 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
         .riscv64,
         .xtensa,
     },
+    // voce pode ver sobre as flags em kernel/core/module/types.zig
+    .flags = .{
+        .call = .{
+            .after = 1,
+            .handler = 1,
+        }
+    },
+    // Uma das coisas que o OpenSaturn sempre levou muito a sério foi a questão do mantenedor
+    // do módulo não precisar se preocupar com a complexidade de adicionar seu módulo ao OpenSaturn,
+    // e, sem dúvidas, as libs mines e outside vão ajudar demais. Agora os módulos têm a capacidade
+    // de expor algumas partes do seu código para outros módulos. Isso é uma coisa muito interessante
+    // se for parar para pensar, já que código de módulo nunca deve estar diretamente no núcleo do kernel,
+    // ou em suas libs. Isso porque o kernel deve ser 100% capaz de rodar sem aquele módulo. Se ele não é capaz,
+    // isso não é um módulo, e sim algo do núcleo. O conceito de mines e outside só pode ser implementado graças
+    // ao Zig, obrigado por isso, Zig :^).
+    .libs = .{
+        // mines sao as libs que voce como modulo implementa para outros modulos, voce pode ter varias libs aqui
+        .mines = &[_]ModuleDescriptionLibMine_T {
+            ModuleDescriptionLibMine_T {
+                .name = "my_super_lib0", // os outros modulos vao procurar por esse nome
+                .lib = @import("my_super_lib0.zig"), // aqui voce pode usar o @import ou montar uma struct {}
+                .whitelist = &[_][]const u8 {
+                    "mod0",
+                    "mod1",
+                    "mod2",
+                },
+                .flags = .{
+                    .whitelist = 1, // somente modulos na whitelist
+                    .enable = 1, // lib ta habilitada e pode ser usada
+                },
+            },
+            ModuleDescriptionLibMine_T {
+                .name = "my_super_lib1",
+                .lib = @import("my_super_lib1.zig"),
+                .whitelist = &[_][]const u8 {
+                    "mod3",
+                    "mod4",
+                },
+                .flags = .{
+                    .whitelist = 1,
+                    .enable = 1,
+                },
+            },
+            ModuleDescriptionLibMine_T {
+                .name = "my_super_lib2",
+                .lib = @import("my_super_lib2.zig"),
+                .whitelist = null,
+                .flags = .{
+                    .whitelist = 0, // caso .whitelist == null deixe essa flag como 0
+                    .enable = 1,
+                },
+            },
+        },
+        // outside sao as libs que voce pode pegar de outros modulos
+        .outside = &[_]ModuleDescriptionLibOut_T {
+            ModuleDescriptionLibOut_T {
+                .mod = "outside_module", // nome do modulo (ModuleDescription_T.name)
+                .lib = "outside_super_lib0", // nome da lib, voce pode ver o mines do modulo e ver qual o nome da lib 
+            },
+            ModuleDescriptionLibOut_T {
+                .mod = "outside_module",
+                .lib = "outside_super_lib1",
+            },
+            ModuleDescriptionLibOut_T {
+                .mod = "outside_module",
+                .lib = "outside_super_lib2",
+            },
+        },
+    },
+};
+
+const outside_libs = r: {
+    // * outsides: possui um [_]?type
+    // * some_fault: se algum indice de outsides e null some_fault == true
+    const outsides, const some_fault = __SaturnModuleDescription__.request_libs()
+        catch unreachable; // so retorna erro caso outside.len == 0 ou outside == null
+    // Aqui você pode decidir o que fazer caso alguma lib falhe. O índice de outsides se refere ao
+    // mesmo índice de __SaturnModuleDescription__.outside. Dificilmente alguma lib vai falhar, só
+    // ocorre erro caso o módulo não seja encontrado, ou o módulo seja encontrado, mas a lib não.
+    if(some_fault) __SaturnModuleDescription__.abort_compile("some lib failed to be fetched!");
+    break :r .{
+        .slib0 = outsides[0].?,
+        .slib1 = outsides[1].?,
+        .slib2 = outsides[2].?,
+    };
 };
 
 const my_module: *const Mod_T = &Mod_T {
@@ -97,6 +187,9 @@ const my_module: *const Mod_T = &Mod_T {
     .type = .filesystem,
     // funcao chamada na inicializacao do modulo
     .init = &init,
+    // esse after nao e garantido ser chamado caso o init de Mot_T falhe, diferentemente do after
+    // do ModuleDescription_T, quem sempre sera chamado, mesmo que o init de ModuleDescription_T falhe
+    .after = null,
     // funcao chamada no exit do modulo
     .exit = &exit,
     // aqui o private pode ser diferentes tipos, vai depender justamente
@@ -110,6 +203,39 @@ const my_module: *const Mod_T = &Mod_T {
         .mount = myfs_mount,
         .unmount = myfs_umount,
     }),
+    // voce tambem pode ver sobre as flags em kernel/core/module/types.zig
+    .flags = .{
+        .control = .{
+            .anon = 0,
+            .call = .{
+                .exit = 0,
+                .remove = 0,
+                .after = 0,
+                .init = 0,
+            },
+        },
+        .internal = .{
+            .installed = 0,
+            .removed = 0,
+            .collision = .{
+                .name = 0,
+                .pointer = 0,
+            },
+            .call = .{
+                .init = 0,
+                .exit = 0,
+                .after = 0,
+            },
+            .fault = .{
+                .call = .{
+                    .init = 0,
+                    .after = 0,
+                    .exit = 0,
+                },
+                .remove = 0,
+            },
+        },
+    },
 };
 
 // feito isso, basta adicionar o arquivo la em module.zig, dentro
@@ -125,9 +251,15 @@ const my_module: *const Mod_T = &Mod_T {
 // por sua conta criar a implementacao do seu modulo :^)
 
 fn init() ModErr_T!void {
+    // sempre opte por chamar inmod, nunca chame diretamente o handler do seu modulo, o inmod
+    // ja e responsavel por resolver o tipo do modulo e chamar o handler correto
     @call(.never_inline, &@import("root").interfaces.module.inmod, .{
         my_module
     }) catch |err| return err;
+}
+
+fn after() ModErr_T!void {
+
 }
 
 fn exit() ModErr_T!void {

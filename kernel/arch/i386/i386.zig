@@ -101,7 +101,7 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
         },
         .{
             .module = "ke_m_devfs",
-            .value = .yes,
+            .value = .no,
         },
     },
     // TODO:

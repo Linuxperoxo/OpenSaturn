@@ -18,8 +18,7 @@ pub const saturn_modules = r: {
                 if(config.arch.options.Target == mod_arch) return;
             }
             if(!config.modules.options.IgnoreModuleWithArchNotSupported) {
-                @compileError("module name " ++
-                    mod.name ++
+                @compileError("module name " ++ mod.name ++
                     " is not supported by target architecture " ++
                     @tagName(config.arch.options.Target)
                 );
@@ -28,9 +27,8 @@ pub const saturn_modules = r: {
         }
 
         pub fn check_module_in_menuconfig(mod: *const interfaces.module.ModuleDescription_T) void {
-            if(!@hasField(config.modules.menuconfig.Menuconfig_T, mod.name))  @compileError(
-                "module " ++
-                mod.name ++
+            if(!@hasField(config.modules.menuconfig.Menuconfig_T, mod.name)) @compileError(
+                "module " ++ mod.name ++
                 " needs to be added in Menuconfig_T"
             );
         }
@@ -47,51 +45,73 @@ pub const saturn_modules = r: {
                 }
             }
         }
+
+        pub fn check_module_collision() usize {
+            var collision_count: usize = 0;
+            for(modules.__SaturnAllMods__, 0..) |mod, i| {
+                for(0..i) |j| {
+                    if(kernel.utils.mem.eql(
+                        mod.__SaturnModuleDescription__.name, modules.__SaturnAllMods__[j].__SaturnModuleDescription__.name, .{
+                            .len = true,
+                            .case = false
+                        }
+                    )) {
+                        // caso modulos diferentes compartilham do mesmo nome, precisa dar erro, isso e critico
+                        if(&mod.__SaturnModuleDescription__ != &modules.__SaturnAllMods__[j].__SaturnModuleDescription__) {
+                            @compileError(
+                                "modsys: collision module name " ++ modules.__SaturnAllMods__[j].__SaturnModuleDescription__.name ++
+                                " files " ++ @typeName(modules.__SaturnAllMods__[j]) ++
+                                " " ++ @typeName(mod)
+                            );
+                        }
+                        if(!config.modules.options.IgnoreModuleCollision) {
+                            @compileError(
+                                "modsys: collision with the module " ++ mod.__SaturnModuleDescription__.name ++
+                                " itself (double module register)"
+                            );
+                        }
+                        collision_count += 1;
+                        break;
+                    }
+                }
+            }
+            return collision_count;
+        }
     };
-    // logica de verificacao:
     var modules_check_index: usize = 0;
     var modules_check = [_]?interfaces.module.ModuleDescription_T {
         null
-    } ** modules.__SaturnAllMods__.len;
+    } ** (modules.__SaturnAllMods__.len - aux.check_module_collision());
     for(modules.__SaturnAllMods__, 0..) |mod, i| {
-        for(0..i) |j| {
-            // nao e o jeito mais eficiente de fazer isso, mas estamos no comptime, as
-            // coisas precisam ser simples aqui
-            if(kernel.utils.compile.mem.eql(
-                modules.__SaturnAllMods__[j].__SaturnModuleDescription__.name,
-                mod.__SaturnModuleDescription__.name,
-                .{}
-            )) @compileError(
-                "modsys: collision module name " ++
-                modules.__SaturnAllMods__[j].__SaturnModuleDescription__.name ++
-                " files " ++
-                @typeName(modules.__SaturnAllMods__[j]) ++
-                " " ++
-                @typeName(mod)
-            );
+        t: {
+            for(0..i) |j| {
+                if(kernel.utils.mem.eql(
+                    mod.__SaturnModuleDescription__.name, modules.__SaturnAllMods__[j].__SaturnModuleDescription__.name, .{
+                        .len = true,
+                        .case = false,
+                    }
+                )) break :t {};
+            }
+            if(!decls.container_decl_exist(mod, .module)) {
+                @compileError(
+                    decls.what_is_decl(.module) ++
+                    " is not defined in the module file " ++ @typeName(mod)
+                );
+            }
+            if(!decls.container_decl_type(@TypeOf(mod.__SaturnModuleDescription__), .module)) {
+                @compileError(
+                    "declaration " ++ decls.what_is_decl(.module) ++
+                    " for module " ++ @typeName(mod) ++
+                    " must be type: " ++ @typeName(decls.what_is_decl_type(.module))
+                );
+            }
+            aux.check_module_load(&mod.__SaturnModuleDescription__) catch continue;
+            aux.check_module_in_menuconfig(&mod.__SaturnModuleDescription__);
+            aux.check_module_menuconfig_enable(&mod.__SaturnModuleDescription__) catch continue;
+            aux.check_module_arch(&mod.__SaturnModuleDescription__) catch continue;
+            modules_check[modules_check_index] = mod.__SaturnModuleDescription__;
+            modules_check_index += 1;
         }
-        if(!decls.container_decl_exist(mod, .module)) {
-            @compileError(
-                decls.what_is_decl(.module) ++
-                " is not defined in the module file " ++
-                @typeName(mod)
-            );
-        }
-        if(!decls.container_decl_type(@TypeOf(mod.__SaturnModuleDescription__), .module)) {
-            @compileError(
-                "declaration " ++
-                decls.what_is_decl(.module) ++
-                " for module " ++
-                @typeName(mod) ++
-                " must be type: " ++
-                @typeName(decls.what_is_decl_type(.module))
-            );
-        }
-        aux.check_module_load(&mod.__SaturnModuleDescription__) catch continue;
-        aux.check_module_in_menuconfig(&mod.__SaturnModuleDescription__);
-        aux.check_module_menuconfig_enable(&mod.__SaturnModuleDescription__) catch continue;
-        aux.check_module_arch(&mod.__SaturnModuleDescription__) catch continue;
-        modules_check[modules_check_index] = mod.__SaturnModuleDescription__; modules_check_index += 1;
     }
     break :r t: {
         var satisfied_modules: [modules_check_index]interfaces.module.ModuleDescription_T = undefined;
@@ -109,14 +129,14 @@ pub fn saturn_modules_loader() void {
         // os modulos em comptime
         skip: {
             switch(comptime module.load) {
-                .dinamic => {},
-                .unlinkable => {},
+                .dynamic, .unlinkable => break :skip {},
                 .linkable => {
                     @call(.never_inline, module.init, .{}) catch {
                         // klog error
                     };
                 },
             }
+            if(module.flags.call.handler == 0) break :skip {};
             // resolvendo modulo com base no seu tipo
             switch(comptime module.type) {
                 .driver => {},
@@ -127,9 +147,18 @@ pub fn saturn_modules_loader() void {
                         // caso o modulo fs use compile, vamos fazer uma
                         // montagem do fs em tempo de compilacao
                         .compile => {}, // call mount
-                        .dinamic => break :skip,
+                        .dynamic => break :skip,
                     }
                 },
+            }
+            if(module.flags.call.after == 1) {
+                if(module.after == null) @compileError(
+                    "modsys: module " ++ module.name ++
+                    " expect call after fn, but after is null in module description"
+                );
+                @call(.never_inline, module.after.?, .{}) catch {
+                    // klog()
+                };
             }
         }
     }

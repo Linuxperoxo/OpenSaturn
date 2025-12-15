@@ -10,6 +10,8 @@ pub const Mod_T: type = module.Mod_T;
 pub const ModErr_T: type = module.ModErr_T;
 pub const ModuleDescriptionTarget_T: type =  module.ModuleDescriptionTarget_T;
 pub const ModuleDescription_T: type = module.ModuleDescription_T;
+pub const ModuleDescriptionLibMine_T: type = module.ModuleDescriptionLibMine_T;
+pub const ModuleDescriptionLibOut_T: type = module.ModuleDescriptionLibOut_T;
 
 pub const srchmod = module.srchmod;
 pub const inmod = module.inmod;

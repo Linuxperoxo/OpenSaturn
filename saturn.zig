@@ -122,7 +122,10 @@ pub const core: type = struct {
 //pub const ioreg: type = @import("kernel/core/ioreg/ioreg.zig");
 pub const loader: type = @import("kernel/loader.zig");
 pub const modules: type = @import("modules.zig");
-pub const modsys: type = @import("kernel/modsys/modsys.zig");
+pub const modsys: type = struct {
+    pub const core: type = @import("kernel/modsys/modsys.zig");
+    pub const exposed: type = @import("kernel/modsys/exposed.zig");
+};
 pub const interfaces: type = struct {
     pub const devices: type = @import("lib/saturn/interfaces/devices.zig");
     pub const fs: type = @import("lib/saturn/interfaces/fs.zig");
