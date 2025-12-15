@@ -15,6 +15,9 @@ const ModuleDescription_T: type = @import("root").interfaces.module.ModuleDescri
 const ModuleDescriptionTarget_T: type = @import("root").interfaces.module.ModuleDescriptionTarget_T;
 // e para error de modulo:
 const ModErr_T: type = @import("root").interfaces.module.ModErr_T;
+// para implementacao de libs
+const ModuleDescriptionLibMine_T: type = @import("root").interfaces.module.ModuleDescriptionLibMine_T;
+const ModuleDescriptionLibOut_T: type = @import("root").interfaces.module.ModuleDescriptionLibOut_T;
 
 // tipos para modulo fs
 const Fs_T: type = @import("root").interfaces.fs.Fs_T;
@@ -84,7 +87,63 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
             .after = 1,
             .handler = 1,
         }
-    }
+    },
+    // Uma das coisas que o OpenSaturn sempre levou muito a sério foi a questão do mantenedor
+    // do módulo não precisar se preocupar com a complexidade de adicionar seu módulo ao OpenSaturn,
+    // e, sem dúvidas, as libs mines e outside vão ajudar demais. Agora os módulos têm a capacidade
+    // de expor algumas partes do seu código para outros módulos. Isso é uma coisa muito interessante
+    // se for parar para pensar, já que código de módulo nunca deve estar diretamente no núcleo do kernel,
+    // ou em suas libs. Isso porque o kernel deve ser 100% capaz de rodar sem aquele módulo. Se ele não é capaz,
+    // isso não é um módulo, e sim algo do núcleo. O conceito de mines e outside só pode ser implementado graças
+    // ao Zig, obrigado por isso, Zig :^).
+    .libs = .{
+        // mines sao as libs que voce como modulo implementa para outros modulos, voce pode ter varias libs aqui
+        .mines = &[_]ModuleDescriptionLibMine_T {
+            .{
+                .name = "my_super_lib0", // os outros modulos vao procurar por esse nome
+                .lib = @import("my_super_lib0.zig"), // aqui voce pode usar o @import ou montar uma struct {}
+            },
+            .{
+                .name = "my_super_lib1",
+                .lib = @import("my_super_lib1.zig"),
+            },
+            .{
+                .name = "my_super_lib2",
+                .lib = @import("my_super_lib2.zig"),
+            },
+        },
+        // outside sao as libs que voce pode pegar de outros modulos
+        .outside = &[_]ModuleDescriptionLibOut_T {
+            .{
+                .mod = "outside_module", // nome do modulo (ModuleDescription_T.name)
+                .lib = "outside_super_lib0", // nome da lib, voce pode ver o mines do modulo e ver qual o nome da lib 
+            },
+            .{
+                .mod = "outside_module",
+                .lib = "outside_super_lib1",
+            },
+            .{
+                .mod = "outside_module",
+                .lib = "outside_super_lib2",
+            },
+        },
+    },
+};
+
+const outside_libs = r: {
+    // * outsides: possui um [_]?type
+    // * some_fault: se algum indice de outsides e null some_fault == true
+    const outsides, const some_fault = __SaturnModuleDescription__.request_libs()
+        catch unreachable; // so retorna erro caso outside.len == 0 ou outside == null
+    // Aqui você pode decidir o que fazer caso alguma lib falhe. O índice de outsides se refere ao
+    // mesmo índice de __SaturnModuleDescription__.outside. Dificilmente alguma lib vai falhar, só
+    // ocorre erro caso o módulo não seja encontrado, ou o módulo seja encontrado, mas a lib não.
+    if(some_fault) __SaturnModuleDescription__.abort_compile("some lib failed to be fetched!");
+    break :r .{
+        .slib0 = outsides[0].?,
+        .slib1 = outsides[1].?,
+        .slib2 = outsides[2].?,
+    };
 };
 
 const my_module: *const Mod_T = &Mod_T {
