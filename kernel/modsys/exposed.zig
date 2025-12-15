@@ -20,7 +20,7 @@ pub fn search_by_libs(
     for(0..libs.len) |i| {
         libs[i] = r: {
             if(aux.find_module_by_name(mod.libs.outside.?[i].mod)) |found| {
-                break :r aux.find_module_lib(found, mod.libs.outside.?[i].lib) catch {
+                const lib_found = aux.find_module_lib(found, mod.libs.outside.?[i].lib) catch {
                     if(config.modules.options.IgnoreFaultNoExistentLib)
                         break :r null;
                     @compileError(
@@ -30,6 +30,17 @@ pub fn search_by_libs(
                         "but this lib does not exist"
                     );
                 };
+                if(lib_found.flags.enable == 0) @compileError(
+                    "modsys: lib " ++ lib_found.name ++ " " ++
+                    "of module " ++ found.name ++ " " ++
+                    "is disable"
+                );
+                if(!aux.mod_in_lib_whitelist(mod.name, lib_found)) @compileError(
+                    "modsys: module " ++ mod.name ++ " " ++
+                    "is not whitelisted in lib " ++ lib_found.name ++ " " ++
+                    "of module " ++ found.name
+                );
+                break :r lib_found.lib;
             } else |_| {
                 if(config.modules.options.IgnoreLibSearchNoExistentMod)
                     break :r null;

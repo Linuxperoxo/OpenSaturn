@@ -99,30 +99,52 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .libs = .{
         // mines sao as libs que voce como modulo implementa para outros modulos, voce pode ter varias libs aqui
         .mines = &[_]ModuleDescriptionLibMine_T {
-            .{
+            ModuleDescriptionLibMine_T {
                 .name = "my_super_lib0", // os outros modulos vao procurar por esse nome
                 .lib = @import("my_super_lib0.zig"), // aqui voce pode usar o @import ou montar uma struct {}
+                .whitelist = &[_][]const u8 {
+                    "mod0",
+                    "mod1",
+                    "mod2",
+                },
+                .flags = .{
+                    .whitelist = 1, // somente modulos na whitelist
+                    .enable = 1, // lib ta habilitada e pode ser usada
+                },
             },
-            .{
+            ModuleDescriptionLibMine_T {
                 .name = "my_super_lib1",
                 .lib = @import("my_super_lib1.zig"),
+                .whitelist = &[_][]const u8 {
+                    "mod3",
+                    "mod4",
+                },
+                .flags = .{
+                    .whitelist = 1,
+                    .enable = 1,
+                },
             },
-            .{
+            ModuleDescriptionLibMine_T {
                 .name = "my_super_lib2",
                 .lib = @import("my_super_lib2.zig"),
+                .whitelist = null,
+                .flags = .{
+                    .whitelist = 0, // caso .whitelist == null deixe essa flag como 0
+                    .enable = 1,
+                },
             },
         },
         // outside sao as libs que voce pode pegar de outros modulos
         .outside = &[_]ModuleDescriptionLibOut_T {
-            .{
+            ModuleDescriptionLibOut_T {
                 .mod = "outside_module", // nome do modulo (ModuleDescription_T.name)
                 .lib = "outside_super_lib0", // nome da lib, voce pode ver o mines do modulo e ver qual o nome da lib 
             },
-            .{
+            ModuleDescriptionLibOut_T {
                 .mod = "outside_module",
                 .lib = "outside_super_lib1",
             },
-            .{
+            ModuleDescriptionLibOut_T {
                 .mod = "outside_module",
                 .lib = "outside_super_lib2",
             },

@@ -148,7 +148,12 @@ pub const ModHandler_T: type = union(ModType_T) {
 
 pub const ModuleDescriptionLibMine_T: type = struct {
     name: []const u8,
+    whitelist: ?[]const []const u8,
     lib: type,
+    flags: packed struct {
+        whitelist: u1, // usa whitelist
+        enable: u1, // pode ser usada
+    },
     // versions: []type, TODO:
 };
 
