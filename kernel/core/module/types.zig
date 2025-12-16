@@ -181,7 +181,11 @@ pub const ModuleDescription_T: type = struct {
         syscall: void,
         irq: void,
         filesystem: union(enum(u1)) {
-            compile: []const u8, // faz a montagem de forma direta no kernel (fstab permanente)
+            // faz a montagem de forma direta no kernel (fstab permanente)
+            compile: struct {
+                name: []const u8,
+                mountpoint: []const u8,
+            },
             dynamic: void, // sera adicionado ao kernel, mas sua montagem acontece em runtime
         },
     },

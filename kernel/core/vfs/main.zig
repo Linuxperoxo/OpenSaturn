@@ -45,7 +45,11 @@ pub fn mount(
     });
     if(dentry_mount.d_sblock != null) return VfsErr_T.AlreadyMounted;
     const fs_struct = fs.search_fs(fs_name) catch return VfsErr_T.FilesystemMountError;
-    const sblock = fs_struct.mount() catch return VfsErr_T.FilesystemMountError;
+    const sblock = fs_struct.mount() catch {
+        fs_struct.flags.internal.fault.mount = 1;
+        return VfsErr_T.FilesystemMountError;
+    };
+    fs_struct.flags.internal.mounted = 1;
     dentry_mount.d_sblock = sblock;
     dentry_mount.d_op = sblock.inode_op;
 }
@@ -161,9 +165,24 @@ pub fn unlink(path: []const u8, current: ?*Dentry_T) VfsErr_T!void {
         path, current, &root
     });
     try aux.is_valid_op(dentry_unlink, .unlink);
+    // removemos dentry da arvore vfs, isso evita acharmos um dentry que nao existe mais
+    // no fs, mas existe na arvore vfs
+    if(dentry_unlink.older_brother == null) {
+        dentry_unlink.parent.?.child = dentry_unlink.younger_brother;
+    } else {
+        dentry_unlink.older_brother.?.younger_brother = dentry_unlink.younger_brother;
+        if(dentry_unlink.younger_brother != null) {
+            dentry_unlink.younger_brother.?.older_brother = dentry_unlink.older_brother;
+        }
+    }
     @call(.never_inline,dentry_unlink.d_op.?.unlink.?, .{ dentry_unlink }) catch {
         // klog()
         return VfsErr_T.OperationFailed;
     };
 }
 
+pub fn touch(path: []const u8, current: ?*Dentry_T) VfsErr_T!void {
+    _ = try @call(.never_inline, aux.resolve_path, .{
+        path, current, &root
+    });
+}

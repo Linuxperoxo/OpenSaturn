@@ -3,6 +3,8 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
+const utils: type = @import("root").kernel.utils;
+
 // kernel Modules Types
 const Mod_T: type = @import("root").interfaces.module.Mod_T;
 const ModErr_T: type = @import("root").interfaces.module.ModErr_T;
@@ -24,7 +26,7 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .name = "ke_m_rootfs",
     .load = .linkable,
     .init = &init,
-    .after = &after,
+    .after = &after_mount(),
     .deps = null,
     .type = .{
         .filesystem = .{
@@ -62,7 +64,7 @@ var rootfs: Mod_T = .{
     },
     .type = .filesystem,
     .init = &init,
-    .after = null,
+    .after = &after_register(),
     .exit = &exit,
     .private = .{
         .filesystem = .{
@@ -126,14 +128,23 @@ var rootfs: Mod_T = .{
     },
 };
 
+const fs: *Fs_T = &rootfs.private.filesystem;
+
 fn init() ModErr_T!void {
     @call(.never_inline, inmod, .{
         &rootfs
     }) catch unreachable;
 }
 
-fn after() ModErr_T!void {
-    if(rootfs.flags.check_op_status(.init) == 0) {
+fn after_mount() ModErr_T!void {
+    if(utils.c.c_bool(fs.flags.internal.mounted)) {
+        // klog()
+    }
+    fs.flags.control.anon = 1;
+}
+
+fn after_register() ModErr_T!void {
+    if(!utils.c.c_bool(rootfs.flags.check_op_status(.init))) {
         // klog()
     }
     rootfs.flags.control.anon = 1;

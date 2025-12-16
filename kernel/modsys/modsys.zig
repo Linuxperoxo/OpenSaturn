@@ -146,7 +146,11 @@ pub fn saturn_modules_loader() void {
                     switch(comptime module.type.filesystem) {
                         // caso o modulo fs use compile, vamos fazer uma
                         // montagem do fs em tempo de compilacao
-                        .compile => {}, // call mount
+                        .compile => |fs_info| {
+                            interfaces.vfs.mount(fs_info.mountpoint, null, fs_info.name) catch {
+                                // klog()
+                            };
+                        },
                         .dynamic => break :skip,
                     }
                 },

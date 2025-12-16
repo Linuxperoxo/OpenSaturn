@@ -30,10 +30,7 @@ const Op_T: type = enum {
     chown,
 };
 
-var call: usize = 0;
-
 pub fn resolve_path(path: []const u8, current: ?*Dentry_T, root: *Dentry_T) VfsErr_T!*Dentry_T {
-    call += 1;
     const dentries = fmt.broken_str(path, '/', &allocator.sba.allocator)
     catch |err| switch(err) {
         error.WithoutSub => return root,

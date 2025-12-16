@@ -115,7 +115,11 @@ var sda_dentry: types.Dentry_T = .{
                sba.write = true;
             }
         }.write,
-        .unlink = null,
+        .unlink = &opaque {
+            pub fn unlink(_: *types.Dentry_T) anyerror!void {
+                sba.created = false;
+            }
+        }.unlink,
         .chmod = null,
         .chown = null,
     },
@@ -340,6 +344,8 @@ test "VFS Tree" {
     _ = try main.read("/proc/self", null);
     _ = try main.read("/proc/0", null);
     _ = try main.read("/dev/nvme", null);
+    try main.unlink("/dev/sba", null);
+    if(main.touch("/dev/sba", null)) |_| return error.DeletedFileTouched else |_| {}
     if(main.write("/dev/", null, "Hello, World!")) |_| return error.WriteInDirectory else |err| { if(err != types.VfsErr_T.InvalidOperation) return err; }
     if(main.write("/proc/", null, "Hello, World!")) |_| return error.WriteInDirectory else |err| { if(err != types.VfsErr_T.InvalidOperation) return err; }
     if(main.read("/dev/", null)) |_| { return error.ReadInDirectory; } else |err| { if(err != types.VfsErr_T.InvalidOperation) return err; }
