@@ -28,7 +28,10 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     },
     .type = .{
         .filesystem = .{
-            .compile = "/dev"
+            .compile = .{
+                .name = "ke_m_devfs",
+                .mountpoint = "/dev",
+            },
         }
     },
     .arch = &[_]ModuleDescriptionTarget_T {
@@ -76,19 +79,7 @@ var devfs: Mod_T = .{
                     .readonly = 0,
                     .anon = 0,
                 },
-                .internal = .{
-                    .mounted = 0,
-                    .registered = 0,
-                    .collision = .{
-                        .name = 0,
-                        .pointer = 0,
-                    },
-                    .fault = .{
-                        .mount = 0,
-                        .umount = 0,
-                        .write = 0,
-                    },
-                },
+                .internal = .{},
             },
         },
     },
@@ -100,29 +91,13 @@ var devfs: Mod_T = .{
                 .remove = 0,
                 .after = 0,
                 .init = 0,
-            },
-        },
-        .internal = .{
-            .installed = 0,
-            .removed = 0,
-            .collision = .{
-                .name = 0,
-                .pointer = 0,
-            },
-            .call = .{
-                .init = 0,
-                .exit = 0,
-                .after = 0,
-            },
-            .fault = .{
-                .call = .{
-                    .init = 0,
-                    .after = 0,
-                    .exit = 0,
+                .handler = .{
+                    .install = 1,
+                    .remove = 1,
                 },
-                .remove = 0,
             },
         },
+        .internal = .{},
     },
 };
 

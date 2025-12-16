@@ -3,6 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
+const c: type = @import("root").kernel.utils.c;
 const builtin: type = @import("builtin");
 const fs: type = @import("root").core.fs;
 const types: type = @import("types.zig");
@@ -40,18 +41,22 @@ pub fn mount(
     current: ?*Dentry_T,
     fs_name: []const u8,
 ) VfsErr_T!void {
-    const dentry_mount: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{ 
+    const dentry_mount: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{
         path, current, &root
     });
     if(dentry_mount.d_sblock != null) return VfsErr_T.AlreadyMounted;
-    const fs_struct = fs.search_fs(fs_name) catch return VfsErr_T.FilesystemMountError;
+    const fs_struct: *fs.Fs_T = @constCast(fs.search_fs(fs_name) catch return VfsErr_T.FilesystemMountError);
+    if(c.c_bool(fs_struct.flags.control.nomount)) {
+        fs_struct.flags.internal.fault.mount = 1;
+        return;
+    }
     const sblock = fs_struct.mount() catch {
         fs_struct.flags.internal.fault.mount = 1;
         return VfsErr_T.FilesystemMountError;
     };
-    fs_struct.flags.internal.mounted = 1;
     dentry_mount.d_sblock = sblock;
     dentry_mount.d_op = sblock.inode_op;
+    fs_struct.flags.internal.mounted = 1;
 }
 
 pub fn umount(path: []const u8, current: ?*Dentry_T) VfsErr_T!void {

@@ -24,3 +24,4 @@ pub const create = vfs.create;
 pub const mkdir = vfs.mkdir;
 pub const chmod = vfs.chmod;
 pub const chown = vfs.chown;
+pub const touch = vfs.touch;

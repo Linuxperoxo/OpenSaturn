@@ -3,8 +3,10 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
+const module: type = @import("module.zig");
+
 // kernel vfs types
-const Dentry_T: type = @import("root").interface.vfs.Dentry_T;
+const Dentry_T: type = @import("root").interfaces.vfs.Dentry_T;
 const Superblock_T: type = @import("root").interfaces.vfs.Superblock_T;
 const FileType_T: type = @import("root").interfaces.vfs.FileType_T;
 const InodeOp_T: type = @import("root").interfaces.vfs.InodeOp_T;
@@ -50,8 +52,56 @@ fn cmp_name(
     return true;
 }
 
+const inode_ops: InodeOp_T = .{
+    .chmod = null,
+    .chown = null,
+    .create = null,
+    .iterator = null,
+    .lookup = null,
+    .mkdir = null,
+    .read = null,
+    .unlink = null,
+    .write = null,
+};
+
 pub fn rootfs_mount() anyerror!*const Superblock_T {
-    return error.AllocInternal;
+    return &Superblock_T {
+        .fs = &module.rootfs.private.filesystem,
+        .block_size = 0,
+        .data_block_start = 0,
+        .inode_table_start = 0,
+        .magic = 0xAB00,
+        .private_data = null,
+        .total_blocks = 0,
+        .total_inodes = 0,
+        .inode_op = &inode_ops,
+        .root_inode = &Inode_T {
+            .data_block = 0,
+            .data_inode = 0,
+            .gid = 0,
+            .inode = 0,
+            .nlinks = 0,
+            .type = .regular,
+            .uid = 0,
+            .mode = .{
+                .owner = .{
+                    .r = 1,
+                    .w = 1,
+                    .x = 1,
+                },
+                .group = .{
+                    .r = 1,
+                    .w = 1,
+                    .x = 1,
+                },
+                .other = .{
+                    .r = 1,
+                    .w = 1,
+                    .x = 1,
+                },
+            },
+        },
+    };
 }
 
 pub fn rootfs_umount() FsErr_T!void {

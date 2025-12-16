@@ -36,7 +36,7 @@ pub const Mod_T: type = struct {
         irq: void,
         filesystem: if(!builtin.is_test) fs.Fs_T else void,
     },
-    flags: packed struct(u16) {
+    flags: packed struct {
         control: packed struct {
             anon: u1, // srchmod() nao expoe modulo
             call: packed struct {
@@ -44,41 +44,55 @@ pub const Mod_T: type = struct {
                 after: u1, // chama o after logo no inmod() apos chamada de init
                 exit: u1, // chama exit logo no rmmod()
                 remove: u1, // modulo aceita ser removido
+                handler: packed struct {
+                    install: u1,
+                    remove: u1,
+                },
             },
         },
         internal: packed struct {
-            installed: u1, // foi instalado
-            removed: u1, // foi removido
+            installed: u1 = 0, // foi instalado
+            removed: u1 = 0, // foi removido
             collision: packed struct {
-                name: u1, // nomes iguais
-                pointer: u1, // ponteiros iguais (double reg)
-            },
+                name: u1 = 0, // nomes iguais
+                pointer: u1 = 0, // ponteiros iguais (double reg)
+            } = .{},
             call: packed struct {
-                init: u1, // init foi chamado
-                after: u1, // after foi chamado
-                exit: u1, // exit foi chamado
-            },
-            fault: packed struct {
-                remove: u1, // tentativa de remover o modulo que nao aceita ser removido
+                init: u1 = 0, // init foi chamado
+                after: u1 = 0, // after foi chamado
+                exit: u1 = 0, // exit foi chamado
+                handler: packed struct {
+                    install: u1 = 0,
+                    remove: u1 = 0,
+                } = .{},
+            } = .{},
+            fault: packed struct(u6) {
+                remove: u1 = 0, // tentativa de remover o modulo que nao aceita ser removido
                 // para saber se a operacao deu certo basta fazer
                 // (control.call.init & internal.call.init & ~internal.fault.call.init) == 1
                 call: packed struct {
-                    init: u1, // init retornou erro
-                    after: u1, // after retornou erro ou tentou ser chamado com ptr sendo null
-                    exit: u1, // exit retornou erro
-                },
+                    init: u1 = 0, // init retornou erro
+                    after: u1 = 0, // after retornou erro ou tentou ser chamado com ptr sendo null
+                    exit: u1 = 0, // exit retornou erro
+                    handler: packed struct {
+                        install: u1 = 0,
+                        remove: u1 = 0,
+                    } = .{},
+                } = .{},
 
-                pub fn status(self: *const @This()) u4 {
-                    return @as(*const u4, @alignCast(@ptrCast(self))).*;
+                pub fn status(self: *const @This()) u6 {
+                    return @as(*const u6, @alignCast(@ptrCast(self))).*;
                 }
-            },
+            } = .{},
         },
 
-        pub inline fn check_op_status(self: *const @This(), comptime op: enum { init, after, exit }) u1 {
+        pub inline fn check_op_status(self: *const @This(), comptime op: enum { init, after, exit, install, remove }) u1 {
             return switch (comptime op) {
                 .init => self.control.call.init & self.internal.call.init & (~self.internal.fault.call.init),
                 .after => self.control.call.after & self.internal.call.after & (~self.internal.fault.call.after),
                 .exit => self.control.call.exit & self.internal.call.exit & (~self.internal.fault.call.exit),
+                .install => self.control.call.handler.install & self.internal.call.handler.install & (~self.internal.fault.call.handler.install),
+                .remove => self.control.call.handler.remove & self.internal.call.handler.remove & (~self.internal.fault.call.handler.remove),
             };
         }
     },

@@ -18,12 +18,12 @@ pub var fs_register: types.FsRegister_T = .{
 
 pub fn register_fs(fs: *types.Fs_T) types.FsErr_T!void {
     try aux.check_init();
-    if(try aux.search_by_fs(fs, null)) |found| {
+    if(aux.search_by_fs(fs, null)) |found| {
         const collided_fs, const collision = found;
         if(collision != null)
             @as(*u2, @alignCast(@ptrCast(&collided_fs.flags.internal.collision))).* = @as(u2, @intFromEnum(collision.?));
         return types.FsErr_T.FsCollision;
-    } else {
+    } else |_| {
         fs_register.fs.push_in_list(&allocator.sba.allocator, fs)
             catch return types.FsErr_T.FsRegisterFailed;
     }
@@ -31,25 +31,21 @@ pub fn register_fs(fs: *types.Fs_T) types.FsErr_T!void {
 
 pub fn unregister_fs(fs: *types.Fs_T) types.FsErr_T!void {
     try aux.check_init();
-    if(try aux.search_by_fs(fs, null)) |_| {
-        return fs_register.fs.drop_on_list(
-            (fs_register.fs.iterator_index() catch unreachable) - 1,
-            &allocator.sba.allocator
-        ) catch {
-            return types.FsErr_T.FsRegisterFailed;
-        };
-    } else {
-        return types.FsErr_T.NoNFound;
-    }
+    _ = try aux.search_by_fs(fs, null);
+    return fs_register.fs.drop_on_list(
+        (fs_register.fs.iterator_index() catch unreachable) - 1,
+        &allocator.sba.allocator
+    ) catch {
+        return types.FsErr_T.FsRegisterFailed;
+    };
 }
 
 pub fn search_fs(fs: []const u8) types.FsErr_T!*const types.Fs_T {
     try aux.check_init();
-    if(try aux.search_by_fs(null, fs)) |found| {
-        const fs_found, _ = found;
-        if(!c.c_bool(fs_found.flags.control.anon))
-            return fs_found;
-    } else {}
+    const fs_found, _ = try aux.search_by_fs(null, fs);
+    if(!c.c_bool(fs_found.flags.control.anon)) {
+        return fs_found;
+    }
     return types.FsErr_T.NoNFound;
 }
 

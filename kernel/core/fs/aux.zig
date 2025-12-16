@@ -19,8 +19,8 @@ pub fn check_init() types.FsErr_T!void {
     }
 }
 
-pub fn search_by_fs(fs: ?*types.Fs_T, fs_name: ?[]const u8) types.FsErr_T!?struct { *types.Fs_T, ?types.Collision_T } {
-    if(!c.c_bool(main.fs_register.fs.how_many_nodes())) return null;
+pub fn search_by_fs(fs: ?*types.Fs_T, fs_name: ?[]const u8) types.FsErr_T!struct { *types.Fs_T, ?types.Collision_T } {
+    if(!c.c_bool(main.fs_register.fs.how_many_nodes())) return types.FsErr_T.NoNFound;
     var param: struct {
         to_cmp_ptr: ?*types.Fs_T,
         to_cmp_name: ?[]const u8,
@@ -44,9 +44,9 @@ pub fn search_by_fs(fs: ?*types.Fs_T, fs_name: ?[]const u8) types.FsErr_T!?struc
                     return error.Continue;
                 }
             }.handler,
-        ) catch |err| switch(err) {
-            @TypeOf(main.fs_register.fs).ListErr_T.EndOfIterator => return null,
-            else => return types.FsErr_T.FsRegisterFailed,
+        ) catch |err| return switch(err) {
+            @TypeOf(main.fs_register.fs).ListErr_T.EndOfIterator => types.FsErr_T.NoNFound,
+            else => types.FsErr_T.FsRegisterFailed,
         },
         param.collision,
     };

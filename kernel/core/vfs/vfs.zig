@@ -25,3 +25,4 @@ pub const create = main.create;
 pub const mkdir = main.mkdir;
 pub const chmod = main.chmod;
 pub const chown = main.chown;
+pub const touch = main.touch;

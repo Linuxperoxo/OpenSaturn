@@ -18,13 +18,13 @@ pub const Fs_T: type = struct {
             readonly: u1, // montagem apenas para leitura
             anon: u1, // search_fs nunca vai retornar
         },
-        internal: packed struct(u8) {
-            mounted: u1, // fs mountado?
-            registered: u1, // fs registrado?
+        internal: packed struct {
+            mounted: u1 = 0, // fs mountado?
+            registered: u1 = 0, // fs registrado?
             // tentativa de registrar o mesmo fs, seja por nome, ou por ponteiro
-            collision: packed struct(u2) {
-                name: u1,
-                pointer: u1,
+            collision: packed struct {
+                name: u1 = 0,
+                pointer: u1 = 0,
 
                 pub inline fn some(self: *@This()) bool {
                     return c.c_bool(
@@ -34,13 +34,13 @@ pub const Fs_T: type = struct {
                         ))
                     );
                 }
-            },
+            } = .{},
             // operacoes negadas ao fs, caso readonly = 1 e alguem tente escrever no fs o write
             // passa a ser 1, mesma coisa para todos os outros
-            fault: packed struct(u3) {
-                mount: u1,
-                umount: u1,
-                write: u1,
+            fault: packed struct {
+                mount: u1 = 0,
+                umount: u1 = 0,
+                write: u1 = 0,
 
                 pub inline fn some(self: *@This()) bool {
                     return c.c_bool(
@@ -51,9 +51,8 @@ pub const Fs_T: type = struct {
                         ))
                     );
                 }
-            },
-            reserved: u1 = 0,
-        },
+            } = .{},
+        } = .{},
     },
 };
 
