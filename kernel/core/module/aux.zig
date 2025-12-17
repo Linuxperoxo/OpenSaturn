@@ -40,7 +40,7 @@ pub inline fn resolve_mod_type(mod: *const Mod_T) ModType_T {
     };
 }
 
-pub inline fn calling_handler(mod: *const Mod_T, comptime op: enum { install, remove }) ModErr_T!void {
+pub inline fn calling_handler(mod: *Mod_T, comptime op: enum { install, remove }) ModErr_T!void {
     const handler: *const ModHandler_T = find_handler(
         resolve_mod_type(mod)
     );

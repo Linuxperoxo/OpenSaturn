@@ -3,32 +3,52 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
+const c: type = @import("root").kernel.utils.c;
+const interfaces: type = @import("root").interfaces;
+
 // kernel Modules Types
-const Mod_T: type = @import("root").interfaces.module.Mod_T;
-const ModErr_T: type = @import("root").interfaces.module.ModErr_T;
-const ModuleDescription_T: type = @import("root").interfaces.module.ModuleDescription_T;
-const ModuleDescriptionTarget_T: type = @import("root").interfaces.module.ModuleDescriptionTarget_T;
-const ModuleDescriptionLibMine_T: type = @import("root").interfaces.module.ModuleDescriptionLibMine_T;
-const ModuleDescriptionLibOut_T: type = @import("root").interfaces.module.ModuleDescriptionLibOut_T;
+const Mod_T: type = interfaces.module.Mod_T;
+const ModErr_T: type = interfaces.module.ModErr_T;
+const ModuleDescription_T: type = interfaces.module.ModuleDescription_T;
+const ModuleDescriptionTarget_T: type = interfaces.module.ModuleDescriptionTarget_T;
+const ModuleDescriptionLibMine_T: type = interfaces.module.ModuleDescriptionLibMine_T;
+const ModuleDescriptionLibOut_T: type = interfaces.module.ModuleDescriptionLibOut_T;
 
 // Kernel FS Types
-const Fs_T: type = @import("root").interfaces.fs.Fs_T;
+const Fs_T: type = interfaces.fs.Fs_T;
 
-const inmod = @import("root").interfaces.module.inmod;
-const rmmod = @import("root").interfaces.module.rmmod;
+const inmod = interfaces.module.inmod;
+const rmmod = interfaces.module.rmmod;
 
-const rootfs_mount = &@import("management.zig").rootfs_mount;
-const rootfs_umount = &@import("management.zig").rootfs_umount;
+const rootfs_mount = &@import("main.zig").rootfs_mount;
+const rootfs_umount = &@import("main.zig").rootfs_umount;
 
 pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .name = "ke_m_rootfs",
     .load = .linkable,
     .init = &init,
-    .after = &after,
+    .after = &opaque {
+        pub fn after() anyerror!void {
+            // como habilitamos no handler em flags.call.handler = 1
+            // vamos chegar nessa funcao ja com o fs registrado, e o
+            // e o mesmo montado
+            if(!c.c_bool(rootfs.flags.internal.installed & rootfs.flags.check_op_status(.install))) {
+                // panic("failed to init rootfs")
+            }
+            if(!c.c_bool(rootfs.private.filesystem.flags.internal.mounted & ~rootfs.private.filesystem.flags.internal.fault.mount)) {
+                // panic("failed to mount rootfs")
+            }
+            rootfs.private.filesystem.flags.control.anon = 1;
+            rootfs.flags.control.anon = 1;
+        }
+    }.after,
     .deps = null,
     .type = .{
         .filesystem = .{
-            .compile = "/"
+            .compile = .{
+                .name = "rootfs",
+                .mountpoint = "/",
+            },
         }
     },
     .arch = &[_]ModuleDescriptionTarget_T {
@@ -51,7 +71,7 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     },
 };
 
-var rootfs: Mod_T = .{
+pub var rootfs: Mod_T = .{
     .name = __SaturnModuleDescription__.name,
     .desc = "Core Kernel Root Filesystem",
     .author = "Linuxperoxo",
@@ -67,9 +87,17 @@ var rootfs: Mod_T = .{
     .private = .{
         .filesystem = .{
             .name = "rootfs",
-            .flags = .R,
             .mount = rootfs_mount,
-            .unmount = rootfs_umount,
+            .umount = rootfs_umount,
+            .flags = .{
+                .control = .{
+                    .nomount = 1,
+                    .noumount = 1,
+                    .readonly = 0,
+                    .anon = 0,
+                },
+                .internal = .{},
+            },
         },
     },
     .flags = .{
@@ -80,29 +108,13 @@ var rootfs: Mod_T = .{
                 .remove = 0,
                 .after = 0,
                 .init = 0,
-            },
-        },
-        .internal = .{
-            .installed = 0,
-            .removed = 0,
-            .collision = .{
-                .name = 0,
-                .pointer = 0,
-            },
-            .call = .{
-                .init = 0,
-                .exit = 0,
-                .after = 0,
-            },
-            .fault = .{
-                .call = .{
-                    .init = 0,
-                    .after = 0,
-                    .exit = 0,
+                .handler = .{
+                    .install = 1, // deixa o proprio inmod chamar o register_fs()
+                    .remove = 0, // deixa o proprio rmmod chamar o unregister_fs()
                 },
-                .remove = 0,
             },
         },
+        .internal = .{},
     },
 };
 
@@ -110,13 +122,8 @@ fn init() ModErr_T!void {
     @call(.never_inline, inmod, .{
         &rootfs
     }) catch unreachable;
-}
-
-fn after() ModErr_T!void {
-    if(rootfs.flags.check_op_status(.init) == 0) {
-        // klog()
-    }
-    rootfs.flags.control.anon = 1;
+    // aqui nao precisamos nos preocupar com registra o fs, ja que a flag rootfs.flags.control.call.handler.{install,remove}
+    // ja se encarrega que chamar o register_fs e o unregister_fs quando usamos o inmod e rmmod
 }
 
 fn exit() ModErr_T!void {

@@ -4,19 +4,19 @@
 // └────────────────────────────────────────────────┘
 
 // kernel vfs types
-const Dentry_T: type = @import("root").core.vfs.interfaces.Dentry_T;
-const Inode_T: type = @import("root").core.vfs.interfaces.Inode_T;
-const InodeOp_T: type = @import("root").core.vfs.interfaces.InodeOp_T;
+const Dentry_T: type = @import("root").interfaces.vfs.Dentry_T;
+const Inode_T: type = @import("root").interfaces.vfs.Inode_T;
+const InodeOp_T: type = @import("root").interfaces.vfs.InodeOp_T;
 
 // rootfs types
 const RootfsBranch_T: type = @import("types.zig").RootfsBranch_T;
 
 // rootfs fn
-const rootfs_create = @import("management.zig").rootfs_create;
-const rootfs_interator = @import("management.zig").rootfs_interator;
-const rootfs_lookup = @import("management.zig").rootfs_lookup;
-const rootfs_mkdir = @import("management.zig").rootfs_mkdir;
-const rootfs_unlink = @import("management.zig").rootfs_unlink;
+const rootfs_create = @import("main.zig").rootfs_create;
+const rootfs_interator = @import("main.zig").rootfs_interator;
+const rootfs_lookup = @import("main.zig").rootfs_lookup;
+const rootfs_mkdir = @import("main.zig").rootfs_mkdir;
+const rootfs_unlink = @import("main.zig").rootfs_unlink;
 
 pub var @"/": RootfsBranch_T = .{
     .dentry = null,
