@@ -29,7 +29,6 @@ pub var root: Dentry_T = .{
     .younger_brother = null,
     .older_brother = null,
     .parent = null,
-    .private = null,
 };
 
 // TODO: por enquanto nao vamos fazer isso, mas quando tivermos
@@ -102,6 +101,8 @@ pub fn mkdir(
     gid: gid_T,
     mode: mode_T,
 ) VfsErr_T!void {
+    // TODO: dar um touch em parent/name para ver se o arquivo ja existe, isso vai
+    // facilitar a vida do fs
     const dentry_parent: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{ 
         parent, current, &root
     });

@@ -68,6 +68,10 @@ pub fn BuildList(comptime T: type) type {
             return @alignCast(@ptrCast(private));
         }
 
+        pub fn is_initialized(self: *@This()) bool {
+            return self.private != null;
+        }
+
         /// * init the list (use whenever the node quantity is 0)
         pub fn init(self: *@This(), allocator: anytype) ListErr_T!void {
             comptime check_allocator(@TypeOf(allocator));

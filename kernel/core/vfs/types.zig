@@ -51,7 +51,6 @@ pub const Dentry_T: type = struct {
     younger_brother: ?*@This(),
     older_brother: ?*@This(),
     parent: ?*@This(),
-    private: ?*anyopaque,
 };
 
 pub const Inode_T: type = struct {
@@ -72,7 +71,6 @@ pub const Superblock_T: type = struct {
     total_inodes: usize, // numero total de inodes disponiveis
     inode_table_start: usize, // offset(em blocos) de onde começa a tabela de inodes
     data_block_start: usize, // offset no disco onde começa a area de dados dos arquivos
-    root_inode: *const Inode_T, // ponteiro para o inode raiz do sistema de arquivos
     inode_op: *const InodeOp_T, // ponteiro para operacoes do dentry montado
     fs: if(!builtin.is_test) *fs.Fs_T else void, // informacoes do fs montado no dentry
     private_data: ?*const anyopaque, // Dados internos do FS (cast dinamico)

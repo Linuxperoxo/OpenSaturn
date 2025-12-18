@@ -3,175 +3,145 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const module: type = @import("module.zig");
-
-// kernel vfs types
-const Dentry_T: type = @import("root").interfaces.vfs.Dentry_T;
-const Superblock_T: type = @import("root").interfaces.vfs.Superblock_T;
-const FileType_T: type = @import("root").interfaces.vfs.FileType_T;
-const InodeOp_T: type = @import("root").interfaces.vfs.InodeOp_T;
-const Inode_T: type = @import("root").interfaces.vfs.Inode_T;
-const VfsErr_T: type = @import("root").interfaces.vfs.VfsErr_T;
-
-// kernel fs types
-const FsErr_T: type = @import("root").interfaces.fs.FsErr_T;
-
-// rootfs
-const RootfsBranch_T: type = @import("types.zig").RootfsBranch_T;
-const RootfsErr_T: type = @import("types.zig").RootfsErr_T;
-const defaultDirs: [5]RootfsBranch_T = .{
-    @import("files.zig").@"/",
-    @import("files.zig").@"usr",
-    @import("files.zig").@"dev",
-    @import("files.zig").@"sys",
-    @import("files.zig").@"volatile",
+const interfaces: type = @import("root").interfaces;
+const rootfs: type = @import("rootfs.zig");
+const types: type = @import("types.zig");
+const mem: type = @import("root").kernel.utils.mem;
+const c: type = @import("root").kernel.utils.c;
+const allocator: type = @import("allocator.zig");
+const aux: type = @import("aux.zig");
+const inode_utils: type = r: {
+    const libs, const fault = rootfs.__SaturnModuleDescription__.request_libs();
+    if(fault) rootfs.__SaturnModuleDescription__.abort_compile(
+        "failed to load self lib"
+    );
+    break :r libs[0].?; // inode-utils
 };
-const rootfsSuperblock: *Superblock_T = @constCast(&Superblock_T {
-    .magic = 0x703,
-    .block_size = 0,
-    .total_blocks = 0,
-    .total_inodes = 0,
-    .inode_table_start = 0,
-    .data_block_start = 0,
-    .root_inode = defaultDirs[0].dentry.inode,
-    .private_data = defaultDirs[0],
-});
 
-fn cmp_name(
-    noalias s0: []const u8,
-    noalias s1: []const u8
-) bool {
-    if(s0.len != s1.len) {
-        return false;
-    }
-    for(0..s0.len) |i| {
-        if(s0[i] != s1[i]) {
-            return false;
-        }
-    }
-    return true;
-}
+const Dentry_T: type = interfaces.vfs.Dentry_T;
+const Superblock_T: type = interfaces.vfs.Superblock_T;
+const FileType_T: type = interfaces.vfs.FileType_T;
+const InodeOp_T: type = interfaces.vfs.InodeOp_T;
+const Inode_T: type = interfaces.vfs.Inode_T;
+const VfsErr_T: type = interfaces.vfs.VfsErr_T;
+const Fs_T: type = interfaces.fs.Fs_T;
+const FsErr_T: type = interfaces.fs.FsErr_T;
+const uid_T: type = interfaces.vfs.uid_T;
+const gid_T: type = interfaces.vfs.gid_T;
+const mode_T: type = interfaces.vfs.mode_T;
+const RootfsDentry_T: type = types.RootfsDentry_T;
+const RootfsErr_T: type = types.RootfsErr_T;
+const list_T: type = types.list_T;
+const listErr_T: type = types.listErr_T;
 
-const inode_ops: InodeOp_T = .{
-    .chmod = null,
-    .chown = null,
+const dir_inode_ops: InodeOp_T = .{
+    .chmod = &chmod,
+    .chown = &chown,
     .create = null,
     .iterator = null,
-    .lookup = null,
-    .mkdir = null,
+    .lookup = &lookup,
+    .mkdir = &mkdir,
     .read = null,
-    .unlink = null,
+    .unlink = &unlink,
     .write = null,
 };
 
+var superblock: Superblock_T = .{
+    .fs = @alignCast(@ptrCast(&rootfs.rootfs.private)),
+    .block_size = 0,
+    .data_block_start = 0,
+    .inode_table_start = 0,
+    .magic = 0xAB00,
+    .private_data = null,
+    .total_blocks = 0,
+    .total_inodes = 0,
+    .inode_op = &dir_inode_ops,
+};
+
+var inode: inode_utils = .{
+    .current = 0,
+};
+
 pub fn rootfs_mount() anyerror!*const Superblock_T {
-    return &Superblock_T {
-        .fs = &module.rootfs.private.filesystem,
-        .block_size = 0,
-        .data_block_start = 0,
-        .inode_table_start = 0,
-        .magic = 0xAB00,
-        .private_data = null,
-        .total_blocks = 0,
-        .total_inodes = 0,
-        .inode_op = &inode_ops,
-        .root_inode = &Inode_T {
-            .data_block = 0,
-            .data_inode = 0,
-            .gid = 0,
-            .inode = 0,
-            .nlinks = 0,
-            .type = .regular,
-            .uid = 0,
-            .mode = .{
-                .owner = .{
-                    .r = 1,
-                    .w = 1,
-                    .x = 1,
-                },
-                .group = .{
-                    .r = 1,
-                    .w = 1,
-                    .x = 1,
-                },
-                .other = .{
-                    .r = 1,
-                    .w = 1,
-                    .x = 1,
-                },
-            },
-        },
-    };
+    return &superblock;
 }
 
 pub fn rootfs_umount() FsErr_T!void {
-    // Como e um sistema de arquivos em ram, devemos
-    // liberar qualquer memoria aqui
+    // rootfs nunca deve ser desmontado
+    unreachable;
 }
 
-fn rootfs_lookup(
-    parent: *Dentry_T,
-    name: []const u8
-) anyerror!*Dentry_T {
-    var current: ?*RootfsBranch_T = block0: {
-        if(parent.inode) |NoNNullInode| {
-            break :block0 NoNNullInode.private;
-        }
-        break :block0 null;
+pub fn chmod(dentry: *Dentry_T, mode: mode_T) anyerror!void {
+    @constCast(dentry.d_inode.?).mode = mode;
+}
+
+pub fn chown(dentry: *Dentry_T, uid: uid_T, gid: gid_T) anyerror!void {
+    @constCast(dentry.d_inode.?).uid = uid;
+    @constCast(dentry.d_inode.?).gid = gid;
+}
+
+pub fn lookup(parent: *Dentry_T, name: []const u8) anyerror!*Dentry_T {
+    const list_ptr: ?*list_T = aux.obtain_rootfs_d(parent).list;
+    if(list_ptr == null or !list_ptr.?.is_initialized()) return RootfsErr_T.NonFound;
+    const param: struct { cmp: []const u8 } = .{
+        .cmp = name,
     };
-    while(current) |NoNNullCurrent| {
-        if(@call(.always_inline, &cmp_name, .{
-            NoNNullCurrent.dentry.name,
-            name
-        })) {
-            return NoNNullCurrent.dentry;
+    return (list_ptr.?.iterator_handler(
+        param,
+        &opaque {
+            pub fn handler(rootfs_dentry: *RootfsDentry_T, rep: @TypeOf(param)) anyerror!void {
+                if(!mem.eql(rootfs_dentry.dentry.d_name, rep.cmp, .{ .case = true }))
+                    return error.Continue;
+            }
+        }.handler,
+    ) catch |err| return switch(err) {
+        listErr_T.EndOfIterator => RootfsErr_T.NonFound,
+        else => r: {
+            // klog()
+            break :r RootfsErr_T.IteratorInternalError;
+        },
+    }).dentry;
+}
+
+pub fn mkdir(parent: *Dentry_T, name: []const u8, uid: uid_T, gid: gid_T, mode: mode_T) anyerror!void {
+    const parent_rootfs_entry: *RootfsDentry_T = aux.obtain_rootfs_d(parent);
+    parent_rootfs_entry.list = if(parent_rootfs_entry.list != null) parent_rootfs_entry.list else r: {
+        if(allocator.sba.alloc_one(list_T)) |list| {
+            list.private = null;
+            break :r list;
+        } else |err| {
+            return err;
         }
-        current = NoNNullCurrent.brother;
+    };
+    if(!parent_rootfs_entry.list.is_initialized()) parent_rootfs_entry.list.?.init() catch {
+        // klog()
+        return RootfsErr_T.ListInitFailed;
+    };
+    const rootfs_entry: *RootfsDentry_T = try aux.alloc_init_entry();
+    rootfs_entry.dentry.d_inode = inode.inode_gen(
+        &allocator.sba.allocator,
+        .directory,
+        uid,
+        gid,
+        mode,
+    ) catch {
+        // klog()
+        allocator.sba.allocator.free(rootfs_entry.dentry) catch {};
+        allocator.sba.allocator.free(rootfs_entry) catch {};
+        return RootfsErr_T.AllocatorFailed;
+    };
+    errdefer {
+        // klog()
+        allocator.sba.allocator.free(rootfs_entry.dentry.d_inode.?) catch {};
+        allocator.sba.allocator.free(rootfs_entry.dentry) catch {};
+        allocator.sba.allocator.free(rootfs_entry) catch {};
     }
-    return RootfsErr_T.NonFound;
+    rootfs_entry.dentry.d_name = try allocator.sba.allocator.alloc(u8, name.len);
+    mem.cpy(rootfs_entry.dentry.d_name, name);
+    errdefer allocator.sba.allocator.free(rootfs_entry.dentry.d_name) catch {};
+    try parent_rootfs_entry.list.?.push_in_list(&allocator.sba.allocator, rootfs_entry);
 }
 
-fn rootfs_mkdir(
-    parent: *Dentry_T,
-    name: []const u8,
-    uid: u16,
-    gid: u32,
-    mode: u16,
-) anyerror!*Dentry_T {
-    _ = parent;
-    _ = name;
-    _ = uid;
-    _ = gid;
-    _ = mode;
-    return RootfsErr_T.NonFound;
-}
+pub fn unlink(_: *Dentry_T) anyerror!void {
 
-fn rootfs_create(
-    parent: *Dentry_T,
-    name: []const u8,
-    uid: u16,
-    gid: u32,
-    mode: u16,
-) anyerror!*Dentry_T {
-    _ = parent;
-    _ = name;
-    _ = uid;
-    _ = gid;
-    _ = mode;
-    return RootfsErr_T.NonFound;
 }
-
-fn rootfs_unlink(
-    parent: *Dentry_T,
-    name: []const u8,
-) anyerror!void {
-    _ = parent;
-    _ = name;
-}
-
-fn rootfs_interator(
-    parent: *Dentry_T
-) []const *Dentry_T {
-    _ = parent;
-}
-

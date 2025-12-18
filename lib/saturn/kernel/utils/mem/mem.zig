@@ -26,6 +26,13 @@ pub fn eql(noalias b0: []const u8, noalias b1: []const u8, comptime rule: struct
     };
 }
 
+pub fn cpy(noalias dest: []u8, noalias src: []const u8) void {
+    for(0..dest.len) |i| {
+        if(src.len <= i) break;
+        dest[i] = src[i];
+    }
+}
+
 pub fn zero(comptime T: type) T {
     @setEvalBranchQuota(4294967295);
     switch(@typeInfo(T)) {

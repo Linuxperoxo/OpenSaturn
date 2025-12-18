@@ -165,6 +165,7 @@ pub const ModHandler_T: type = union(ModType_T) {
 
 pub const ModuleDescriptionLibMine_T: type = struct {
     name: []const u8,
+    // TODO: Whitelist liberando modulos de um certo tipo, como somente para fs, drivers, irq, syscalls, etc
     whitelist: ?[]const []const u8,
     lib: type,
     flags: packed struct {
@@ -211,6 +212,7 @@ pub const ModuleDescription_T: type = struct {
         reserved: u6 = 0,
     },
 
+    // TODO: especificar a lib que queremos do outside
     pub fn request_libs(self: *const @This()) anyerror!struct { [if(self.libs.outside != null) self.libs.outside.?.len else 0]?type, bool } {
         return comptime modsys.exposed.search_by_libs(self);
     }
