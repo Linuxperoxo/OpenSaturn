@@ -2,7 +2,6 @@ OpenSaturn 0.2.3 - Change Log
 =============================
 
 --- KERNEL
-* Adicionado SMLL.
 * Melhorias no código do SMLL.
 * Novas funções em ModuleDescription_T para obter libs
 * Configs IgnoreLibSearchNoExistentMod e IgnoreFaultNoExistentLib removidas
