@@ -10,30 +10,34 @@ const config: type = @import("root").config;
 const modsys: type = @import("modsys.zig");
 const mem: type = @import("root").kernel.utils.mem;
 
-pub fn search_all(comptime mod: *const module.ModuleDescription_T) [
+pub fn search_all(comptime mod: *const module.ModuleDescription_T) struct { [
     if(mod.libs.outside == null) 0 else
         mod.libs.outside.?.len
-]?type {
+]?type, bool } {
     if(mod.libs.outside == null or mod.libs.outside.?.len == 0) @compileError(
         "modsys: " ++  mod.name ++ " request libs without outside lib"
     );
-    var libs = [_]?type {
-        null
-    } ** mod.libs.outside.?.len;
-    for(mod.libs.outside.?, 0..) |outside, i| {
-        libs[i] = search_lib(mod, outside.lib);
-    }
-    return libs;
+    return comptime search_libs(mod, r: {
+        var libs: [mod.libs.outside.?.len][]const u8 = undefined;
+        for(0..libs.len) |i|
+            libs[i] = mod.libs.outside.?[i].lib;
+        break :r &libs;
+    });
 }
 
-pub fn search_libs(mod: *const module.ModuleDescription_T, libs: []const[]const u8) [libs.len]?type {
+pub fn search_libs(mod: *const module.ModuleDescription_T, libs: []const[]const u8) struct { [libs.len]?type, bool } {
+    var fault: bool = false;
     var loaded_libs = [_]?type {
         null
-    } ** mod.libs.outside.?.len;
+    } ** libs.len;
     for(libs, 0..) |outside, i| {
         loaded_libs[i] = search_lib(mod, outside);
+        fault = if(loaded_libs[i] == null) true else fault;
     }
-    return loaded_libs;
+    return .{
+        loaded_libs,
+        fault,
+    };
 }
 
 pub fn search_lib(mod: *const module.ModuleDescription_T, lib: []const u8) ?type {
@@ -51,7 +55,7 @@ pub fn search_lib(mod: *const module.ModuleDescription_T, lib: []const u8) ?type
         );
     };
     const mod_found = find_module_by_name(outside_lib.mod)
-        catch if(config.modules.options.IgnoreLibSearchNoExistentMod) return null else
+        catch if(outside_lib.flags.required == 0) return null else
             @compileError(
                 "modsys: lib request by " ++ mod.name ++ " " ++
                 "for module " ++ outside_lib.mod ++ ", " ++
@@ -59,7 +63,7 @@ pub fn search_lib(mod: *const module.ModuleDescription_T, lib: []const u8) ?type
                 "overrider and menuconfig to see if the module really exists"
             );
     const lib_found = find_module_lib_by_name(mod_found, outside_lib.lib)
-        catch if(config.modules.options.IgnoreFaultNoExistentLib) return null else
+        catch if(outside_lib.flags.required == 0) return null else
             @compileError(
                 "modsys: module " ++ mod.name ++ " " ++
                 "is requesting " ++ outside_lib.lib ++ " " ++

@@ -29,11 +29,6 @@
 //
 // * IgnoreModulePointerCollision: Ignora modulos repetidos, caso contrario, ocorre um erro em comptime
 //
-// * IgnoreLibSearchNoExistentMod: Ignora caso um modulo faca request de uma lib para um modulo que nao esta no kernel,
-//                                 caso contrario, ocorre um erro em comptime
-//
-// * IgnoreFaultNoExistentLib: Funciona da mesma maneira que IgnoreLibSearchNoExistentMod, so que com a lib, caso o modulo
-//                             nao tenha aquela lib
 
 pub const UseMenuconfigAsRef: bool = true;
 pub const IgnoreModuleWithArchNotSupported: bool = true;
@@ -41,5 +36,3 @@ pub const AllowDynamicModulesLoad: bool = true; // TODO:
 pub const ForceModuleArchOverrider: bool = true;
 pub const IgnoreOverriderIfNoExist: bool = true;
 pub const IgnoreModuleCollision: bool = false;
-pub const IgnoreLibSearchNoExistentMod: bool = false;
-pub const IgnoreFaultNoExistentLib: bool = false;
