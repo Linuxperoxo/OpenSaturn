@@ -190,8 +190,19 @@ pub const ModuleDescription_T: type = struct {
         reserved: u6 = 0,
     },
 
-    pub fn request_libs(self: *const @This()) anyerror!struct { [if(self.libs.outside != null) self.libs.outside.?.len else 0]?type, bool } {
-        return comptime modsys.exposed.search_by_libs(self);
+    pub fn request_all(comptime self: *const @This()) [
+        if(self.libs.outside == null) 0 else
+            self.libs.outside.?.len
+    ]?type {
+        return comptime modsys.smll.search_all(self);
+    }
+
+    pub fn request_libs(comptime self: *const @This(), comptime libs: []const[]const u8) [libs.len]?type {
+        return comptime modsys.smll.search_libs(self, libs);
+    }
+
+    pub fn request_lib(self: *const @This(), lib: []const u8) ?type {
+        return comptime modsys.smll.search_lib(self, lib);
     }
 
     pub fn abort_compile(self: *const @This(), comptime msg: []const u8) noreturn {

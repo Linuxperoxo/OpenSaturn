@@ -41,5 +41,5 @@ pub const AllowDynamicModulesLoad: bool = true; // TODO:
 pub const ForceModuleArchOverrider: bool = true;
 pub const IgnoreOverriderIfNoExist: bool = true;
 pub const IgnoreModuleCollision: bool = false;
-pub const IgnoreLibSearchNoExistentMod: bool = true;
-pub const IgnoreFaultNoExistentLib: bool = true;
+pub const IgnoreLibSearchNoExistentMod: bool = false;
+pub const IgnoreFaultNoExistentLib: bool = false;
