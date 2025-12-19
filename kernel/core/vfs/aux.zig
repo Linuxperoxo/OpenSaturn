@@ -6,6 +6,7 @@
 const builtin: type = @import("builtin");
 const types: type = @import("types.zig");
 const kernel: type = @import("root").kernel;
+const main: type = @import("main.zig");
 
 const allocator: type = if(!builtin.is_test) @import("allocator.zig") else
     @import("test/allocator.zig");
@@ -100,8 +101,12 @@ pub inline fn perm_decode(dentry: *Dentry_T, gid: []const types.gid_T, uid: type
 }
 
 pub inline fn is_valid_op(dentry: *Dentry_T, op: Op_T) VfsErr_T!void {
-    if(dentry.d_inode == null or dentry.d_op == null) return VfsErr_T.InvalidDentry;
-    switch(dentry.d_inode.?.type) {
+    const file_type: types.FileType_T = r: {
+        if(dentry == &main.root) break :r .directory;
+        if(dentry.d_inode == null or dentry.d_op == null) return VfsErr_T.InvalidDentry;
+        break :r dentry.d_inode.?.type;
+    };
+    switch(file_type) {
         .block, .char, .regular => {
             return switch(op) {
                 .read => if(dentry.d_op.?.read == null) VfsErr_T.InvalidOperation,
