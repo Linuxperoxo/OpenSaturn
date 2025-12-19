@@ -124,7 +124,7 @@ pub const loader: type = @import("kernel/loader.zig");
 pub const modules: type = @import("modules.zig");
 pub const modsys: type = struct {
     pub const core: type = @import("kernel/modsys/modsys.zig");
-    pub const exposed: type = @import("kernel/modsys/exposed.zig");
+    pub const smll: type = @import("kernel/modsys/smll.zig");
 };
 pub const interfaces: type = struct {
     pub const devices: type = @import("lib/saturn/interfaces/devices.zig");

@@ -138,15 +138,24 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
         .outside = &[_]ModuleDescriptionLibOut_T {
             ModuleDescriptionLibOut_T {
                 .mod = "outside_module", // nome do modulo (ModuleDescription_T.name)
-                .lib = "outside_super_lib0", // nome da lib, voce pode ver o mines do modulo e ver qual o nome da lib 
+                .lib = "outside_super_lib0", // nome da lib, voce pode ver o mines do modulo e ver qual o nome da lib
+                .flags = .{
+                    .required = 1, // em caso de falha ocorre um erro de compilacao
+                },
             },
             ModuleDescriptionLibOut_T {
                 .mod = "outside_module",
                 .lib = "outside_super_lib1",
+                .flags = .{
+                    .required = 1,
+                },
             },
             ModuleDescriptionLibOut_T {
                 .mod = "outside_module",
                 .lib = "outside_super_lib2",
+                .flags = .{
+                    .required = 0, // pode retornar null no request
+                },
             },
         },
     },
@@ -155,12 +164,12 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
 const outside_libs = r: {
     // * outsides: possui um [_]?type
     // * some_fault: se algum indice de outsides e null some_fault == true
-    const outsides, const some_fault = __SaturnModuleDescription__.request_libs()
-        catch unreachable; // so retorna erro caso outside.len == 0 ou outside == null
-    // Aqui você pode decidir o que fazer caso alguma lib falhe. O índice de outsides se refere ao
+    const outsides, const some_fault = __SaturnModuleDescription__.request_all(); // obtem todas as libs em outside
+    // * para obter apenas uma lib especifica do outisde use "__SaturnModuleDescription__.request_lib("outside_super_lib0");"
+    // * para obter varias libs mas especificando use "__SaturnModuleDescription__.request_libs(&[_][]const u8 { "outside_super_lib0", "outside_super_lib1" })"
     // mesmo índice de __SaturnModuleDescription__.outside. Dificilmente alguma lib vai falhar, só
     // ocorre erro caso o módulo não seja encontrado, ou o módulo seja encontrado, mas a lib não.
-    if(some_fault) __SaturnModuleDescription__.abort_compile("some lib failed to be fetched!");
+    if(some_fault) __SaturnModuleDescription__.abort_compile("outside_super_lib2 failed to be fetched!");
     break :r .{
         .slib0 = outsides[0].?,
         .slib1 = outsides[1].?,
