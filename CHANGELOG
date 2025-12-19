@@ -1,8 +1,8 @@
-OpenSaturn 0.2.2 - Change Log
+OpenSaturn 0.2.3 - Change Log
 =============================
 
 --- KERNEL
-* Modulos podem ter libs que outros modulos podem usar.
-* Whitelist para dizer quais modulos podem usar aquela lib.
-* Novos tipos para ModuleDescription_T (ModuleDescriptionLibOut_T, ModuleDescriptionLibMine_T)
-* Novas options para controle de libs em config/modules/options.zig
+* Melhorias no código do SMLL.
+* Novas funções em ModuleDescription_T para obter libs
+* Configs IgnoreLibSearchNoExistentMod e IgnoreFaultNoExistentLib removidas
+* Flags de controle para ModuleDescriptionLibOut_T
