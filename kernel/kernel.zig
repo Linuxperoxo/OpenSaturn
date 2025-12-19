@@ -24,7 +24,7 @@ pub const modules: type = saturn.modules;
 pub const decls: type = saturn.decls;
 pub const modsys: type = struct {
     const core: type = saturn.modsys.core;
-    pub const exposed: type = saturn.modsys.exposed;
+    pub const smll: type = saturn.modsys.smll;
 };
 pub const step: type = struct {
     pub const saturn_get_phase = saturn.step.saturn_get_phase;
