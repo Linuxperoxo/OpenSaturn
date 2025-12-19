@@ -15,7 +15,7 @@ pub inline fn inode_gen(
     gid: vfs.gid_T,
     mode: vfs.mode_T,
 ) anyerror!*vfs.Inode_T {
-    const inode: *vfs.Inode_T = &(try allocator.alloc(vfs.Inode_T))[0];
+    const inode: *vfs.Inode_T = &(try allocator.alloc(vfs.Inode_T, 1))[0];
     inode.* = .{
         .inode = self.current,
         .type = itype,

@@ -80,13 +80,16 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
             ModuleDescriptionLibOut_T {
                 .lib = "inode-utils",
                 .mod = "ke_m_rootfs",
+                .flags = .{
+                    .required = 1,
+                },
             },
         },
     },
 };
 
 pub var rootfs: Mod_T = .{
-    .name = __SaturnModuleDescription__.name,
+    .name = "rootfs",
     .desc = "Core Kernel Root Filesystem",
     .author = "Linuxperoxo",
     .version = "0.1.0",
@@ -105,7 +108,7 @@ pub var rootfs: Mod_T = .{
             .umount = rootfs_umount,
             .flags = .{
                 .control = .{
-                    .nomount = 1,
+                    .nomount = 0,
                     .noumount = 1,
                     .readonly = 0,
                     .anon = 0,

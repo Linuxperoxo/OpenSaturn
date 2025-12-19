@@ -3,15 +3,17 @@
 // │            Author: Linuxperoxo                  │
 // └─────────────────────────────────────────────────┘
 
-pub const buildByteAllocator: type = @import("root").kernel.memory.sba.buildByteAllocator;
+const types: type = @import("types.zig");
+
+pub const buildByteAllocator = @import("root").kernel.memory.sba.buildByteAllocator;
 
 pub const sba: type = struct {
-    pub const allocator = buildByteAllocator(null, .{
-        .resized = true,
+    pub var allocator = buildByteAllocator(null, .{
+        .resize = true,
     }) {};
 
-    pub fn alloc_one(comptime T: type) anyerror!*T {
+    pub fn alloc_one(comptime T: type) types.RootfsErr_T!*T {
         return &(allocator.alloc(T, 1)
-            catch @import("types.zig").RootfsErr_T.AllocatorFailed)[0];
+            catch return types.RootfsErr_T.AllocatorFailed)[0];
     }
 };

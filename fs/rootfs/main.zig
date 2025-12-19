@@ -10,13 +10,8 @@ const mem: type = @import("root").kernel.utils.mem;
 const c: type = @import("root").kernel.utils.c;
 const allocator: type = @import("allocator.zig");
 const aux: type = @import("aux.zig");
-const inode_utils: type = r: {
-    const libs, const fault = rootfs.__SaturnModuleDescription__.request_libs();
-    if(fault) rootfs.__SaturnModuleDescription__.abort_compile(
-        "failed to load self lib"
-    );
-    break :r libs[0].?; // inode-utils
-};
+// required
+const inode_utils: type = rootfs.__SaturnModuleDescription__.request_lib("inode-utils").?;
 
 const Dentry_T: type = interfaces.vfs.Dentry_T;
 const Superblock_T: type = interfaces.vfs.Superblock_T;
@@ -52,7 +47,7 @@ var superblock: Superblock_T = .{
     .data_block_start = 0,
     .inode_table_start = 0,
     .magic = 0xAB00,
-    .private_data = null,
+    .private_data = &types.list_T {},
     .total_blocks = 0,
     .total_inodes = 0,
     .inode_op = &dir_inode_ops,
@@ -104,7 +99,15 @@ pub fn lookup(parent: *Dentry_T, name: []const u8) anyerror!*Dentry_T {
 }
 
 pub fn mkdir(parent: *Dentry_T, name: []const u8, uid: uid_T, gid: gid_T, mode: mode_T) anyerror!void {
+    // FIXME: fault: caso seja o bloco montado, devemos pegar diretamente o private_data,
+    // que ja e um ponteiro para uma lista de *RootfsDentry_T
     const parent_rootfs_entry: *RootfsDentry_T = aux.obtain_rootfs_d(parent);
+    asm volatile(
+        \\ jmp .
+        \\ jmp 0xAA00
+        :
+        :[_] "{eax}" (parent_rootfs_entry)
+    );
     parent_rootfs_entry.list = if(parent_rootfs_entry.list != null) parent_rootfs_entry.list else r: {
         if(allocator.sba.alloc_one(list_T)) |list| {
             list.private = null;
@@ -113,7 +116,7 @@ pub fn mkdir(parent: *Dentry_T, name: []const u8, uid: uid_T, gid: gid_T, mode: 
             return err;
         }
     };
-    if(!parent_rootfs_entry.list.is_initialized()) parent_rootfs_entry.list.?.init() catch {
+    if(!parent_rootfs_entry.list.?.is_initialized()) parent_rootfs_entry.list.?.init(&allocator.sba.allocator) catch {
         // klog()
         return RootfsErr_T.ListInitFailed;
     };
@@ -132,13 +135,13 @@ pub fn mkdir(parent: *Dentry_T, name: []const u8, uid: uid_T, gid: gid_T, mode: 
     };
     errdefer {
         // klog()
-        allocator.sba.allocator.free(rootfs_entry.dentry.d_inode.?) catch {};
+        allocator.sba.allocator.free(@constCast(rootfs_entry.dentry.d_inode.?)) catch {};
         allocator.sba.allocator.free(rootfs_entry.dentry) catch {};
         allocator.sba.allocator.free(rootfs_entry) catch {};
     }
     rootfs_entry.dentry.d_name = try allocator.sba.allocator.alloc(u8, name.len);
-    mem.cpy(rootfs_entry.dentry.d_name, name);
-    errdefer allocator.sba.allocator.free(rootfs_entry.dentry.d_name) catch {};
+    mem.cpy(@constCast(rootfs_entry.dentry.d_name), name);
+    errdefer allocator.sba.allocator.free(@constCast(rootfs_entry.dentry.d_name)) catch {};
     try parent_rootfs_entry.list.?.push_in_list(&allocator.sba.allocator, rootfs_entry);
 }
 

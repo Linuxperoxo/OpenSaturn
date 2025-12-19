@@ -8,9 +8,9 @@ const allocator: type = @import("allocator.zig");
 const vfs: type = @import("root").interfaces.vfs;
 
 pub inline fn obtain_rootfs_d(dentry: *vfs.Dentry_T) *types.RootfsDentry_T {
-    if(dentry.s_block != null)
-        return @constCast(dentry.s_block.?.private_data.?);
-    return @constCast(dentry.d_private.?);
+    if(dentry.d_sblock != null)
+        return @alignCast(@ptrCast(@constCast(dentry.d_sblock.?.private_data.?)));
+    return @alignCast(@ptrCast(@constCast(dentry.d_private.?)));
 }
 
 pub inline fn alloc_init_entry() types.RootfsErr_T!*types.RootfsDentry_T {
@@ -23,7 +23,7 @@ pub inline fn alloc_init_entry() types.RootfsErr_T!*types.RootfsDentry_T {
     rootfs_entry.dentry.parent = null;
     rootfs_entry.dentry.younger_brother = null;
     rootfs_entry.dentry.older_brother = null;
-    rootfs_entry.dentry.d_private = &rootfs_entry;
+    rootfs_entry.dentry.d_private = rootfs_entry;
     rootfs_entry.list = null;
     return rootfs_entry;
 }

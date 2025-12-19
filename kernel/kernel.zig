@@ -85,5 +85,16 @@ fn saturn_main() callconv(.c) noreturn {
     @call(.always_inline, saturn.step.saturn_set_phase, .{
         .runtime
     });
+    core.vfs.mkdir("/", "dev", null, 0, 0, .{
+        .owner = .{ .r = 1, .w = 1, .x = 1 },
+        .group = .{ .r = 1, .w = 1, .x = 1 },
+        .other = .{ .r = 1, .w = 1, .x = 1 },
+    }) catch {
+        asm volatile(
+            \\ jmp .
+            \\ jmp 0xAE00
+        );
+        unreachable;
+    };
     @call(.always_inline, loader.saturn_running, .{}); // noreturn fn
 }
