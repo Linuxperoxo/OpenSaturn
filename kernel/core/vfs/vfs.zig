@@ -16,6 +16,10 @@ pub const Dentry_T: type = types.Dentry_T;
 pub const Superblock_T: type = types.Superblock_T;
 pub const VfsErr_T: type = types.VfsErr_T;
 
+pub const R: u3 = types.R;
+pub const W: u3 = types.W;
+pub const X: u3 = types.X;
+
 pub const write = main.write;
 pub const read = main.read;
 pub const unlink = main.unlink;

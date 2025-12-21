@@ -165,6 +165,7 @@ pub const ModHandler_T: type = union(ModType_T) {
 
 pub const ModuleDescriptionLibMine_T: type = struct {
     name: []const u8,
+    // TODO: Whitelist liberando modulos de um certo tipo, como somente para fs, drivers, irq, syscalls, etc
     whitelist: ?[]const []const u8,
     lib: type,
     flags: packed struct {

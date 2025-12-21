@@ -1,12 +1,12 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: module.zig   │
+// │  (c) 2025 Linuxperoxo  •  FILE: rootfs.zig   │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
 const c: type = @import("root").kernel.utils.c;
 const interfaces: type = @import("root").interfaces;
+const list: type = @import("root").kernel.utils.list;
 
-// kernel Modules Types
 const Mod_T: type = interfaces.module.Mod_T;
 const ModErr_T: type = interfaces.module.ModErr_T;
 const ModuleDescription_T: type = interfaces.module.ModuleDescription_T;
@@ -14,7 +14,6 @@ const ModuleDescriptionTarget_T: type = interfaces.module.ModuleDescriptionTarge
 const ModuleDescriptionLibMine_T: type = interfaces.module.ModuleDescriptionLibMine_T;
 const ModuleDescriptionLibOut_T: type = interfaces.module.ModuleDescriptionLibOut_T;
 
-// Kernel FS Types
 const Fs_T: type = interfaces.fs.Fs_T;
 
 const inmod = interfaces.module.inmod;
@@ -66,13 +65,31 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
         },
     },
     .libs = .{
-        .mines = null,
-        .outside = null,
+        .mines = &[_]ModuleDescriptionLibMine_T {
+            ModuleDescriptionLibMine_T {
+                .name = "inode-utils",
+                .whitelist = null,
+                .lib = @import("lib/inode.zig"),
+                .flags = .{
+                    .whitelist = 0,
+                    .enable = 1,
+                },
+            },
+        },
+        .outside = &[_]ModuleDescriptionLibOut_T {
+            ModuleDescriptionLibOut_T {
+                .lib = "inode-utils",
+                .mod = "ke_m_rootfs",
+                .flags = .{
+                    .required = 1,
+                },
+            },
+        },
     },
 };
 
 pub var rootfs: Mod_T = .{
-    .name = __SaturnModuleDescription__.name,
+    .name = "rootfs",
     .desc = "Core Kernel Root Filesystem",
     .author = "Linuxperoxo",
     .version = "0.1.0",
@@ -91,7 +108,7 @@ pub var rootfs: Mod_T = .{
             .umount = rootfs_umount,
             .flags = .{
                 .control = .{
-                    .nomount = 1,
+                    .nomount = 0,
                     .noumount = 1,
                     .readonly = 0,
                     .anon = 0,

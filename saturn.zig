@@ -11,6 +11,7 @@
 // as partes em um unico arquivo, partimos da ideia da leitura
 // desse arquivo ficar dificil para a estrutura dos codigos fique
 // organizada
+
 const SelectedArch: type = switch(config.arch.options.Target) {
     .i386 => Architectures.i386,
     .amd64 => Architectures.amd64,
