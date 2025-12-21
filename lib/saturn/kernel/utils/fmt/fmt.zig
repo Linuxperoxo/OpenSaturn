@@ -58,7 +58,7 @@ pub fn broken_str(str: []const u8, broken: u8, allocator: anytype) anyerror![][]
     const initial_offset,
     const final_offset,
     const subs = try aux.BrokenInfo(str, broken);
-    const sub_strs: [][]const u8 = try allocator.alloc([]const u8, subs);
+    const sub_strs: [][]const u8 = (try allocator.alloc([]const u8, subs)).ptr[0..subs]; // FIXME: alloc retorna .len errado para o slice
     var sub_strs_index: usize = 0;
     var i: usize = initial_offset;
     while(i < final_offset) : (i += 1) {

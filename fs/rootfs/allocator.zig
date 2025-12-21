@@ -5,7 +5,7 @@
 
 const types: type = @import("types.zig");
 
-pub const buildByteAllocator = @import("root").kernel.memory.sba.buildByteAllocator;
+const buildByteAllocator = @import("root").kernel.memory.sba.buildByteAllocator;
 
 pub const sba: type = struct {
     pub var allocator = buildByteAllocator(null, .{

@@ -29,7 +29,7 @@ const RootfsErr_T: type = types.RootfsErr_T;
 const list_T: type = types.list_T;
 const listErr_T: type = types.listErr_T;
 
-const dir_inode_ops: InodeOp_T = .{
+pub var dir_inode_ops: InodeOp_T = .{
     .chmod = &chmod,
     .chown = &chown,
     .create = null,
@@ -47,7 +47,7 @@ var superblock: Superblock_T = .{
     .data_block_start = 0,
     .inode_table_start = 0,
     .magic = 0xAB00,
-    .private_data = &types.list_T {},
+    .private_data = null,
     .total_blocks = 0,
     .total_inodes = 0,
     .inode_op = &dir_inode_ops,
@@ -61,9 +61,9 @@ pub fn rootfs_mount() anyerror!*const Superblock_T {
     return &superblock;
 }
 
-pub fn rootfs_umount() FsErr_T!void {
-    // rootfs nunca deve ser desmontado
-    unreachable;
+pub fn rootfs_umount()anyerror!void {
+    // klog()
+    return RootfsErr_T.AttemptUmount;
 }
 
 pub fn chmod(dentry: *Dentry_T, mode: mode_T) anyerror!void {
@@ -76,12 +76,12 @@ pub fn chown(dentry: *Dentry_T, uid: uid_T, gid: gid_T) anyerror!void {
 }
 
 pub fn lookup(parent: *Dentry_T, name: []const u8) anyerror!*Dentry_T {
-    const list_ptr: ?*list_T = aux.obtain_rootfs_d(parent).list;
-    if(list_ptr == null or !list_ptr.?.is_initialized()) return RootfsErr_T.NonFound;
+    const list_ptr: *list_T = try aux.obtain_dentry_list(parent);
+    if(!list_ptr.is_initialized()) return RootfsErr_T.NonFound;
     const param: struct { cmp: []const u8 } = .{
         .cmp = name,
     };
-    return (list_ptr.?.iterator_handler(
+    return (list_ptr.iterator_handler(
         param,
         &opaque {
             pub fn handler(rootfs_dentry: *RootfsDentry_T, rep: @TypeOf(param)) anyerror!void {
@@ -99,24 +99,8 @@ pub fn lookup(parent: *Dentry_T, name: []const u8) anyerror!*Dentry_T {
 }
 
 pub fn mkdir(parent: *Dentry_T, name: []const u8, uid: uid_T, gid: gid_T, mode: mode_T) anyerror!void {
-    // FIXME: fault: caso seja o bloco montado, devemos pegar diretamente o private_data,
-    // que ja e um ponteiro para uma lista de *RootfsDentry_T
-    const parent_rootfs_entry: *RootfsDentry_T = aux.obtain_rootfs_d(parent);
-    asm volatile(
-        \\ jmp .
-        \\ jmp 0xAA00
-        :
-        :[_] "{eax}" (parent_rootfs_entry)
-    );
-    parent_rootfs_entry.list = if(parent_rootfs_entry.list != null) parent_rootfs_entry.list else r: {
-        if(allocator.sba.alloc_one(list_T)) |list| {
-            list.private = null;
-            break :r list;
-        } else |err| {
-            return err;
-        }
-    };
-    if(!parent_rootfs_entry.list.?.is_initialized()) parent_rootfs_entry.list.?.init(&allocator.sba.allocator) catch {
+    const list_ptr: *list_T = try aux.obtain_dentry_list(parent);
+    if(!list_ptr.is_initialized()) list_ptr.init(&allocator.sba.allocator) catch {
         // klog()
         return RootfsErr_T.ListInitFailed;
     };
@@ -139,10 +123,10 @@ pub fn mkdir(parent: *Dentry_T, name: []const u8, uid: uid_T, gid: gid_T, mode: 
         allocator.sba.allocator.free(rootfs_entry.dentry) catch {};
         allocator.sba.allocator.free(rootfs_entry) catch {};
     }
-    rootfs_entry.dentry.d_name = try allocator.sba.allocator.alloc(u8, name.len);
+    rootfs_entry.dentry.d_name = (try allocator.sba.allocator.alloc(u8, name.len)).ptr[0..name.len];
     mem.cpy(@constCast(rootfs_entry.dentry.d_name), name);
     errdefer allocator.sba.allocator.free(@constCast(rootfs_entry.dentry.d_name)) catch {};
-    try parent_rootfs_entry.list.?.push_in_list(&allocator.sba.allocator, rootfs_entry);
+    try list_ptr.push_in_list(&allocator.sba.allocator, rootfs_entry);
 }
 
 pub fn unlink(_: *Dentry_T) anyerror!void {

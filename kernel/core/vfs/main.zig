@@ -9,6 +9,7 @@ const fs: type = @import("root").core.fs;
 const types: type = @import("types.zig");
 const allocator: type = @import("allocator.zig");
 const aux: type = @import("aux.zig");
+const fmt: type = @import("root").kernel.utils.fmt;
 
 const Inode_T: type = types.Inode_T;
 const InodeOp_T: type = types.InodeOp_T;
@@ -53,7 +54,7 @@ pub fn mount(
         fs_struct.flags.internal.fault.mount = 1;
         return VfsErr_T.FilesystemMountError;
     };
-    dentry_mount.d_sblock = sblock;
+    dentry_mount.d_sblock = @constCast(sblock);
     dentry_mount.d_op = sblock.inode_op;
     fs_struct.flags.internal.mounted = 1;
 }
@@ -83,9 +84,9 @@ pub fn create(
     gid: gid_T,
     mode: mode_T,
 ) VfsErr_T!void {
-    const dentry_parent: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{ 
+    const dentry_parent: *Dentry_T = @call(.never_inline, aux.resolve_path, .{ 
         parent, current, &root
-    });
+    }) catch return types.VfsErr_T.WithoutParent;
     try aux.is_valid_op(dentry_parent, .create);
     dentry_parent.d_op.?.create.?(dentry_parent, name, uid, gid, mode) catch {
         // klog()
@@ -101,11 +102,9 @@ pub fn mkdir(
     gid: gid_T,
     mode: mode_T,
 ) VfsErr_T!void {
-    // TODO: dar um touch em parent/name para ver se o arquivo ja existe, isso vai
-    // facilitar a vida do fs
-    const dentry_parent: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{ 
+    const dentry_parent: *Dentry_T = @call(.never_inline, aux.resolve_path, .{
         parent, current, &root
-    });
+    }) catch return types.VfsErr_T.WithoutParent;
     try aux.is_valid_op(dentry_parent, .mkdir);
     return dentry_parent.d_op.?.mkdir.?(dentry_parent, name, uid, gid, mode) catch {
         // klog()

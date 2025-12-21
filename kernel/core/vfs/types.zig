@@ -9,16 +9,14 @@ const fs: type = @import("root").core.fs;
 pub const uid_T: type = if(@bitSizeOf(usize) >= 16) u16 else u8;
 pub const gid_T: type = if(@bitSizeOf(usize) >= 32) u32 else uid_T;
 
-pub const perm_T: type = packed struct(u3) {
-    r: u1,
-    w: u1,
-    x: u1,
-};
+pub const R: u3 = 0b100;
+pub const W: u3 = 0b010;
+pub const X: u3 = 0b001;
 
 pub const mode_T: type = packed struct(u9) {
-    owner: perm_T,
-    group: perm_T,
-    other: perm_T,
+    owner: u3,
+    group: u3,
+    other: u3,
 };
 
 pub const FileType_T: type = enum {
@@ -43,10 +41,10 @@ pub const InodeOp_T: type = struct {
 
 pub const Dentry_T: type = struct {
     d_name: []const u8,
-    d_inode: ?*const Inode_T,
-    d_sblock: ?*const Superblock_T,
-    d_op: ?*const InodeOp_T,
-    d_private: ?*const anyopaque,
+    d_inode: ?*Inode_T,
+    d_sblock: ?*Superblock_T,
+    d_op: ?*InodeOp_T,
+    d_private: ?*anyopaque,
     child: ?*@This(),
     younger_brother: ?*@This(),
     older_brother: ?*@This(),
@@ -71,9 +69,9 @@ pub const Superblock_T: type = struct {
     total_inodes: usize, // numero total de inodes disponiveis
     inode_table_start: usize, // offset(em blocos) de onde começa a tabela de inodes
     data_block_start: usize, // offset no disco onde começa a area de dados dos arquivos
-    inode_op: *const InodeOp_T, // ponteiro para operacoes do dentry montado
+    inode_op: *InodeOp_T, // ponteiro para operacoes do dentry montado
     fs: if(!builtin.is_test) *fs.Fs_T else void, // informacoes do fs montado no dentry
-    private_data: ?*const anyopaque, // Dados internos do FS (cast dinamico)
+    private_data: ?*anyopaque, // Dados internos do FS (cast dinamico)
 };
 
 pub const VfsErr_T: type = error {
@@ -90,4 +88,5 @@ pub const VfsErr_T: type = error {
     InvalidOperation,
     OperationFailed,
     InvalidDentry,
+    WithoutParent,
 };

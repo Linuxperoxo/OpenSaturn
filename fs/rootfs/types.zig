@@ -23,5 +23,6 @@ pub const RootfsErr_T: type = error {
     IteratorInternalError,
     ListInitFailed,
     AllocatorFailed,
+    AttemptUmount,
 };
 
