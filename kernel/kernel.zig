@@ -22,6 +22,7 @@ pub const userspace: type = saturn.lib.userspace;
 pub const config: type = saturn.config;
 pub const modules: type = saturn.modules;
 pub const decls: type = saturn.decls;
+pub const fusioners: type = saturn.fusioners;
 pub const modsys: type = struct {
     const core: type = saturn.modsys.core;
     pub const smll: type = saturn.modsys.smll;
@@ -85,5 +86,7 @@ fn saturn_main() callconv(.c) noreturn {
     @call(.always_inline, saturn.step.saturn_set_phase, .{
         .runtime
     });
+    _ = (interfaces.fusium.fetch_fusioners(&[_][]const u8 {
+    }));
     @call(.always_inline, loader.saturn_running, .{}); // noreturn fn
 }
