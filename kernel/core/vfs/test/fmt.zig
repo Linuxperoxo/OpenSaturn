@@ -3,32 +3,6 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-fn numSize(comptime num: usize) usize {
-    if(num < 10) return 1;
-    var context: usize = num;
-    var size: usize = 0;
-    while(context != 0) : (context /= 10) {
-        size += 1;
-    }
-    return size;
-}
-
-pub fn intFromArray(comptime num: usize) [r: {
-    break :r numSize(num);
-}]u8 {
-    const size = numSize(num);
-    var context: usize = num;
-    var result = [_]u8 {
-        0
-    } ** size;
-    context = num;
-    for(0..size) |i| {
-        result[(size - 1) - i] = (context % 10) + '0';
-        context /= 10;
-    }
-    return result;
-}
-
 pub fn broken_str(str: []const u8, broken: u8, allocator: anytype) anyerror![][]const u8 {
     const aux: type = opaque {
         inline fn BrokenInfo(strr: []const u8, brokenn: u8) anyerror!struct { usize, usize, usize } {
@@ -58,7 +32,7 @@ pub fn broken_str(str: []const u8, broken: u8, allocator: anytype) anyerror![][]
     const initial_offset,
     const final_offset,
     const subs = try aux.BrokenInfo(str, broken);
-    const sub_strs: [][]const u8 = (try allocator.alloc([]const u8, subs)).ptr[0..subs]; // FIXME: alloc retorna .len errado para o slice
+    const sub_strs: [][]const u8 = try allocator.alloc([]const u8, subs);
     var sub_strs_index: usize = 0;
     var i: usize = initial_offset;
     while(i < final_offset) : (i += 1) {

@@ -45,7 +45,7 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     // deve preparar seu modulo
     .init = &init,
     // funcao chamada apos o init e o handler do tipo do modulo serem chamado
-    .after = &after, // ou null 
+    .after = &after, // ou null
     // aqui e o tipo do seu modulo. Como o sistema de modulos foi feito totalmente
     // pensando no comptime, aqui e uma parte bem importante para ele saber que parte
     // do kernel e responsavel por esse modulo, essa union tem todos o tipos de modulos

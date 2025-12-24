@@ -68,6 +68,10 @@ pub fn BuildList(comptime T: type) type {
             return @alignCast(@ptrCast(private));
         }
 
+        pub fn is_initialized(self: *@This()) bool {
+            return self.private != null;
+        }
+
         /// * init the list (use whenever the node quantity is 0)
         pub fn init(self: *@This(), allocator: anytype) ListErr_T!void {
             comptime check_allocator(@TypeOf(allocator));
@@ -211,9 +215,7 @@ pub fn BuildList(comptime T: type) type {
         ///     - If the handler returns an error, the iterator
         ///     continues until EndOfIterator
         ///     -  If it does not return an error, iterator
-        ///     returns what is stored in the current node, if it
-        ///     doesn't return an error, iterator returns what is
-        ///     stored in the current node
+        ///     returns what is stored in the current node
         ///     - any is used as a parameter for the handler
         pub fn iterator_handler(
             self: *@This(),

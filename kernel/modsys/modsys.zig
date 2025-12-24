@@ -79,9 +79,7 @@ pub const saturn_modules = r: {
         }
     };
     var modules_check_index: usize = 0;
-    var modules_check = [_]?interfaces.module.ModuleDescription_T {
-        null
-    } ** (modules.__SaturnAllMods__.len - aux.check_module_collision());
+    var modules_check: [(modules.__SaturnAllMods__.len - aux.check_module_collision())]interfaces.module.ModuleDescription_T = undefined;
     for(modules.__SaturnAllMods__, 0..) |mod, i| {
         t: {
             for(0..i) |j| {
@@ -113,13 +111,9 @@ pub const saturn_modules = r: {
             modules_check_index += 1;
         }
     }
-    break :r t: {
-        var satisfied_modules: [modules_check_index]interfaces.module.ModuleDescription_T = undefined;
-        for(0..modules_check_index) |i| {
-            satisfied_modules[i] = modules_check[i].?;
-        }
-        break :t satisfied_modules;
-    };
+    break :r @as(
+        *const [modules_check_index]interfaces.module.ModuleDescription_T, @ptrCast(&modules_check)
+    ).*;
 };
 
 pub fn saturn_modules_loader() void {
@@ -146,7 +140,13 @@ pub fn saturn_modules_loader() void {
                     switch(comptime module.type.filesystem) {
                         // caso o modulo fs use compile, vamos fazer uma
                         // montagem do fs em tempo de compilacao
-                        .compile => {}, // call mount
+                        .compile => |fs_info| {
+                            @call(.never_inline, interfaces.vfs.mount, .{
+                                fs_info.mountpoint, null, fs_info.name
+                            }) catch {
+                                // klog()
+                            };
+                        },
                         .dynamic => break :skip,
                     }
                 },

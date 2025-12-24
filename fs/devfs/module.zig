@@ -15,8 +15,8 @@ const Fs_T: type = @import("root").interfaces.fs.Fs_T;
 const inmod = @import("root").interfaces.module.inmod;
 const rmmod = @import("root").interfaces.module.rmmod;
 
-const devfs_mount = &@import("management.zig").devfs_mount;
-const devfs_umount = &@import("management.zig").devfs_umount;
+const devfs_mount = &@import("main.zig").devfs_mount;
+const devfs_umount = &@import("main.zig").devfs_umount;
 
 pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .name = "ke_m_devfs",
@@ -28,7 +28,10 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     },
     .type = .{
         .filesystem = .{
-            .compile = "/dev"
+            .compile = .{
+                .name = "ke_m_devfs",
+                .mountpoint = "/dev",
+            },
         }
     },
     .arch = &[_]ModuleDescriptionTarget_T {
@@ -67,9 +70,17 @@ var devfs: Mod_T = .{
     .private = .{
         .filesystem = .{
             .name = "devfs",
-            .flags = .RW,
             .mount = devfs_mount,
-            .unmount = devfs_umount,
+            .umount = devfs_umount,
+            .flags = .{
+                .control = .{
+                    .nomount = 0,
+                    .noumount = 1,
+                    .readonly = 0,
+                    .anon = 0,
+                },
+                .internal = .{},
+            },
         },
     },
     .flags = .{
@@ -80,29 +91,13 @@ var devfs: Mod_T = .{
                 .remove = 0,
                 .after = 0,
                 .init = 0,
-            },
-        },
-        .internal = .{
-            .installed = 0,
-            .removed = 0,
-            .collision = .{
-                .name = 0,
-                .pointer = 0,
-            },
-            .call = .{
-                .init = 0,
-                .exit = 0,
-                .after = 0,
-            },
-            .fault = .{
-                .call = .{
-                    .init = 0,
-                    .after = 0,
-                    .exit = 0,
+                .handler = .{
+                    .install = 1,
+                    .remove = 1,
                 },
-                .remove = 0,
             },
         },
+        .internal = .{},
     },
 };
 
