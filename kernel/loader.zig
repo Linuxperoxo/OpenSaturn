@@ -110,10 +110,12 @@ pub fn saturn_arch_verify() void {
                     }
                     continue;
                 }
-                if(field.type == ?[]const decl_expect_type.Overrider_T) continue;
                 break :sw true;
             },
-            else => break :sw false,
+            else => {
+                if(field.type == decl_expect_type.Overrider_T) continue;
+                break :sw false;
+            }
         };
         aux.export_this(
             if(opt) (@field(arch.__SaturnArchDescription__, field.name)).?.entry else

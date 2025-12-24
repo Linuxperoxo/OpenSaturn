@@ -1,7 +1,15 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: config.zig   │
+// │  (c) 2025 Linuxperoxo  •  FILE: types.zig    │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const options: type = @import("options.zig");
-pub const menuconfig: type = @import("menuconfig.zig");
+pub const Load_T: type = enum {
+    no,
+    yes,
+};
+
+pub const Menuconfig_T: type = struct {
+    some0: Load_T,
+    some1: Load_T,
+};
+

@@ -10,4 +10,3 @@ pub const FusiumDescription_T: type = types.FusiumDescription_T;
 pub const FusiumDescriptionTarget_T: type = types.FusiumDescriptionTarget_T;
 
 pub const fetch_fusioner = fetch.fetch_fusioner;
-pub const fetch_fusioners = fetch.fetch_fusioners;

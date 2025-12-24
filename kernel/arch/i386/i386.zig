@@ -94,15 +94,18 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
             .ptr = &interrupts.idt_entries,
         },
     },
-    .overrider = &[_]interfaces.arch.ArchDescription_T.Overrider_T {
-        .{
-            .module = "ke_m_rootfs",
-            .value = .yes,
+    .overrider = interfaces.arch.ArchDescription_T.Overrider_T {
+        .modules = &[_]interfaces.arch.ArchDescription_T.ModuleOverrider_T {
+            .{
+                .module = "ke_m_rootfs",
+                .value = .yes,
+            },
+            .{
+                .module = "ke_m_devfs",
+                .value = .yes,
+            },
         },
-        .{
-            .module = "ke_m_devfs",
-            .value = .no,
-        },
+        .fusioners = null,
     },
     // TODO:
     //
