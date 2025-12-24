@@ -94,7 +94,7 @@ fn saturn_main() callconv(.c) noreturn {
     }) catch {
         asm volatile(
             \\ jmp .
-            \\ jmp 0xAE00
+            \\ jmp 0xAA00
         );
         unreachable;
     };
@@ -105,7 +105,21 @@ fn saturn_main() callconv(.c) noreturn {
     }) catch {
         asm volatile(
             \\ jmp .
-            \\ jmp 0xAE00
+            \\ jmp 0xAB00
+        );
+        unreachable;
+    };
+    core.vfs.touch("/dev/sda", null) catch {
+        asm volatile(
+            \\ jmp .
+            \\ jmp 0xAC00
+        );
+        unreachable;
+    };
+    core.vfs.unlink("/dev/sda", null) catch {
+        asm volatile(
+            \\ jmp .
+            \\ jmp 0xAD00
         );
         unreachable;
     };

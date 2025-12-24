@@ -129,6 +129,20 @@ pub fn mkdir(parent: *Dentry_T, name: []const u8, uid: uid_T, gid: gid_T, mode: 
     try list_ptr.push_in_list(&allocator.sba.allocator, rootfs_entry);
 }
 
-pub fn unlink(_: *Dentry_T) anyerror!void {
-
+pub fn unlink(dentry: *Dentry_T) anyerror!void {
+    const parent_rootfs_dentry = aux.cast_private(dentry).parent;
+    if(parent_rootfs_dentry.list == null or !parent_rootfs_dentry.list.?.is_initialized()) return;
+    _ = parent_rootfs_dentry.list.?.iterator_handler(
+        dentry,
+        &opaque {
+            pub fn handler(rootfs_dentry: *RootfsDentry_T, dentry_to_found: *Dentry_T) anyerror!void {
+                if(rootfs_dentry.dentry != dentry_to_found)
+                    return error.Continue;
+            }
+        }.handler,
+    ) catch return RootfsErr_T.NonFound;
+    parent_rootfs_dentry.list.?.drop_on_list(
+        (parent_rootfs_dentry.list.?.iterator_index() catch unreachable) - 1,
+        &allocator.sba.allocator,
+    ) catch return RootfsErr_T.ListOperationFailed;
 }
