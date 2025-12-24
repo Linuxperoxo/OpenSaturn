@@ -10,44 +10,37 @@ const fusioners: type = @import("root").fusioners;
 const decls: type = @import("root").decls;
 const interfeces: type = @import("root").interfaces;
 const config: type = @import("root").config;
+const core: type = @import("core.zig");
 
-const fusioners_verified = r: {
-    var fusioners_confirm: [
-        fusioners.__SaturnAllFusioners__.len
-    ]interfeces.fusium.FusiumDescription_T = undefined;
-    for(fusioners.__SaturnAllFusioners__, 0..) |fusioner, i| {
-        if(!decls.container_decl_exist(fusioner, .fusium)) @compileError(
-            ""
+pub fn fetch_fusioner(comptime f_name: []const u8) ?type {
+    if(!config.fusium.options.FusiumEnable) {
+        return if(!config.fusium.options.FetchErrorIfFusiumDisable) null else
+        @compileError(
+            "fusioum: fetch_fusioner() is not allowed since fusion is disabled"
         );
-        if(!decls.container_decl_type(@TypeOf(fusioner.__SaturnFusiumDescription__), .fusium)) @compileError(
-            ""
-        );
-        if(c.c_bool(fusioner.__SaturnFusiumDescription__.flags.blocked)) @compileError(
-            ""
-        );
-        fusioners_confirm[i] = fusioner.__SaturnFusiumDescription__;
     }
-    break :r fusioners_confirm;
-};
-
-pub fn fetch_fusioners(comptime f_names: []const[]const u8) [f_names.len]type {
-    var fusioners_arr: [f_names.len]type = undefined;
-    for(f_names, 0..) |fusioner, i|
-        fusioners_arr[i] = comptime fetch_fusioner(
-            fusioner
-        );
-    return fusioners_arr;
-}
-
-pub fn fetch_fusioner(comptime f_name: []const u8) type {
-    for(fusioners_verified) |fusioner_info| {
+    for(core.fusioners_verified) |fusioner_info| {
         if(mem.eql(f_name, fusioner_info.name, .{ .case = true })) {
-            if(c.c_bool(fusioner_info.flags.blocked)) @compileError(
-                "fusioum: fusioner \"" ++ fusioner_info.name ++ "\" " ++
-                "is blocked"
-            );
+            check_blocked(&fusioner_info);
+            supported_arch(&fusioner_info) catch return null;
             return fusioner_info.fusioner;
         }
     }
-    @compileError("fusioum: fusioner \"" ++ f_name ++ "\" does not exist");
+    @compileError("fusioum: fusioner \"" ++ f_name ++ "\" does not exist or is disable in menuconfig/overrider");
+}
+
+fn supported_arch(comptime fusioner: *const types.FusiumDescription_T) anyerror!void {
+    for(fusioner.arch) |supported| {
+        if(supported == config.arch.options.Target) return;
+    }
+    return if(config.fusium.options.IgnoreArchNotSupported) error.IgnoreThis else
+        @compileError(
+            ""
+        );
+}
+
+fn check_blocked(comptime fusioner: *const types.FusiumDescription_T) void {
+    if(fusioner.flags.blocked == 1 and !config.fusium.options.IgnoreBlockedFlag) @compileError(
+        "fusium: fusioner \"" ++ fusioner.name ++ "\" is blocked!"
+    );
 }

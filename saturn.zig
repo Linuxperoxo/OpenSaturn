@@ -124,6 +124,7 @@ pub const core: type = struct {
 pub const loader: type = @import("kernel/loader.zig");
 pub const modules: type = @import("modules.zig");
 pub const fusioners: type = @import("fusioners.zig");
+pub const fusium: type = @import("kernel/fusium/core.zig");
 pub const modsys: type = struct {
     pub const core: type = @import("kernel/modsys/modsys.zig");
     pub const smll: type = @import("kernel/modsys/smll.zig");
@@ -154,6 +155,7 @@ pub const config: type = struct {
     pub const modules: type = @import("config/modules/config.zig");
     pub const arch: type = @import("config/arch/config.zig");
     pub const compile: type = @import("config/compile/config.zig");
+    pub const fusium: type = @import("config/fusium/config.zig");
     pub const kernel: type = struct {
         pub const options: type = @import("config/kernel/options.zig");
         pub const mem: type = if(cpu.segments == void) @import("config/kernel/segments.zig") else

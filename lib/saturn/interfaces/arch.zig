@@ -3,7 +3,8 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const menuconfig: type = @import("root").config.modules.menuconfig;
+const modules: type = @import("root").config.modules;
+const fusium: type = @import("root").config.fusium;
 
 pub const Target_T: type = @TypeOf(@import("root").config.arch.options.Target);
 pub const ArchDescription_T: type = struct {
@@ -36,7 +37,7 @@ pub const ArchDescription_T: type = struct {
     },
     extra: ?[]const Extra_T,
     data: ?[]const Data_T,
-    overrider: ?[]const Overrider_T,
+    overrider: Overrider_T,
 
     pub const Extra_T: type = struct {
         maintainer: []const u8,
@@ -55,8 +56,23 @@ pub const ArchDescription_T: type = struct {
         ptr: *const anyopaque,
     };
 
-    pub const Overrider_T: type = struct {
+    pub const ModuleOverrider_T: type = struct {
         module: []const u8,
-        value: menuconfig.Load_T,
+        value: modules.menuconfig.Load_T,
+    };
+
+    pub const Fusium_T: type = struct {
+        default: ?fusium.menuconfig.Load_T,
+        overriders: []const FusiumOverrider_T,
+    };
+
+    pub const FusiumOverrider_T: type = struct {
+        fusioner: []const u8,
+        value: fusium.menuconfig.Load_T,
+    };
+
+    pub const Overrider_T: type = struct {
+        modules: ?[]const ModuleOverrider_T,
+        fusioners: ?Fusium_T,
     };
 };
