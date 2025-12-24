@@ -87,6 +87,52 @@ fn saturn_main() callconv(.c) noreturn {
     @call(.always_inline, saturn.step.saturn_set_phase, .{
         .runtime
     });
-    (interfaces.fusium.fetch_fusioner("some1")).?.some();
+    core.vfs.mkdir("/", "dev", null, 0, 0, .{
+        .owner = core.vfs.R | core.vfs.W | core.vfs.X,
+        .group = core.vfs.R | core.vfs.W | core.vfs.X,
+        .other = core.vfs.R | core.vfs.W | core.vfs.X,
+    }) catch {
+        asm volatile(
+            \\ jmp .
+            \\ jmp 0xAA00
+        );
+        unreachable;
+    };
+    core.vfs.mkdir("/dev", "sda", null, 0, 0, .{
+        .owner = core.vfs.R | core.vfs.W | core.vfs.X,
+        .group = core.vfs.R | core.vfs.W | core.vfs.X,
+        .other = core.vfs.R | core.vfs.W | core.vfs.X,
+    }) catch {
+        asm volatile(
+            \\ jmp .
+            \\ jmp 0xAB00
+        );
+        unreachable;
+    };
+    core.vfs.touch("/dev/sda", null) catch {
+        asm volatile(
+            \\ jmp .
+            \\ jmp 0xAC00
+        );
+        unreachable;
+    };
+    core.vfs.unlink("/dev/sda", null) catch {
+        asm volatile(
+            \\ jmp .
+            \\ jmp 0xAD00
+        );
+        unreachable;
+    };
+    core.vfs.touch("/dev/sda", null) catch {
+        asm volatile(
+            \\ jmp .
+            \\ jmp 0xAE00
+        );
+        unreachable;
+    };
+    asm volatile(
+        \\ jmp .
+        \\ jmp 0xFFFFF
+    );
     @call(.always_inline, loader.saturn_running, .{}); // noreturn fn
 }

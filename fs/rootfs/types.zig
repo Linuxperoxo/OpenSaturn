@@ -24,5 +24,11 @@ pub const RootfsErr_T: type = error {
     ListInitFailed,
     AllocatorFailed,
     AttemptUmount,
+    ListOperationFailed,
+};
+
+pub const RootfsPrivate_T: type = struct {
+    parent: *list_T,
+    self: *RootfsDentry_T,
 };
 
