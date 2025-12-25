@@ -9,6 +9,7 @@ const list: type = @import("root").kernel.utils.list;
 
 const Mod_T: type = interfaces.module.Mod_T;
 const ModErr_T: type = interfaces.module.ModErr_T;
+const ModType_T: type = interfaces.module.ModType_T;
 const ModuleDescription_T: type = interfaces.module.ModuleDescription_T;
 const ModuleDescriptionTarget_T: type = interfaces.module.ModuleDescriptionTarget_T;
 const ModuleDescriptionLibMine_T: type = interfaces.module.ModuleDescriptionLibMine_T;
@@ -66,10 +67,23 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     },
     .libs = .{
         .mines = &[_]ModuleDescriptionLibMine_T {
-            ModuleDescriptionLibMine_T {
+            .{
                 .name = "inode-utils",
                 .whitelist = null,
-                .lib = @import("lib/inode.zig"),
+                .m_types = &[_]ModType_T {
+                    .filesystem,
+                },
+                .current = 0,
+                .stable = 0,
+                .versions = &[_]ModuleDescriptionLibMine_T.Version_T {
+                    .{
+                        .lib = @import("lib/inode.zig"),
+                        .tag = "0.1.0",
+                        .flags = .{
+                            .enable = 1,
+                        },
+                    },
+                },
                 .flags = .{
                     .whitelist = 0,
                     .enable = 1,
@@ -77,9 +91,12 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
             },
         },
         .outside = &[_]ModuleDescriptionLibOut_T {
-            ModuleDescriptionLibOut_T {
+            .{
                 .lib = "inode-utils",
                 .mod = "ke_m_rootfs",
+                .version = .{
+                    .tag = "0.1.0",
+                },
                 .flags = .{
                     .required = 1,
                 },

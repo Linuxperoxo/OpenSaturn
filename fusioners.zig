@@ -5,6 +5,5 @@
 
 // --- SATURN FUSIONERS ---
 pub const __SaturnAllFusioners__ = [_]type {
-    @import("fusioners/some0.zig"),
-    @import("fusioners/some1.zig"),
+
 };

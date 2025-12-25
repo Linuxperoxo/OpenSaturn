@@ -87,6 +87,5 @@ fn saturn_main() callconv(.c) noreturn {
     @call(.always_inline, saturn.step.saturn_set_phase, .{
         .runtime
     });
-    (interfaces.fusium.fetch_fusioner("some1")).?.some();
     @call(.always_inline, loader.saturn_running, .{}); // noreturn fn
 }
