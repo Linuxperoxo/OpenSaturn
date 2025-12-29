@@ -1,9 +1,12 @@
 // ┌────────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: fusioners.zig  │
+// │  (c) 2025 Linuxperoxo  •  FILE: allocator.zig  │
 // │            Author: Linuxperoxo                 │
 // └────────────────────────────────────────────────┘
 
-// --- SATURN FUSIONERS ---
-pub const __SaturnAllFusioners__ = [_]type {
-    @import("fusioners/ktask/fusioner.zig")
+const buildByteAllocator = @import("root").lib.kernel.memory.sba.buildByteAllocator;
+
+pub const sba: type = struct {
+    pub var allocator = buildByteAllocator(null, .{
+        .resize = true
+    }) {};
 };
