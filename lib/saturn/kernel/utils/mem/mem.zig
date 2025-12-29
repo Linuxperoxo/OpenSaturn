@@ -33,6 +33,11 @@ pub fn cpy(noalias dest: []u8, noalias src: []const u8) void {
     }
 }
 
+pub fn set(noalias dest: []u8, v: u8) void {
+    for(0..dest.len) |i|
+        dest[i] = v;
+}
+
 pub fn zero(comptime T: type) T {
     @setEvalBranchQuota(4294967295);
     switch(@typeInfo(T)) {

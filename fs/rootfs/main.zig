@@ -76,73 +76,10 @@ pub fn chown(dentry: *Dentry_T, uid: uid_T, gid: gid_T) anyerror!void {
 }
 
 pub fn lookup(parent: *Dentry_T, name: []const u8) anyerror!*Dentry_T {
-    const list_ptr: *list_T = try aux.obtain_dentry_list(parent);
-    if(!list_ptr.is_initialized()) return RootfsErr_T.NonFound;
-    const param: struct { cmp: []const u8 } = .{
-        .cmp = name,
-    };
-    return (list_ptr.iterator_handler(
-        param,
-        &opaque {
-            pub fn handler(rootfs_dentry: *RootfsDentry_T, rep: @TypeOf(param)) anyerror!void {
-                if(!mem.eql(rootfs_dentry.dentry.d_name, rep.cmp, .{ .case = true }))
-                    return error.Continue;
-            }
-        }.handler,
-    ) catch |err| return switch(err) {
-        listErr_T.EndOfIterator => RootfsErr_T.NonFound,
-        else => r: {
-            // klog()
-            break :r RootfsErr_T.IteratorInternalError;
-        },
-    }).dentry;
 }
 
 pub fn mkdir(parent: *Dentry_T, name: []const u8, uid: uid_T, gid: gid_T, mode: mode_T) anyerror!void {
-    const list_ptr: *list_T = try aux.obtain_dentry_list(parent);
-    if(!list_ptr.is_initialized()) list_ptr.init(&allocator.sba.allocator) catch {
-        // klog()
-        return RootfsErr_T.ListInitFailed;
-    };
-    const rootfs_entry: *RootfsDentry_T = try aux.alloc_init_entry();
-    rootfs_entry.dentry.d_inode = inode.inode_gen(
-        &allocator.sba.allocator,
-        .directory,
-        uid,
-        gid,
-        mode,
-    ) catch {
-        // klog()
-        allocator.sba.allocator.free(rootfs_entry.dentry) catch {};
-        allocator.sba.allocator.free(rootfs_entry) catch {};
-        return RootfsErr_T.AllocatorFailed;
-    };
-    errdefer {
-        // klog()
-        allocator.sba.allocator.free(@constCast(rootfs_entry.dentry.d_inode.?)) catch {};
-        allocator.sba.allocator.free(rootfs_entry.dentry) catch {};
-        allocator.sba.allocator.free(rootfs_entry) catch {};
-    }
-    rootfs_entry.dentry.d_name = (try allocator.sba.allocator.alloc(u8, name.len)).ptr[0..name.len];
-    mem.cpy(@constCast(rootfs_entry.dentry.d_name), name);
-    errdefer allocator.sba.allocator.free(@constCast(rootfs_entry.dentry.d_name)) catch {};
-    try list_ptr.push_in_list(&allocator.sba.allocator, rootfs_entry);
 }
 
 pub fn unlink(dentry: *Dentry_T) anyerror!void {
-    const parent_rootfs_dentry = aux.cast_private(dentry).parent;
-    if(parent_rootfs_dentry.list == null or !parent_rootfs_dentry.list.?.is_initialized()) return;
-    _ = parent_rootfs_dentry.list.?.iterator_handler(
-        dentry,
-        &opaque {
-            pub fn handler(rootfs_dentry: *RootfsDentry_T, dentry_to_found: *Dentry_T) anyerror!void {
-                if(rootfs_dentry.dentry != dentry_to_found)
-                    return error.Continue;
-            }
-        }.handler,
-    ) catch return RootfsErr_T.NonFound;
-    parent_rootfs_dentry.list.?.drop_on_list(
-        (parent_rootfs_dentry.list.?.iterator_index() catch unreachable) - 1,
-        &allocator.sba.allocator,
-    ) catch return RootfsErr_T.ListOperationFailed;
 }

@@ -15,7 +15,7 @@ pub const listErr_T: type = list_T.ListErr_T;
 
 pub const RootfsDentry_T: type = struct {
     dentry: *Dentry_T,
-    list: ?*list_T,
+    childs: ?*list_T,
 };
 
 pub const RootfsErr_T: type = error {
@@ -28,7 +28,7 @@ pub const RootfsErr_T: type = error {
 };
 
 pub const RootfsPrivate_T: type = struct {
-    parent: *list_T,
+    parent: *RootfsDentry_T,
     self: *RootfsDentry_T,
 };
 
