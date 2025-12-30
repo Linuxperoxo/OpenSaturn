@@ -33,6 +33,9 @@ pub fn BuildList(comptime T: type) type {
             IteratorEarlyReturn,
             HandlerForceExit,
             WithoutNodes,
+            NothingToDeinit,
+            FreeNodeError,
+            FreeInternalError,
         };
 
         fn check_allocator(comptime AT: type) void {
@@ -69,7 +72,7 @@ pub fn BuildList(comptime T: type) type {
         }
 
         pub fn is_initialized(self: *@This()) bool {
-            return self.private != null;
+            return self.private != null or self.how_many_nodes() != 0;
         }
 
         /// * init the list (use whenever the node quantity is 0)
@@ -84,6 +87,22 @@ pub fn BuildList(comptime T: type) type {
                 .iterator_index = 0,
                 .nodes = 0,
             };
+        }
+
+        /// * deinit the list (free all nodes)
+        pub fn deinit(self: *@This(), allocator: anytype) ListErr_T!void {
+            comptime check_allocator(@TypeOf(allocator));
+            if(!self.is_initialized())
+                return ListErr_T.NothingToDeinit;
+            const private_casted: *Private_T = cast_private(self.private.?);
+            var current: ?*ListNode_T = private_casted.eol;
+            var prev: ?*ListNode_T = current.?.prev;
+            while(current != null) : (current = prev) {
+                allocator.free(current.?) catch return ListErr_T.FreeNodeError;
+                prev = current.?.prev;
+            }
+            allocator.free(private_casted) catch return ListErr_T.FreeInternalError;
+            self.private = null;
         }
 
         /// * add a new no to the end of the list
