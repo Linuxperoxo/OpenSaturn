@@ -9,7 +9,6 @@ pub const Load_T: type = enum {
 };
 
 pub const Menuconfig_T: type = struct {
-    some0: Load_T,
-    some1: Load_T,
+    ktask: Load_T,
 };
 

@@ -40,6 +40,7 @@ pub const KTask_T: type align(@sizeOf(usize)) = struct {
         },
     },
     param: ?*anyopaque,
+    result: ?*anyopaque,
     task: *const fn(?*anyopaque) anyerror!?*anyopaque, // propria task
     childs: ?[]KTaskChild_T,
     failed: ?*ListKTaskChildFailed_T, // filhos com erro
@@ -50,20 +51,21 @@ pub const KTask_T: type align(@sizeOf(usize)) = struct {
             single: u1, // executa task apenas uma vez e depois a dropa
         },
         internal: packed struct {
-            done: u1, // task resolvida
-            err: u1, // task retornou erro
-            abort: u1, // init da task retornou erro
+            done: u1 = 0, // task resolvida
+            err: u1 = 0, // task retornou erro
+            abort: u1 = 0, // init da task retornou erro
             childs: packed struct {
-                done: u1, // task de todos os filhos foram chamados
-                err: u1, // algum filho retornou erro
-            },
-        },
+                done: u1 = 0, // task de todos os filhos foram chamados
+                err: u1 = 0, // algum filho retornou erro
+                abort: u1 = 0, // init do child retornou erro
+            } = .{},
+        } = .{},
     },
 };
 
 pub const KTaskChild_T: type align(@sizeOf(usize)) = struct {
     start: ?*const fn() anyerror!void,
-    task: *const fn(anytype) anyerror!void,
+    task: *const fn(?*anyopaque) anyerror!void,
     exit: ?*const fn() void,
     flags: packed struct {
         control: packed struct {
@@ -71,8 +73,9 @@ pub const KTaskChild_T: type align(@sizeOf(usize)) = struct {
             allow: u1, // aceita parametro do parent
         },
         internal: packed struct {
-            done: u1, // task resolvida
-            err: u1, // task retornou erro
-        },
+            done: u1 = 0, // task resolvida
+            err: u1 = 0, // task retornou erro
+            abort: u1 = 0, // init retornou erro
+        } = .{},
     },
 };
