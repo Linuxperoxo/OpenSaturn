@@ -5,7 +5,7 @@
 
 // === Teste Info ===
 //
-// OpenSaturn: 0.1.1
+// OpenSaturn: 0.3.0
 // OS: Gentoo Linux x86_64
 // Zig: 0.15.2
 // Tester: Linuxperoxo
@@ -88,4 +88,7 @@ test "List All Tests" {
         return err;
     }
     if(test_list.how_many_nodes() != try test_list.last_index() + 1) return error.HowManyNodesError;
+    test_list.deinit(&allocator) catch return error.DeinitFailed;
+    if(test_list.is_initialized()) return error.AllowAfterDeinit;
+    if(test_list.private != null) return error.PrivateIsNotNull;
 }
