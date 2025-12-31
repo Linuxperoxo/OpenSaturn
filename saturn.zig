@@ -137,6 +137,7 @@ pub const interfaces: type = struct {
     pub const arch: type = @import("lib/saturn/interfaces/arch.zig");
     pub const vfs: type = @import("lib/saturn/interfaces/vfs.zig");
     pub const drivers: type = @import("lib/saturn/interfaces/drivers.zig");
+    pub const events: type = @import("lib/saturn/interfaces/events.zig");
 };
 pub const supervisor: type = @import("kernel/supervisor/supervisor.zig"); // NOTE: Tmp Obsolete
 pub const decls: type = @import("kernel/decls.zig");

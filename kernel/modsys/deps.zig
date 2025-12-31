@@ -196,7 +196,7 @@ pub fn resolve_dependencies()
             // apenas para evitar quebra na lista
             if((dep_node.next != null and dep_node.next == node)
                 // se encontrou a esquerda, ja esta resolvido, nao precisa fazer nada
-                or direct == .left) continue; // acho que isso pode trazer um possivel bug
+                or direct == .left) continue;
             // aqui caso a dependencia nao foi fixada, colocamos ela na
             // frente do modulo
             if(dep_node.flags.fixed == 0) {

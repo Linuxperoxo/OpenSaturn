@@ -84,7 +84,7 @@ pub const Mod_T: type = struct {
                     return @as(*const u6, @alignCast(@ptrCast(self))).*;
                 }
             } = .{},
-        },
+        } = .{},
 
         pub inline fn check_op_status(self: *const @This(), comptime op: enum { init, after, exit, install, remove }) u1 {
             return switch (comptime op) {
@@ -164,20 +164,34 @@ pub const ModHandler_T: type = union(ModType_T) {
 };
 
 pub const ModuleDescriptionLibMine_T: type = struct {
+    pub const Version_T: type = struct {
+        tag: []const u8,
+        lib: type,
+        flags: packed struct {
+            enable: u1,
+        },
+    };
+
     name: []const u8,
-    // TODO: Whitelist liberando modulos de um certo tipo, como somente para fs, drivers, irq, syscalls, etc
     whitelist: ?[]const []const u8,
-    lib: type,
+    m_types: ?[]const ModType_T,
+    current: comptime_int,
+    stable: comptime_int,
+    versions: []const Version_T,
     flags: packed struct {
         whitelist: u1, // usa whitelist
         enable: u1, // pode ser usada
     },
-    // versions: []type, TODO:
 };
 
 pub const ModuleDescriptionLibOut_T: type = struct {
     lib: []const u8,
     mod: []const u8,
+    version: union(enum) {
+        tag: []const u8,
+        current: void,
+        stable: void,
+    },
     flags: packed struct {
         // * 0 => lib pode retornar null caso o modulo nao seja encontrado ou a propria lib
         // * 1 => sempre vai retornar a lib, caso nao encontre o modulo ou a lib um erro de compilacao acontece
