@@ -5,7 +5,9 @@
 
 // TODO: Substituir list por stack
 
-const list: type = @import("root").kernel.utils.list;
+const builtin: type = @import("builtin");
+const list: type = if(!builtin.is_test) @import("root").kernel.utils.list else
+    @import("test/list.zig");
 
 pub const ListKTask_T: type = list.BuildList(*KTask_T);
 pub const ListKTaskErr_T: type = ListKTask_T.ListErr_T;
@@ -22,60 +24,44 @@ pub const KTaskPriority_T: type = enum(u2) {
 
 pub const KTaskErr_T: type = error {
     SchedFailed,
+    SchedPriorityInitError,
 };
 
-pub const KTask_T: type align(@sizeOf(usize)) = struct {
-    hooks: packed struct {
-        // alerta que a task vai rodar, em caso de erro
-        // task e abortada
-        start: ?*const fn() anyerror!void,
-        // alerta finalizacao da task
-        exit: ?*const fn() void,
-        childs: packed struct {
-            // alerta que os childs vao comecar a rodar
-            // em caso de erro aqui, a chamada e abortada
-            start: ?*const fn() anyerror!void,
-            // alerta de finalizacao dos filhos
-            exit: ?*const fn() void,
-        },
-    },
-    param: ?*anyopaque,
-    result: ?*anyopaque,
+pub const KTask_T: type = struct {
+    param: ?*anyopaque align(@sizeOf(usize)),
+    result: ?*anyopaque = null,
     task: *const fn(?*anyopaque) anyerror!?*anyopaque, // propria task
+    exit: ?*const fn() void,
     childs: ?[]KTaskChild_T,
-    failed: ?*ListKTaskChildFailed_T, // filhos com erro
     flags: packed struct {
         control: packed struct {
-            block: u1, // ignora task
-            overflow: u1, // retorna algo que pode ir para os filhos
             single: u1, // executa task apenas uma vez e depois a dropa
+            pendent: u1, // task pendente
+            stop: u1, // caso a task retorne erro ignora todos os filhos
+            drop: u1, // dropa a task assim que passar por ela
         },
         internal: packed struct {
             done: u1 = 0, // task resolvida
             err: u1 = 0, // task retornou erro
-            abort: u1 = 0, // init da task retornou erro
             childs: packed struct {
                 done: u1 = 0, // task de todos os filhos foram chamados
                 err: u1 = 0, // algum filho retornou erro
-                abort: u1 = 0, // init do child retornou erro
             } = .{},
         } = .{},
     },
 };
 
-pub const KTaskChild_T: type align(@sizeOf(usize)) = struct {
-    start: ?*const fn() anyerror!void,
-    task: *const fn(?*anyopaque) anyerror!void,
+pub const KTaskChild_T: type = struct {
+    task: *const fn(?*anyopaque) anyerror!void align(@sizeOf(usize)),
     exit: ?*const fn() void,
     flags: packed struct {
         control: packed struct {
-            block: u1, // ignora task
-            allow: u1, // aceita parametro do parent
+            pendent: u1, // ignora task
+            depend: u1, // so executa se a task pai nao retornar erro
         },
         internal: packed struct {
             done: u1 = 0, // task resolvida
             err: u1 = 0, // task retornou erro
-            abort: u1 = 0, // init retornou erro
         } = .{},
     },
 };
