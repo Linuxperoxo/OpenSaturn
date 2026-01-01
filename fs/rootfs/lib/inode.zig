@@ -23,7 +23,7 @@ pub inline fn inode_gen(
         .gid = gid,
         .mode = mode,
         .nlinks = 0,
-        .data_block = 0,
+        .data_block = @intFromPtr(&inode),
         .data_inode = 0,
     };
     self.current += 1;

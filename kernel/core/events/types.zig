@@ -69,8 +69,8 @@ pub const EventListener_T: type = struct {
         },
         internal: packed struct {
             // flags changed by the event (READY ONLY FLAGS!)
-            listen: u1,
-        },
+            listen: u1 = 0,
+        } = .{},
         reserved: u5 = 0,
     },
 };

@@ -12,10 +12,12 @@ pub var listener: events.EventListener_T = .{
     .event = 0, // para timer temos apenas o evento 0
     .handler = &opaque {
         pub fn handler(_: events.EventOut_T) ?events.EventInput_T {
-            @call(.always_inline, sched.sched_run, .{});
+            @call(.always_inline, sched.sched_run, .{
+                null
+            });
             return null;
         }
-    },
+    }.handler,
     .flags = .{
         .control = .{
             .all = 1, // opcional
@@ -28,9 +30,8 @@ pub fn ktask_install_listener() anyerror!void {
     errdefer {
         // klog()
     }
-    try @call(.never_inline, events.install_listener_event, .{
-        &listener,
-        .{ .default = .timer }
+    try events.install_listener_event(&listener, .{
+        .default = .timer,
     });
 }
 
