@@ -1,0 +1,1 @@
+config/fusium/menuconfig.zig

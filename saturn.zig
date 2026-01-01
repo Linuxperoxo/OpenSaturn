@@ -11,6 +11,7 @@
 // as partes em um unico arquivo, partimos da ideia da leitura
 // desse arquivo ficar dificil para a estrutura dos codigos fique
 // organizada
+
 const SelectedArch: type = switch(config.arch.options.Target) {
     .i386 => Architectures.i386,
     .amd64 => Architectures.amd64,
@@ -122,17 +123,21 @@ pub const core: type = struct {
 //pub const ioreg: type = @import("kernel/core/ioreg/ioreg.zig");
 pub const loader: type = @import("kernel/loader.zig");
 pub const modules: type = @import("modules.zig");
+pub const fusioners: type = @import("fusioners.zig");
+pub const fusium: type = @import("kernel/fusium/core.zig");
 pub const modsys: type = struct {
     pub const core: type = @import("kernel/modsys/modsys.zig");
     pub const smll: type = @import("kernel/modsys/smll.zig");
 };
 pub const interfaces: type = struct {
+    pub const fusium: type = @import("kernel/fusium/fusium.zig");
     pub const devices: type = @import("lib/saturn/interfaces/devices.zig");
     pub const fs: type = @import("lib/saturn/interfaces/fs.zig");
     pub const module: type = @import("lib/saturn/interfaces/module.zig");
     pub const arch: type = @import("lib/saturn/interfaces/arch.zig");
     pub const vfs: type = @import("lib/saturn/interfaces/vfs.zig");
     pub const drivers: type = @import("lib/saturn/interfaces/drivers.zig");
+    pub const events: type = @import("lib/saturn/interfaces/events.zig");
 };
 pub const supervisor: type = @import("kernel/supervisor/supervisor.zig"); // NOTE: Tmp Obsolete
 pub const decls: type = @import("kernel/decls.zig");
@@ -151,6 +156,7 @@ pub const config: type = struct {
     pub const modules: type = @import("config/modules/config.zig");
     pub const arch: type = @import("config/arch/config.zig");
     pub const compile: type = @import("config/compile/config.zig");
+    pub const fusium: type = @import("config/fusium/config.zig");
     pub const kernel: type = struct {
         pub const options: type = @import("config/kernel/options.zig");
         pub const mem: type = if(cpu.segments == void) @import("config/kernel/segments.zig") else

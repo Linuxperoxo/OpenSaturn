@@ -45,7 +45,7 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     // deve preparar seu modulo
     .init = &init,
     // funcao chamada apos o init e o handler do tipo do modulo serem chamado
-    .after = &after, // ou null 
+    .after = &after, // ou null
     // aqui e o tipo do seu modulo. Como o sistema de modulos foi feito totalmente
     // pensando no comptime, aqui e uma parte bem importante para ele saber que parte
     // do kernel e responsavel por esse modulo, essa union tem todos o tipos de modulos
@@ -99,62 +99,84 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .libs = .{
         // mines sao as libs que voce como modulo implementa para outros modulos, voce pode ter varias libs aqui
         .mines = &[_]ModuleDescriptionLibMine_T {
-            ModuleDescriptionLibMine_T {
+            .{
                 .name = "my_super_lib0", // os outros modulos vao procurar por esse nome
-                .lib = @import("my_super_lib0.zig"), // aqui voce pode usar o @import ou montar uma struct {}
+                .current = 0, // indice da version current
+                .stable = 0, // indice da version stable
+                // aqui voce pode definir quais tipos de modulos
+                // podem usar a lib
+                .m_types = .{
+                    .filesystem,
+                },
+                // quais modulos podem ter acesso a lib
                 .whitelist = &[_][]const u8 {
                     "mod0",
                     "mod1",
                     "mod2",
+                },
+                .versions = &[_]ModuleDescriptionLibMine_T.Version_T {
+                    .{
+                        .lib = @import("my_super_lib0_0.1.0.zig"), // aqui voce pode usar o @import ou montar uma struct {}
+                        .tag = "0.1.0", // versao da lib
+                        .flags = .{
+                            .enable = 1, // versao esta ativa
+                        },
+                    }
                 },
                 .flags = .{
                     .whitelist = 1, // somente modulos na whitelist
                     .enable = 1, // lib ta habilitada e pode ser usada
                 },
             },
-            ModuleDescriptionLibMine_T {
+            .{
                 .name = "my_super_lib1",
-                .lib = @import("my_super_lib1.zig"),
+                .current = 0,
+                .stable = 0,
+                .m_types = .{
+                    .driver
+                },
                 .whitelist = &[_][]const u8 {
                     "mod3",
                     "mod4",
+                },
+                .versions = &[_]ModuleDescriptionLibMine_T.Version_T {
+                    .{
+                        .lib = @import("my_super_lib1_0.1.0.zig"), // aqui voce pode usar o @import ou montar uma struct {}
+                        .tag = "0.1.0", // versao da lib
+                        .flags = .{
+                            .enable = 1, // versao esta ativa
+                        },
+                    }
                 },
                 .flags = .{
                     .whitelist = 1,
                     .enable = 1,
                 },
             },
-            ModuleDescriptionLibMine_T {
-                .name = "my_super_lib2",
-                .lib = @import("my_super_lib2.zig"),
-                .whitelist = null,
-                .flags = .{
-                    .whitelist = 0, // caso .whitelist == null deixe essa flag como 0
-                    .enable = 1,
-                },
-            },
         },
         // outside sao as libs que voce pode pegar de outros modulos
         .outside = &[_]ModuleDescriptionLibOut_T {
-            ModuleDescriptionLibOut_T {
+            .{
                 .mod = "outside_module", // nome do modulo (ModuleDescription_T.name)
                 .lib = "outside_super_lib0", // nome da lib, voce pode ver o mines do modulo e ver qual o nome da lib
+                // uma coisa bem interessante e a possibilitade
+                // de escolher a versao da lib
+                .version = .{
+                    .tag = "0.1.0",
+                },
                 .flags = .{
                     .required = 1, // em caso de falha ocorre um erro de compilacao
                 },
             },
-            ModuleDescriptionLibOut_T {
+            .{
                 .mod = "outside_module",
                 .lib = "outside_super_lib1",
+                .version = .{
+                    .current = {},
+                    //.stable = {},
+                },
                 .flags = .{
                     .required = 1,
-                },
-            },
-            ModuleDescriptionLibOut_T {
-                .mod = "outside_module",
-                .lib = "outside_super_lib2",
-                .flags = .{
-                    .required = 0, // pode retornar null no request
                 },
             },
         },

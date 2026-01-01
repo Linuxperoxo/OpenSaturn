@@ -22,6 +22,7 @@ pub const userspace: type = saturn.lib.userspace;
 pub const config: type = saturn.config;
 pub const modules: type = saturn.modules;
 pub const decls: type = saturn.decls;
+pub const fusioners: type = saturn.fusioners;
 pub const modsys: type = struct {
     const core: type = saturn.modsys.core;
     pub const smll: type = saturn.modsys.smll;
@@ -29,8 +30,8 @@ pub const modsys: type = struct {
 pub const step: type = struct {
     pub const saturn_get_phase = saturn.step.saturn_get_phase;
 };
-
 const loader: type = saturn.loader;
+const fusium: type = saturn.fusium;
 
 // Para obter mais detalhes de como funciona a inicializacao do
 // kernel voce pode olhar o arquivo kernel/loader.zig, nele vai ter toda
@@ -78,7 +79,8 @@ fn saturn_main() callconv(.c) noreturn {
     @call(.always_inline, saturn.step.saturn_set_phase, .{
         .init
     });
-
+    // chamamos init de fusioners
+    @call(.always_inline, fusium.saturn_fusium_loader, .{});
     // Depois da arquitetura resolver todos os seus detalhes, podemos iniciar
     // os modulos linkados ao kernel
     @call(.always_inline, modsys.core.saturn_modules_loader, .{});

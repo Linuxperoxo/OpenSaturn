@@ -27,8 +27,7 @@
 //                             ignoramos esse fato, e usamos o menuconfig do jeito que esta, caso contrario, temos
 //                             o erro de compilacao
 //
-// * IgnoreModulePointerCollision: Ignora modulos repetidos, caso contrario, ocorre um erro em comptime
-//
+// * IgnoreModulesCollision: Ignora modulos repetidos, caso contrario, ocorre um erro em comptime
 
 pub const UseMenuconfigAsRef: bool = true;
 pub const IgnoreModuleWithArchNotSupported: bool = true;
@@ -36,3 +35,5 @@ pub const AllowDynamicModulesLoad: bool = true; // TODO:
 pub const ForceModuleArchOverrider: bool = true;
 pub const IgnoreOverriderIfNoExist: bool = true;
 pub const IgnoreModuleCollision: bool = false;
+pub const IgnoreFaultNoExistentLib: bool = false;
+pub const IgnoreVersionNoFound: bool = false;
