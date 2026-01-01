@@ -14,12 +14,13 @@ pub const list_T: type = list.BuildList(*RootfsDentry_T);
 pub const listErr_T: type = list_T.ListErr_T;
 
 pub const RootfsDentry_T: type = struct {
-    dentry: *Dentry_T,
+    dentry: ?*Dentry_T,
     childs: ?*list_T,
 };
 
 pub const RootfsErr_T: type = error {
     NonFound,
+    DirectoryWithChilds,
     IteratorInternalError,
     ListInitFailed,
     AllocatorFailed,
@@ -28,7 +29,7 @@ pub const RootfsErr_T: type = error {
 };
 
 pub const RootfsPrivate_T: type = struct {
-    parent: *RootfsDentry_T,
+    parent: ?*RootfsDentry_T,
     self: *RootfsDentry_T,
 };
 
