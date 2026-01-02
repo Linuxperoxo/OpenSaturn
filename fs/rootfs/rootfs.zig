@@ -20,8 +20,8 @@ const Fs_T: type = interfaces.fs.Fs_T;
 const inmod = interfaces.module.inmod;
 const rmmod = interfaces.module.rmmod;
 
-const rootfs_mount = &@import("main.zig").rootfs_mount;
-const rootfs_umount = &@import("main.zig").rootfs_umount;
+const rootfs_mount = &@import("ops.zig").rootfs_mount;
+const rootfs_umount = &@import("ops.zig").rootfs_umount;
 
 pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .name = "ke_m_rootfs",

@@ -6,7 +6,6 @@
 const types: type = @import("types.zig");
 const allocator: type = @import("allocator.zig");
 const vfs: type = @import("root").interfaces.vfs;
-const main: type = @import("main.zig");
 const mem: type = @import("root").kernel.utils.mem;
 const rootfs: type = @import("rootfs.zig");
 // required
