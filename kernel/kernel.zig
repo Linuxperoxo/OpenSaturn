@@ -79,11 +79,11 @@ fn saturn_main() callconv(.c) noreturn {
     @call(.always_inline, saturn.step.saturn_set_phase, .{
         .init
     });
-    // chamamos init de fusioners
-    @call(.always_inline, fusium.saturn_fusium_loader, .{});
+    @call(.always_inline, fusium.saturn_fusium_loader, .{ .before });
     // Depois da arquitetura resolver todos os seus detalhes, podemos iniciar
     // os modulos linkados ao kernel
     @call(.always_inline, modsys.core.saturn_modules_loader, .{});
+    @call(.always_inline, fusium.saturn_fusium_loader, .{ .after });
     @call(.always_inline, saturn.step.saturn_set_phase, .{
         .runtime
     });
