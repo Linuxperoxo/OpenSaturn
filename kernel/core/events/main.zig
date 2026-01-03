@@ -10,11 +10,13 @@
 // poderiamos fazer IO_event. O listener so iria precisar colocar na sua struct
 // qual o identificador ele deve escutar, e todos os outros sao ignorados
 
+// TODO: Adicionar prioridade para listeners
+
 const aux: type = @import("aux.zig");
 const types: type = @import("types.zig");
 const allocators: type = @import("allocators.zig");
 
-var event_buses = [_]types.EventBus_T {
+pub var event_buses = [_]types.EventBus_T {
     types.EventBus_T {
         .line = [_]?*types.EventInfo_T {
             null
@@ -22,20 +24,13 @@ var event_buses = [_]types.EventBus_T {
     },
 } ** 4;
 
-inline fn check_path(bus: u2, line: u3) bool {
-    return if(event_buses[bus].line[line] != null) true else false;
-}
-
-inline fn ret_event(bus: u2, line: u3) *types.EventInfo_T {
-    return event_buses[bus].line[line].?;
-}
 
 pub fn install_event(event: *types.Event_T, comptime default: ?types.EventDefault_T) types.EventErr_T!void {
     const bus, const line = if(default != null) aux.default_bus(default.?) else .{
         event.bus,
         event.line
     };
-    if(check_path(bus, line)) return types.EventErr_T.EventCollision;
+    if(aux.check_path(bus, line)) return types.EventErr_T.EventCollision;
     event_buses[bus].line[line] = &(allocators.sba.allocator.alloc(
         types.EventInfo_T, 1
     ) catch return types.EventErr_T.AllocFailed)[0];
@@ -52,8 +47,9 @@ pub fn install_event(event: *types.Event_T, comptime default: ?types.EventDefaul
 // quando tiver ktask, vamos ter um novo parametro, que vai enviar para todos de uma vez
 // de 1 em 1, ou de metade em metade, quem vai gerenciar isso vai ser i ktask
 pub fn send_event(event: *types.Event_T, out: types.EventOut_T) types.EventErr_T!void {
-    if(!check_path(event.bus, event.line)) return types.EventErr_T.NoNEvent;
-    const event_info = ret_event(event.bus, event.line);
+    if(!aux.check_path(event.bus, event.line)) return types.EventErr_T.NoNEvent;
+    const event_info = aux.ret_event(event.bus, event.line);
+    if(event_info.event.flags.control.active != 1) return types.EventErr_T.DisableEvent;
     const iterator_param: struct { ite_event: *types.EventInfo_T, event_out: types.EventOut_T } = .{
         .ite_event = event_info,
         .event_out = out,
@@ -82,8 +78,8 @@ pub fn send_event(event: *types.Event_T, out: types.EventOut_T) types.EventErr_T
 }
 
 pub fn remove_event(event: *types.Event_T) types.EventErr_T!void {
-    if(!check_path(event.bus, event.line)) return types.EventErr_T.NoNEvent;
-    const event_info = ret_event(event.bus, event.line);
+    if(!aux.check_path(event.bus, event.line)) return types.EventErr_T.NoNEvent;
+    const event_info = aux.ret_event(event.bus, event.line);
     const iterator_param: void = {};
     _ = event_info.listeners.iterator_handler(
         iterator_param,
@@ -119,8 +115,9 @@ pub fn install_listener_event(
             bus_line.explicit.line
         },
     };
-    if(!check_path(bus, line)) return types.EventErr_T.NoNEvent;
-    const event_info = ret_event(bus, line);
+    if(!aux.check_path(bus, line)) return types.EventErr_T.NoNEvent;
+    const event_info = aux.ret_event(bus, line);
+    if((~event_info.event.flags.control.block & event_info.event.flags.control.active) != 1) return types.EventErr_T.InactiveEvent;
     event_info.listeners.push_in_list(&allocators.sba.allocator, listener)
         catch return types.EventErr_T.NoNListenerInstall;
     listener.flags.internal.listen = 1;
@@ -143,8 +140,8 @@ pub fn remove_listener_event(
             bus_line.explicit.line
         },
     };
-    if(!check_path(bus, line)) return types.EventErr_T.NoNEvent;
-    const event_info = ret_event(bus, line);
+    if(!aux.check_path(bus, line)) return types.EventErr_T.NoNEvent;
+    const event_info = aux.ret_event(bus, line);
     const iterator_param: struct { ite_event: *types.EventInfo_T, listener_to_found: *types.EventListener_T } = .{
         .ite_event = event_info,
         .listener_to_found = listener,
