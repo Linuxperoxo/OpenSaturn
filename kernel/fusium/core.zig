@@ -50,9 +50,10 @@ pub const fusioners_verified = r: {
     ).*;
 };
 
-pub fn saturn_fusium_loader() void {
+pub fn saturn_fusium_loader(order_call: types.FusiumDescription_T.Order_T) void {
     if(!config.fusium.options.FusiumEnable) return;
     inline for(fusioners_verified) |fusioner| {
+        if(fusioner.order != order_call) continue;
         if(fusioner.init != null) fusioner.init.?() catch {
             // klog()
         };
