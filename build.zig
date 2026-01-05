@@ -24,35 +24,36 @@ pub const optimize: std.builtin.OptimizeMode = switch(SaturnCompileConfig.option
 
 pub fn build(b: *std.Build) void {
     const saturn = b.addExecutable(.{
-        .name = "sImage",
+        .name = "sImage.elf",
         .root_module = b.addModule("kernel", .{
             .root_source_file = b.path("kernel/kernel.zig"),
-        .target = b.resolveTargetQuery(.{
+            .target = b.resolveTargetQuery(.{
                 .cpu_arch = target,
                 .os_tag = .freestanding,
             }),
             .optimize = optimize,
             .stack_protector = false,
             .code_model = .kernel,
+            .imports = &[_]std.Build.Module.Import {
+                .{
+                    .name = "saturn",
+                    .module = b.addModule(
+                        "saturn",
+                        .{
+                            .root_source_file = b.path("saturn.zig"),
+                            .optimize = optimize,
+                            .stack_protector = false,
+                            .target = b.resolveTargetQuery(.{
+                                .cpu_arch = target,
+                                .os_tag = .freestanding,
+                            }),
+                            .code_model = .kernel,
+                        }
+                    ),
+                },
+            },
         }),
     });
-
-    saturn.root_module.addImport(
-        "saturn",
-        b.addModule(
-            "saturn",
-            .{
-                .root_source_file = b.path("saturn.zig"),
-                .optimize = optimize,
-                .stack_protector = false,
-                .target = b.resolveTargetQuery(.{
-                    .cpu_arch = target,
-                    .os_tag = .freestanding,
-                }),
-                .code_model = .kernel,
-            }
-        )
-    );
 
     const saturn_install = b.addInstallArtifact(saturn, .{});
     var saturn_step = b.step("saturn", "Install Saturn Binary");

@@ -1,0 +1,21 @@
+// ┌────────────────────────────────────────────┐
+// │  (c) 2025 Linuxperoxo  •  FILE: codes.zig  │
+// │            Author: Linuxperoxo             │
+// └────────────────────────────────────────────┘
+
+const types: type = @import("kernel/ar/types.zig");
+
+pub const targets: types.Targets_T = .{
+    .@"i386" = .{
+        .arch = @import("kernel/arch/i386/i386.zig"),
+        .entry = @import("kernel/entries/i386/entry.zig"),
+        .init = @import("kernel/init/i386/init.zig"),
+        .interrupts = @import("kernel/interrupts/i386/interrupts.zig"),
+        .physio = @import("kernel/physio/i386/physio.zig"),
+        .mm = @import("mm/i386/mm.zig"),
+        .lib = .{
+            .kernel = @import("lib/saturn/kernel/arch/i386/lib.zig"),
+            .userspace = @import("lib/saturn/userspace/i386/lib.zig"),
+        },
+    },
+};

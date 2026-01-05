@@ -5,33 +5,39 @@
 
 const saturn: type = @import("saturn");
 
-pub const cpu: type = saturn.cpu;
-pub const arch: type = saturn.cpu.arch;
-pub const entry: type = saturn.cpu.entry;
-pub const init: type = saturn.cpu.init;
-pub const interrupts: type = saturn.cpu.interrupts;
-pub const linker: type = saturn.cpu.linker;
-pub const mm: type = saturn.cpu.mm;
-pub const physio: type = saturn.cpu.physio;
+pub const code: type ar.target_code();
+pub const arch: type = code.arch;
+pub const entry: type = code.entry;
+pub const init: type = code.init;
+pub const interrupts: type = code.interrupts;
+pub const mm: type = code.mm;
+pub const physio: type = code.physio;
 pub const core: type = saturn.core;
+pub const ar: type = saturn.ar;
 pub const interfaces: type = saturn.interfaces;
 pub const supervisor: type = saturn.supervisor;
-pub const lib: type = saturn.lib;
+pub const lib: type = saturn.lib.saturn;
 pub const kernel: type = saturn.lib.kernel;
 pub const userspace: type = saturn.lib.userspace;
 pub const config: type = saturn.config;
 pub const modules: type = saturn.modules;
 pub const decls: type = saturn.decls;
 pub const fusioners: type = saturn.fusioners;
+pub const codes: type = saturn.codes;
+
 pub const modsys: type = struct {
     const core: type = saturn.modsys.core;
     pub const smll: type = saturn.modsys.smll;
 };
+
 pub const step: type = struct {
     pub const saturn_get_phase = saturn.step.saturn_get_phase;
 };
+
 const loader: type = saturn.loader;
 const fusium: type = saturn.fusium;
+
+const target_code = ar.
 
 // Para obter mais detalhes de como funciona a inicializacao do
 // kernel voce pode olhar o arquivo kernel/loader.zig, nele vai ter toda
@@ -81,7 +87,7 @@ fn saturn_main() callconv(.c) noreturn {
     });
     @call(.always_inline, fusium.saturn_fusium_loader, .{ .before });
     // Depois da arquitetura resolver todos os seus detalhes, podemos iniciar
-    // os modulos linkados ao kernel
+// os modulos linkados ao kernel
     @call(.always_inline, modsys.core.saturn_modules_loader, .{});
     @call(.always_inline, fusium.saturn_fusium_loader, .{ .after });
     @call(.always_inline, saturn.step.saturn_set_phase, .{
