@@ -7,6 +7,7 @@ const std: type = @import("std");
 
 const SaturnArchConfig: type = @import("config/arch/config.zig");
 const SaturnCompileConfig: type = @import("config/compile/config.zig");
+const SaturnLinkers = @import("linkers/linkers.zig") {};
 
 pub const target: std.Target.Cpu.Arch = switch(SaturnArchConfig.options.Target) {
     .i386 => .x86,
@@ -78,7 +79,7 @@ pub fn build(b: *std.Build) void {
             " linker error"
         );
     };
-    _ = file.write(@import("saturn.zig").linker.__SaturnLinkerString__) catch {
+    _ = file.write(@field(SaturnLinkers, @tagName(SaturnArchConfig.options.Target))) catch {
         @panic(
             @tagName(SaturnArchConfig.options.Target) ++
             " linker error"

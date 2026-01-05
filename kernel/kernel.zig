@@ -5,7 +5,7 @@
 
 const saturn: type = @import("saturn");
 
-pub const code: type ar.target_code();
+pub const code: type = ar.target_code;
 pub const arch: type = code.arch;
 pub const entry: type = code.entry;
 pub const init: type = code.init;
@@ -17,8 +17,6 @@ pub const ar: type = saturn.ar;
 pub const interfaces: type = saturn.interfaces;
 pub const supervisor: type = saturn.supervisor;
 pub const lib: type = saturn.lib.saturn;
-pub const kernel: type = saturn.lib.kernel;
-pub const userspace: type = saturn.lib.userspace;
 pub const config: type = saturn.config;
 pub const modules: type = saturn.modules;
 pub const decls: type = saturn.decls;
@@ -36,8 +34,6 @@ pub const step: type = struct {
 
 const loader: type = saturn.loader;
 const fusium: type = saturn.fusium;
-
-const target_code = ar.
 
 // Para obter mais detalhes de como funciona a inicializacao do
 // kernel voce pode olhar o arquivo kernel/loader.zig, nele vai ter toda

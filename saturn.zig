@@ -3,8 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-// Esse arquivo e responsavel por fazer resolver arquivos
-// de arquitetura alvo, alem de juntar todas as partes do
+// Esse arquivo e responsavel por juntar todas as partes do
 // kernel em um unico arquivo
 
 pub const loader: type = @import("kernel/loader.zig");
@@ -58,23 +57,4 @@ pub const config: type = struct {
         pub const options: type = @import("config/kernel/options.zig");
         pub const mem: type = @import("config/kernel/segments.zig");
     };
-};
-
-const SelectedArch = @field(architectures, @tagName(config.arch.options.Target));
-
-const architectures: architectures_T = .{
-    .@"i386" = .{
-    },
-};
-
-const architectures_T: type = struct {
-    @"i386": arch_T,
-    amd64: arch_T,
-    arm: arch_T,
-    riscv64: arch_T,
-    avr: arch_T,
-    xtensa: arch_T,
-};
-
-const arch_T: type = struct {
 };

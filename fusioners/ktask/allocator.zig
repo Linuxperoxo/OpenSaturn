@@ -4,7 +4,7 @@
 // └────────────────────────────────────────────────┘
 
 const builtin: type = @import("builtin");
-const buildByteAllocator = if(!builtin.is_test) @import("root").lib.kernel.memory.sba.buildByteAllocator else
+const buildByteAllocator = if(!builtin.is_test) @import("root").lib.memory.sba.buildByteAllocator else
     @import("test/sba.zig").buildByteAllocator;
 
 pub const sba: type = struct {
