@@ -45,8 +45,8 @@ pub fn csi_handler() callconv(.c) void {
             :[_] "={al}" (-> u8)
         ),
         .flags = .{
-            .d = 0,
-            .e = 1,
+            .data = 0,
+            .event = 1,
         },
     }) catch {
         // KLOG: this is a kernel panic!
