@@ -5,31 +5,27 @@
 
 const saturn: type = @import("saturn");
 
-pub const cpu: type = saturn.cpu;
-pub const arch: type = saturn.cpu.arch;
-pub const entry: type = saturn.cpu.entry;
-pub const init: type = saturn.cpu.init;
-pub const interrupts: type = saturn.cpu.interrupts;
-pub const linker: type = saturn.cpu.linker;
-pub const mm: type = saturn.cpu.mm;
-pub const physio: type = saturn.cpu.physio;
+pub const code: type = saturn.code;
 pub const core: type = saturn.core;
+pub const ar: type = saturn.ar;
 pub const interfaces: type = saturn.interfaces;
 pub const supervisor: type = saturn.supervisor;
-pub const lib: type = saturn.lib;
-pub const kernel: type = saturn.lib.kernel;
-pub const userspace: type = saturn.lib.userspace;
+pub const lib: type = saturn.lib.saturn;
 pub const config: type = saturn.config;
 pub const modules: type = saturn.modules;
 pub const decls: type = saturn.decls;
 pub const fusioners: type = saturn.fusioners;
+pub const codes: type = saturn.codes;
+
 pub const modsys: type = struct {
     const core: type = saturn.modsys.core;
     pub const smll: type = saturn.modsys.smll;
 };
+
 pub const step: type = struct {
     pub const saturn_get_phase = saturn.step.saturn_get_phase;
 };
+
 const loader: type = saturn.loader;
 const fusium: type = saturn.fusium;
 

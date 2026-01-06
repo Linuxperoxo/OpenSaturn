@@ -9,11 +9,11 @@ const ModErr_T: type = @import("types.zig").ModErr_T;
 const ModHandler_T: type = @import("types.zig").ModHandler_T;
 const ModRoot_T: type = @import("types.zig").ModRoot_T;
 
-const c: type = @import("root").kernel.utils.c;
+const c: type = @import("root").lib.utils.c;
 const aux: type = @import("aux.zig");
 const builtin: type = @import("builtin");
 const allocator: type = @import("allocator.zig");
-const mem: type = if(!builtin.is_test) @import("root").kernel.utils.mem else @import("test/mem.zig");
+const mem: type = if(!builtin.is_test) @import("root").lib.utils.mem else @import("test/mem.zig");
 const fs: type = @import("root").interfaces.fs;
 
 // poderiamos colocar os tipos nos index

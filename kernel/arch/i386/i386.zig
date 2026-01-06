@@ -5,12 +5,13 @@
 
 const root: type = @import("root");
 
-const entry: type = root.entry;
-const init: type = root.init;
-const interrupts: type = root.interrupts;
-const mm: type = root.mm;
+const entry: type = root.code.entry;
+const init: type = root.code.init;
+const interrupts: type = root.code.interrupts;
+const mm: type = root.code.mm;
+const physio: type = root.code.physio;
+
 const interfaces: type = root.interfaces;
-const physio: type = root.physio;
 
 pub const linker: type = @import("linker.zig");
 pub const sections: type = @import("sections.zig");

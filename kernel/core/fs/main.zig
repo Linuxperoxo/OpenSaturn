@@ -5,7 +5,7 @@
 
 const aux: type = @import("aux.zig");
 const types: type = @import("types.zig");
-const c: type = @import("root").kernel.utils.c;
+const c: type = @import("root").lib.utils.c;
 const allocator: type = @import("allocator.zig");
 const module: type = @import("root").interfaces.module;
 

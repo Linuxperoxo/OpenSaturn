@@ -6,10 +6,11 @@
 // Esse arquivo e responsavel por 2 coisas, carregar
 // recursos do kernel, e fazer verificacoes em comptime
 
-const cpu: type = @import("root").cpu;
-const arch: type = @import("root").arch;
+const code: type = @import("root").code;
+const codes: type = @import("root").codes;
+const arch: type = @import("root").code.arch;
 const decls: type = @import("root").decls;
-const kernel: type = @import("root").kernel;
+const lib: type = @import("root").lib;
 const config: type = @import("root").config;
 const supervisor: type = @import("root").supervisor;
 const interfaces: type = @import("root").interfaces;
@@ -27,13 +28,13 @@ comptime {
     // nao foi usada dentro do proprio codigo zig, o compilador so iria ignorar e nem colocar o export nela
     const aux: type = opaque {
         pub fn make_asm_set(comptime name: []const u8, comptime value: u32) []const u8 {
-            return ".set " ++ name ++ ", " ++ kernel.utils.fmt.intFromArray(value) ++ "\n"
+            return ".set " ++ name ++ ", " ++ lib.utils.fmt.intFromArray(value) ++ "\n"
                 ++ ".globl " ++ name ++ "\n"
             ;
         }
     };
     // caso a arquitetura nao use uma configuracao default, fica por conta dela mesmo fazer isso
-    if(cpu.segments == void) asm(
+    if(codes.fetch_code(code.target).segments == null) asm(
         aux.make_asm_set("kernel_phys_address", config.kernel.mem.phys.kernel_phys) ++
         aux.make_asm_set("kernel_virtual_address", config.kernel.mem.virtual.kernel_text) ++
         aux.make_asm_set("kernel_text_virtual", config.kernel.mem.virtual.kernel_text) ++

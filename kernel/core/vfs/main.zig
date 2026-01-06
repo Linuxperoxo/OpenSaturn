@@ -3,13 +3,13 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const c: type = @import("root").kernel.utils.c;
+const c: type = @import("root").lib.utils.c;
 const builtin: type = @import("builtin");
 const fs: type = @import("root").core.fs;
 const types: type = @import("types.zig");
 const allocator: type = @import("allocator.zig");
 const aux: type = @import("aux.zig");
-const fmt: type = @import("root").kernel.utils.fmt;
+const fmt: type = @import("root").lib.utils.fmt;
 
 const Inode_T: type = types.Inode_T;
 const InodeOp_T: type = types.InodeOp_T;

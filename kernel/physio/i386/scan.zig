@@ -8,14 +8,14 @@ const types: type = @import("types.zig");
 const tree: type = @import("tree.zig");
 
 const PhysIo_T: type = types.PhysIo_T;
-const PCIPhysIo_T: type = root.kernel.arch.io.pci.PCIPhysIo_T;
-const PCIAddress_T: type = root.kernel.arch.io.pci.PCIAddress_T;
-const PCIRegsOffset_T: type = root.kernel.arch.io.pci.PCIRegsOffset_T;
+const PCIPhysIo_T: type = root.code.lib.kernel.io.pci.PCIPhysIo_T;
+const PCIAddress_T: type = root.code.lib.kernel.io.pci.PCIAddress_T;
+const PCIRegsOffset_T: type = root.code.lib.kernel.io.pci.PCIRegsOffset_T;
 
-const pci_config_read = root.kernel.arch.io.pci.pci_config_read;
+const pci_config_read = root.code.lib.kernel.io.pci.pci_config_read;
 const physio_register = tree.physio_register;
 
-const PCI_UNDEFINED_RETURN = root.kernel.arch.io.pci.PCI_UNDEFINED_RETURN;
+const PCI_UNDEFINED_RETURN = root.code.lib.kernel.io.pci.PCI_UNDEFINED_RETURN;
 
 pub fn physio_scan() void {
     // TODO: O log deve ser [PCI] {domain}:{bus}:{device}.{function} {class}: {vendor} {device} (rev {revision})

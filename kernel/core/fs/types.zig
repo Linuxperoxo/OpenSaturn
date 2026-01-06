@@ -4,8 +4,8 @@
 // └───────────────────────────────────────────────┘
 
 const vfs: type = @import("root").core.vfs;
-const c: type = @import("root").kernel.utils.c;
-const list: type = @import("root").kernel.utils.list;
+const c: type = @import("root").lib.utils.c;
+const list: type = @import("root").lib.utils.list;
 
 pub const Fs_T: type = struct {
     name: []const u8,

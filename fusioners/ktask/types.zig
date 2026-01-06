@@ -6,7 +6,7 @@
 // TODO: Substituir list por stack
 
 const builtin: type = @import("builtin");
-const list: type = if(!builtin.is_test) @import("root").kernel.utils.list else
+const list: type = if(!builtin.is_test) @import("root").lib.utils.list else
     @import("test/list.zig");
 
 pub const ListKTask_T: type = list.BuildList(*KTask_T);

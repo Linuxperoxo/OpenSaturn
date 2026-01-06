@@ -5,14 +5,14 @@
 
 const builtin: type = @import("builtin");
 const types: type = @import("types.zig");
-const kernel: type = @import("root").kernel;
+const lib: type = @import("root").lib;
 const main: type = @import("main.zig");
 
 const allocator: type = if(!builtin.is_test) @import("allocator.zig") else
     @import("test/allocator.zig");
-const mem: type = if(!builtin.is_test) kernel.utils.mem else
+const mem: type = if(!builtin.is_test) lib.utils.mem else
     @import("test/mem.zig");
-const fmt: type = if(!builtin.is_test) kernel.utils.fmt else
+const fmt: type = if(!builtin.is_test) lib.utils.fmt else
     @import("test/fmt.zig");
 
 const Inode_T: type = types.Inode_T;

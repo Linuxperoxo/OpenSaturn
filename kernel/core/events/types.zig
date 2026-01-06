@@ -4,7 +4,7 @@
 // └──────────────────────────────────────────────┘
 
 const builtin: type = @import("builtin");
-const list: type = if(!builtin.is_test) @import("root").kernel.utils.list else @import("test/list.zig");
+const list: type = if(!builtin.is_test) @import("root").lib.utils.list else @import("test/list.zig");
 
 pub const Event_T: type = struct {
     bus: u2,

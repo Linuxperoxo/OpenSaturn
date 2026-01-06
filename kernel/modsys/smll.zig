@@ -8,8 +8,8 @@
 const module: type = @import("root").interfaces.module;
 const config: type = @import("root").config;
 const modsys: type = @import("modsys.zig");
-const mem: type = @import("root").kernel.utils.mem;
-const c: type = @import("root").kernel.utils.c;
+const mem: type = @import("root").lib.utils.mem;
+const c: type = @import("root").lib.utils.c;
 const aux: type = struct {
     fn find_module_by_name(mod_name: []const u8) anyerror!*const module.ModuleDescription_T {
         for(&modsys.saturn_modules) |*mod_desc| {
