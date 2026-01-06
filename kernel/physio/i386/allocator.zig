@@ -4,7 +4,7 @@
 // └────────────────────────────────────────────────┘
 
 const builtin: type = @import("builtin");
-const memory: type = if(!builtin.is_test) @import("root").lib.kernel.memory.sba else @import("test/sba.zig");
+const memory: type = if(!builtin.is_test) @import("root").lib.memory.sba else @import("test/sba.zig");
 const types: type = @import("types.zig");
 
 pub const sba: type = struct {

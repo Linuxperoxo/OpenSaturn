@@ -1,6 +1,6 @@
 // ┌───────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: linker.zig    │
+// │  (c) 2025 Linuxperoxo  •  FILE: linkers.zig   │
 // │            Author: Linuxperoxo                │
 // └───────────────────────────────────────────────┘
 
-pub const __SaturnLinkerString__ = @embedFile("i386-linker.ld");
+@"i386": []const u8 = @embedFile("i386/i386-linker.ld"),

@@ -133,7 +133,7 @@
 //     - É concatenado com SegLimitLow para formar o valor final
 //
 
-const arch: type = @import("root").arch;
+const arch: type = @import("root").code.arch;
 
 const section_text_loader = arch.sections.section_text_loader;
 const section_data_loader = arch.sections.section_data_loader;

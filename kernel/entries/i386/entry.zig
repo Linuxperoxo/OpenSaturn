@@ -3,9 +3,9 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const arch: type = @import("root").arch;
+const arch: type = @import("root").code.arch;
 const config: type = @import("root").config;
-const kernel: type = @import("root").kernel;
+const lib: type = @import("root").lib;
 const atlas: type = @import("atlas.zig");
 
 const section_text_loader = arch.sections.section_text_loader;
@@ -25,7 +25,7 @@ const section_data_persist = arch.sections.section_data_persist;
 comptime {
     const aux: type = opaque {
         pub fn make_asm_set(comptime name: []const u8, comptime value: u32) []const u8 {
-            return ".set " ++ name ++ ", " ++ kernel.utils.fmt.intFromArray(value) ++ "\n";
+            return ".set " ++ name ++ ", " ++ lib.utils.fmt.intFromArray(value) ++ "\n";
         }
     };
     // AtlasB Headers

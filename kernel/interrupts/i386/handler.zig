@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo                  │
 // └─────────────────────────────────────────────────┘
 
-const kernel: type = @import("root").kernel;
+const lib: type = @import("root").lib;
 const events: type = @import("root").core.events;
 const csi: type = @import("csi.zig");
 
@@ -14,7 +14,7 @@ pub var csi_isr =  r: {
             comptime {
                 // apenas para facilitar a busca no assembly
                 @export(&isr_handler, .{
-                    .name = ".i386.csi.isr" ++ kernel.utils.fmt.intFromArray(i),
+                    .name = ".i386.csi.isr" ++ lib.utils.fmt.intFromArray(i),
                 });
             }
             pub fn isr_handler() callconv(.naked) void {
@@ -45,8 +45,8 @@ pub fn csi_handler() callconv(.c) void {
             :[_] "={al}" (-> u8)
         ),
         .flags = .{
-            .d = 0,
-            .e = 1,
+            .data = 0,
+            .event = 1,
         },
     }) catch {
         // KLOG: this is a kernel panic!

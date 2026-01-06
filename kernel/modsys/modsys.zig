@@ -7,7 +7,7 @@ const decls: type = @import("root").decls;
 const modules: type = @import("root").modules;
 const config: type = @import("root").config;
 const interfaces: type = @import("root").interfaces;
-const kernel: type = @import("root").kernel;
+const lib: type = @import("root").lib;
 const deps: type = @import("deps.zig");
 const menuconfig: type = @import("menuconfig.zig");
 
@@ -50,7 +50,7 @@ pub const saturn_modules = r: {
             var collision_count: usize = 0;
             for(modules.__SaturnAllMods__, 0..) |mod, i| {
                 for(0..i) |j| {
-                    if(kernel.utils.mem.eql(
+                    if(lib.utils.mem.eql(
                         mod.__SaturnModuleDescription__.name, modules.__SaturnAllMods__[j].__SaturnModuleDescription__.name, .{
                             .len = true,
                             .case = false
@@ -83,7 +83,7 @@ pub const saturn_modules = r: {
     for(modules.__SaturnAllMods__, 0..) |mod, i| {
         t: {
             for(0..i) |j| {
-                if(kernel.utils.mem.eql(
+                if(lib.utils.mem.eql(
                     mod.__SaturnModuleDescription__.name, modules.__SaturnAllMods__[j].__SaturnModuleDescription__.name, .{
                         .len = true,
                         .case = false,

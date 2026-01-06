@@ -3,9 +3,9 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const c: type = @import("root").kernel.utils.c;
+const c: type = @import("root").lib.utils.c;
 const interfaces: type = @import("root").interfaces;
-const list: type = @import("root").kernel.utils.list;
+const list: type = @import("root").lib.utils.list;
 
 const Mod_T: type = interfaces.module.Mod_T;
 const ModErr_T: type = interfaces.module.ModErr_T;

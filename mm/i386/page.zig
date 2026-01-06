@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const arch: type = @import("root").arch;
+const arch: type = @import("root").code.arch;
 const config: type = @import("root").config;
 const types: type = @import("types.zig");
 const zone: type = @import("zone.zig");

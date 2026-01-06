@@ -4,7 +4,7 @@
 // └──────────────────────────────────────────────┘
 
 const interfaces: type = @import("root").interfaces;
-const list: type = @import("root").kernel.utils.list;
+const list: type = @import("root").lib.utils.list;
 
 const Dentry_T: type = interfaces.vfs.Dentry_T;
 const Superblock_T: type = interfaces.vfs.Superblock_T;
