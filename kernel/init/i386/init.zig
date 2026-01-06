@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const arch: type = @import("root").arch;
+const arch: type = @import("root").code.arch;
 
 pub const gdt: type = @import("gdt.zig");
 pub const apic: type = @import("apic.zig");

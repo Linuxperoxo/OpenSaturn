@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo                  │
 // └─────────────────────────────────────────────────┘
 
-const arch: type = @import("root").arch;
+const arch: type = @import("root").code.arch;
 const config: type = @import("root").config;
 
 pub const ModulesSelection: config.modules.menuconfig.Menuconfig_T = r: {

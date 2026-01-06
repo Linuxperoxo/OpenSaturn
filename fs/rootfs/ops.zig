@@ -6,8 +6,8 @@
 const interfaces: type = @import("root").interfaces;
 const rootfs: type = @import("rootfs.zig");
 const types: type = @import("types.zig");
-const mem: type = @import("root").kernel.utils.mem;
-const c: type = @import("root").kernel.utils.c;
+const mem: type = @import("root").lib.utils.mem;
+const c: type = @import("root").lib.utils.c;
 const allocator: type = @import("allocator.zig");
 const aux: type = @import("aux.zig");
 
@@ -46,6 +46,10 @@ var superblock: Superblock_T = .{
     .data_block_start = 0,
     .inode_table_start = 0,
     .magic = 0xAB00,
+    // tudo bem usar esse @constCast em contexto de kernel. Em userspace,
+    // isso e uma armadilha, e vai causar segfault, o compilador colocar
+    // &RootfsPrivate_T na section .rodata ja que e conhecido em comptime
+    // e implicitamente const
     .private_data = @constCast(&RootfsPrivate_T {
         .parent = null,
         .self = @constCast(&RootfsDentry_T {

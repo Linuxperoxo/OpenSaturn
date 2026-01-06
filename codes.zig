@@ -3,9 +3,10 @@
 // │            Author: Linuxperoxo             │
 // └────────────────────────────────────────────┘
 
-const types: type = @import("kernel/ar/types.zig");
+const ar: type = @import("kernel/ar/ar.zig");
+const arch: type = @import("lib/saturn/interfaces/arch.zig");
 
-pub const __SaturnTargets__: types.Targets_T = .{
+pub const __SaturnTargets__: ar.types.Targets_T = .{
     .@"i386" = .{
         .arch = @import("kernel/arch/i386/i386.zig"),
         .entry = @import("kernel/entries/i386/entry.zig"),
@@ -39,14 +40,18 @@ pub const __SaturnTargets__: types.Targets_T = .{
         .arch = @import("kernel/arch/riscv64/riscv64.zig"),
         .entry = @import("kernel/entries/arm/entry.zig"),
     },
-    
+
     .avr = .{
         .arch = @import("kernel/arch/avr/avr.zig"),
         .entry = @import("kernel/entries/avr/entry.zig"),
     },
-    
+
     .xtensa = .{
         .arch = @import("kernel/arch/xtensa/xtensa.zig"),
         .entry = @import("kernel/entries/xtensa/entry.zig"),
     },
 };
+
+pub fn fetch_code(comptime target: arch.Target_T) ar.types.TargetCode_T {
+    return @field(__SaturnTargets__, @tagName(target));
+}

@@ -3,11 +3,11 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const arch: type = @import("root").arch;
+const arch: type = @import("root").code.arch;
 const config: type = @import("root").config;
 const page: type = @import("page.zig");
 const types: type = @import("types.zig");
-const linker: type = @import("root").arch.linker;
+const linker: type = @import("root").code.arch.linker;
 const zone: type = @import("zone.zig");
 
 // sections []const u8

@@ -9,15 +9,15 @@ const listeners: type = @import("listeners.zig");
 const waiting: type = @import("waiting.zig");
 const aux: type = @import("aux.zig");
 const types: type = @import("types.zig");
-const pci: type = @import("root").kernel.arch.io.pci;
+const pci: type = @import("root").kernel.io.pci;
 
-const PCIPhysIo_T: type = root.kernel.arch.io.pci.PCIPhysIo_T;
-const PCIAddress_T: type = root.kernel.arch.io.pci.PCIAddress_T;
-const PCIRegsOffset_T: type = root.kernel.arch.io.pci.PCIRegsOffset_T;
+const PCIPhysIo_T: type = root.code.lib.kernel.io.pci.PCIPhysIo_T;
+const PCIAddress_T: type = root.code.lib.kernel.io.pci.PCIAddress_T;
+const PCIRegsOffset_T: type = root.code.lib.kernel.io.pci.PCIRegsOffset_T;
 
-const pci_config_read = root.kernel.arch.io.pci.pci_config_read;
+const pci_config_read = root.code.lib.kernel.io.pci.pci_config_read;
 
-const PCI_UNDEFINED_RETURN = root.kernel.arch.io.pci.PCI_UNDEFINED_RETURN;
+const PCI_UNDEFINED_RETURN = root.code.lib.kernel.io.pci.PCI_UNDEFINED_RETURN;
 
 fn try_listener(config_space: *PCIPhysIo_T) bool {
     const listener_found = listeners.physio_listener_search(

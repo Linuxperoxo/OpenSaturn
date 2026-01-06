@@ -5,13 +5,7 @@
 
 const saturn: type = @import("saturn");
 
-pub const code: type = ar.target_code;
-pub const arch: type = code.arch;
-pub const entry: type = code.entry;
-pub const init: type = code.init;
-pub const interrupts: type = code.interrupts;
-pub const mm: type = code.mm;
-pub const physio: type = code.physio;
+pub const code: type = saturn.code;
 pub const core: type = saturn.core;
 pub const ar: type = saturn.ar;
 pub const interfaces: type = saturn.interfaces;
@@ -83,7 +77,7 @@ fn saturn_main() callconv(.c) noreturn {
     });
     @call(.always_inline, fusium.saturn_fusium_loader, .{ .before });
     // Depois da arquitetura resolver todos os seus detalhes, podemos iniciar
-// os modulos linkados ao kernel
+    // os modulos linkados ao kernel
     @call(.always_inline, modsys.core.saturn_modules_loader, .{});
     @call(.always_inline, fusium.saturn_fusium_loader, .{ .after });
     @call(.always_inline, saturn.step.saturn_set_phase, .{

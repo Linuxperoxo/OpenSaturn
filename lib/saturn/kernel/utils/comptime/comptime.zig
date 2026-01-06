@@ -1,12 +1,7 @@
 // ┌────────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: allocator.zig  │
+// │  (c) 2025 Linuxperoxo  •  FILE: comptime.zig   │
 // │            Author: Linuxperoxo                 │
 // └────────────────────────────────────────────────┘
 
-const buildByteAllocator = @import("root").lib.memory.sba.buildByteAllocator;
-
-pub const sba: type = struct {
-    pub var allocator = buildByteAllocator(null, .{
-        .resize = true
-    }) {};
-};
+pub const fmt: type = @import("fmt/fmt.zig");
+pub const utils: type = @import("utils/utils.zig");

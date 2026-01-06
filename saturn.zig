@@ -6,6 +6,16 @@
 // Esse arquivo e responsavel por juntar todas as partes do
 // kernel em um unico arquivo
 
+pub const code: type = ar.target_code;
+pub const arch: type = code.arch;
+pub const entry: type = code.entry;
+pub const init: type = code.init;
+pub const interrupts: type = code.interrupts;
+pub const mm: type = code.mm;
+pub const physio: type = code.physio;
+pub const tconfig: type = code.config;
+pub const segments: type = code.segments;
+
 pub const loader: type = @import("kernel/loader.zig");
 pub const modules: type = @import("modules.zig");
 pub const fusioners: type = @import("fusioners.zig");
@@ -55,6 +65,8 @@ pub const config: type = struct {
     pub const fusium: type = @import("config/fusium/config.zig");
     pub const kernel: type = struct {
         pub const options: type = @import("config/kernel/options.zig");
-        pub const mem: type = @import("config/kernel/segments.zig");
+        pub const mem: type = if(codes.fetch_code(code.target).segments == null) @import("config/kernel/segments.zig") else
+            segments
+        ;
     };
 };

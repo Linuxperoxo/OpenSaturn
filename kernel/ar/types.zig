@@ -8,6 +8,7 @@ pub const TargetCode_T: type = struct {
     entry: type,
     init: ?type = null,
     interrupts: ?type = null,
+    config: ?type = null,
     segments: ?type = null,
     physio: ?type = null,
     mm: ?type = null,

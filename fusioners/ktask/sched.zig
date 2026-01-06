@@ -7,6 +7,8 @@ const types: type = @import("types.zig");
 const allocator: type = @import("allocator.zig");
 const aux: type = @import("aux.zig");
 
+const default_priority: types.KTaskPriority_T = types.KTaskPriority_T.normal;
+
 var tasks = [_]types.ListKTask_T {
     .{},
 } ** @typeInfo(types.KTaskPriority_T).@"enum".fields.len;
@@ -14,7 +16,7 @@ var tasks = [_]types.ListKTask_T {
 var current_priority: types.KTaskPriority_T = .highly;
 
 pub fn sched_task(task: *types.KTask_T, priority: ?types.KTaskPriority_T) types.KTaskErr_T!void {
-    const task_prio = priority orelse types.KTaskPriority_T.normal;
+    const task_prio = priority orelse default_priority;
     const task_list: *types.ListKTask_T = &tasks[@intFromEnum(task_prio)];
     if(!task_list.is_initialized()) task_list.init(
         &allocator.sba.allocator
