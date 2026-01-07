@@ -29,6 +29,16 @@ pub const target_code: type = r: {
     };
 };
 
+comptime {
+    for(codes.__SaturnTargets__, 0..) |target_impl, i| {
+        for(codes.__SaturnTargets__[0..i]) |other_impl| {
+            if(other_impl.target == target_impl.target) @compileError(
+                "target \"" ++ @tagName(target_impl.target) ++ "\" duplicate implementation in codes.zig"
+            );
+        }
+    }
+}
+
 pub fn fetch_code(comptime target: arch.Target_T) types.TargetCode_T {
     for(codes.__SaturnTargets__) |target_impl|
         if(target_impl.target == target) return target_impl;
