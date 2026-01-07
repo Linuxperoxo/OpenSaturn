@@ -4,10 +4,10 @@
 // └────────────────────────────────────────────┘
 
 const ar: type = @import("kernel/ar/ar.zig");
-const arch: type = @import("lib/saturn/interfaces/arch.zig");
 
-pub const __SaturnTargets__: ar.types.Targets_T = .{
-    .@"i386" = .{
+pub const __SaturnTargets__ = [_]ar.types.TargetCode_T {
+    .{
+        .target = .i386,
         .arch = @import("kernel/arch/i386/i386.zig"),
         .entry = @import("kernel/entries/i386/entry.zig"),
         .init = @import("kernel/init/i386/init.zig"),
@@ -20,7 +20,8 @@ pub const __SaturnTargets__: ar.types.Targets_T = .{
         },
     },
 
-    .amd64 = .{
+    .{
+        .target = .amd64,
         .arch = @import("kernel/arch/amd64/amd64.zig"),
         .entry = @import("kernel/entries/amd64/entry.zig"),
         .interrupts = @import("kernel/interrupts/amd64/interrupts.zig"),
@@ -31,27 +32,27 @@ pub const __SaturnTargets__: ar.types.Targets_T = .{
         },
     },
 
-    .arm = .{
+    .{
+        .target = .arm,
         .arch = @import("kernel/arch/arm/arm.zig"),
         .entry = @import("kernel/entries/arm/entry.zig"),
     },
 
-    .riscv64 = .{
+    .{
+        .target = .riscv64,
         .arch = @import("kernel/arch/riscv64/riscv64.zig"),
         .entry = @import("kernel/entries/arm/entry.zig"),
     },
 
-    .avr = .{
+    .{
+        .target = .avr,
         .arch = @import("kernel/arch/avr/avr.zig"),
         .entry = @import("kernel/entries/avr/entry.zig"),
     },
 
-    .xtensa = .{
+    .{
+        .target = .xtensa,
         .arch = @import("kernel/arch/xtensa/xtensa.zig"),
         .entry = @import("kernel/entries/xtensa/entry.zig"),
     },
 };
-
-pub fn fetch_code(comptime target: arch.Target_T) ar.types.TargetCode_T {
-    return @field(__SaturnTargets__, @tagName(target));
-}

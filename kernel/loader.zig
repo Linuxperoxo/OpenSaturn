@@ -34,7 +34,7 @@ comptime {
         }
     };
     // caso a arquitetura nao use uma configuracao default, fica por conta dela mesmo fazer isso
-    if(codes.fetch_code(code.target).segments == null) asm(
+    if(@field(code.arch, decls.what_is_decl(.arch)).symbols.segments == 1 ) asm(
         aux.make_asm_set("kernel_phys_address", config.kernel.mem.phys.kernel_phys) ++
         aux.make_asm_set("kernel_virtual_address", config.kernel.mem.virtual.kernel_text) ++
         aux.make_asm_set("kernel_text_virtual", config.kernel.mem.virtual.kernel_text) ++
@@ -114,8 +114,11 @@ pub fn saturn_arch_verify() void {
                 break :sw true;
             },
             else => {
-                if(field.type == decl_expect_type.Overrider_T) continue;
-                break :sw false;
+                switch(field.type) {
+                     decl_expect_type.Overrider_T,
+                     decl_expect_type.Symbols_T => continue,
+                     else => break :sw false,
+                }
             }
         };
         aux.export_this(

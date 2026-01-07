@@ -35,6 +35,7 @@ pub const ArchDescription_T: type = struct {
         entry: *const fn() callconv(.c) void,
         sync: *const fn() void,
     },
+    symbols: Symbols_T = .{},
     extra: ?[]const Extra_T,
     data: ?[]const Data_T,
     overrider: Overrider_T,
@@ -48,6 +49,10 @@ pub const ArchDescription_T: type = struct {
             c: *const fn() callconv(.c) void,
             naked: *const fn() callconv(.naked) void
         }
+    };
+
+    pub const Symbols_T: type = struct {
+        segments: u1 = 1,
     };
 
     pub const Data_T: type = struct {
