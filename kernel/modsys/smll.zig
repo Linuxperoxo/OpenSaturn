@@ -7,64 +7,8 @@
 
 const module: type = @import("root").interfaces.module;
 const config: type = @import("root").config;
-const modsys: type = @import("modsys.zig");
 const mem: type = @import("root").lib.utils.mem;
-const c: type = @import("root").lib.utils.c;
-const aux: type = struct {
-    fn find_module_by_name(mod_name: []const u8) anyerror!*const module.ModuleDescription_T {
-        for(&modsys.saturn_modules) |*mod_desc| {
-            if(mem.eql(mod_desc.name, mod_name, .{ .case = true}))
-                return mod_desc;
-        }
-        return error.NoNFound;
-    }
-
-    fn find_module_lib_by_name(mod: *const module.ModuleDescription_T, lib_name: []const u8) anyerror!module.ModuleDescriptionLibMine_T {
-        if(mod.libs.mines == null
-            or mod.libs.outside.?.len == 0) return error.NoNFound;
-        for(mod.libs.mines.?) |mine_lib| {
-            if(mem.eql(lib_name, mine_lib.name, .{ .case = true }))
-                return mine_lib;
-        }
-        return error.NoNFound;
-    }
-
-    fn mod_whitelisted(mod_name: []const u8, lib: module.ModuleDescriptionLibMine_T) bool {
-        if(lib.flags.whitelist == 0) return true;
-        if(lib.whitelist == null) return false;
-        for(lib.whitelist.?) |whitelisted| {
-            if(mem.eql(mod_name, whitelisted, .{ .case = true }))
-                return true;
-        }
-        return false;
-    }
-
-    fn find_lib_version(mod_out: module.ModuleDescriptionLibOut_T, mod_mine: module.ModuleDescriptionLibMine_T) ?module.ModuleDescriptionLibMine_T.Version_T {
-        const version: module.ModuleDescriptionLibMine_T.Version_T = r: switch(mod_out.version) {
-            .stable => break :r mod_mine.versions[mod_mine.stable],
-            .current => break :r mod_mine.versions[mod_mine.current],
-            .tag => |tag| {
-                for(mod_mine.versions) |version| {
-                    if(mem.eql(version.tag, tag, .{ .case = false }))
-                        break :r version;
-                }
-                return null;
-            },
-        };
-        return version;
-    }
-
-    fn valid_type_for_lib(mod: *const module.ModuleDescription_T, mod_mine: module.ModuleDescriptionLibMine_T) bool {
-        if(mod_mine.m_types == null or !c.c_bool(mod_mine.m_types.?.len)) return true;
-        for(mod_mine.m_types.?) |m_type| {
-            switch(m_type) {
-                else => |who_is| if(who_is == mod.type) return true
-                    else continue,
-            }
-        }
-        return false;
-    }
-};
+const aux: type = @import("aux.zig");
 
 pub fn search_all(comptime mod: *const module.ModuleDescription_T) struct { [
     if(mod.libs.outside == null) 0 else
@@ -139,7 +83,7 @@ pub fn search_lib(mod: *const module.ModuleDescription_T, lib: []const u8) ?type
         "of module \"" ++ mod_found.name ++ "\""
     );
     if(aux.find_lib_version(outside_lib, lib_found)) |version_found| {
-        if(!c.c_bool(version_found.flags.enable)) @compileError(
+        if(version_found.flags.enable == 0) @compileError(
             "modsys: module \"" ++ mod.name ++ "\" is requesting lib" ++ " " ++
             "\"" ++ outside_lib.lib ++ "\" version \"" ++  outside_lib.version.tag ++ "\" " ++
             "for module \"" ++ outside_lib.mod ++ "\", but this lib version is disable"
