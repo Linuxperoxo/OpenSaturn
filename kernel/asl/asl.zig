@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-// Arch Static Loader
+// Architecture Signature & Linker
 
 const code: type = @import("root").code;
 const decls: type = @import("root").decls;
