@@ -5,7 +5,7 @@
 
 const lib: type = @import("root").lib;
 
-pub fn make_asm_set(comptime name: []const u8, comptime value: u32) []const u8 {
+pub fn asm_set(comptime name: []const u8, comptime value: u32) []const u8 {
     return ".set " ++ name ++ ", " ++ lib.utils.fmt.intFromArray(value) ++ "\n"
         ++ ".globl " ++ name ++ "\n"
     ;

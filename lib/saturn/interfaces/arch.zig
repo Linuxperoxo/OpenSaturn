@@ -48,17 +48,14 @@ pub const ArchDescription_T: type = struct {
             // e capaz de mudar o callconv, parametros e return
             c: *const fn() callconv(.c) void,
             naked: *const fn() callconv(.naked) void,
-        },
 
-        pub fn active_field(comptime self: *const @This()) switch(self.entry) {
-            .c => |c| @TypeOf(c),
-            .naked => |naked| @TypeOf(naked),
-        } {
-            return switch(self.entry) {
-                .c => |c| c,
-                .naked => |naked| naked,
-            };
-        }
+            pub fn actived_field(comptime self: *const @This()) @FieldType(@This(), if(self.* == .c) "c" else "naked") {
+                return switch(self.*) {
+                    .c => |c| c,
+                    .naked => |naked| naked,
+                };
+            }
+        },
     };
 
     pub const Symbols_T: type = struct {
