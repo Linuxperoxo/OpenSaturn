@@ -44,6 +44,9 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
         .entry = &physio.physio_init,
         .sync = &physio.physio_sync,
     },
+    .symbols = .{
+        .segments = 1,
+    },
     .extra = &[_]interfaces.arch.ArchDescription_T.Extra_T {
         .{
             .maintainer = "Linuxperoxo",

@@ -239,7 +239,7 @@ pub fn entry() linksection(section_text_loader) callconv(.naked) noreturn {
 }
 
 // depois de criar a implementar todos os arquivos, precisamos adicionar ela ao kernel,
-// isso pode ser feito por 3 arquivos, o primeiro e em config/arch/types.zig, la vamor ter
+// isso pode ser feito por alguns arquivos, o primeiro e em config/arch/types.zig, la vamor ter
 // um enum:
 
 pub const Target_T: type = enum {
@@ -253,7 +253,7 @@ pub const Target_T: type = enum {
 // basta colocar sua nova arquitetura, digamos que seja i386
 
 pub const Target_T: type = enum {
-    i386,
+    i386, // novo target
     amd64,
     arm,
     avr,
@@ -261,10 +261,20 @@ pub const Target_T: type = enum {
     riscv64,
 };
 
-// feito isso, vamos precisar ir em saturn.zig, la temos uma grande struct chamada
-// Architectures, dentro dela temos todas as arquiteturas do kernel, e seus arquivos,
-// voce deve fazer a mesma coisa, seguindo a mesma ideia, vamos usar de exemplo i386
-// navamente
+// feito isso, vamos precisar ir em kernel/ar/types.zig, la temos uma struct chamada
+// Targets_T, dentro dela temos todas as arquiteturas do kernel, e seus arquivos, voce
+// deve fazer o mesmo para a sua arquitetura
+
+pub const Targets_T: type = struct {
+    @"i386": TargetCode_T, // o nome do field deve ser extamente como esta no enum Target_T e sempre do tipo TargetCode_T
+    amd64: TargetCode_T,
+    arm: TargetCode_T,
+    riscv64: TargetCode_T,
+    avr: TargetCode_T,
+    xtensa: TargetCode_T,
+};
+
+// agora basta ir em codes.zig e adicionar sua nova arquitetura la
 
 pub const Architectures: type = struct {
     pub const @"i386": type = struct {
