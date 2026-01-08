@@ -23,6 +23,10 @@ pub const DeclsOffset_T: type = enum {
     fusium,
 };
 
+pub fn decl_access(comptime container: type, comptime decl: DeclsOffset_T) @TypeOf(@field(container, decl)) {
+    return @field(container, what_is_decl(decl));
+}
+
 pub fn container_decl_exist(comptime container: type, comptime decl: DeclsOffset_T) bool {
     return @hasDecl(container, saturn_especial_decls[
         @intFromEnum(decl)

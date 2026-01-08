@@ -8,7 +8,6 @@
 
 const enable_obsolete: bool = false;
 
-pub const loader: type = @import("kernel/loader.zig");
 pub const modules: type = @import("modules.zig");
 pub const fusioners: type = @import("fusioners.zig");
 pub const fusium: type = @import("kernel/fusium/core.zig");
@@ -16,6 +15,7 @@ pub const supervisor: type = if(enable_obsolete) @import("kernel/supervisor/supe
 pub const decls: type = @import("kernel/decls.zig");
 pub const step: type = @import("kernel/step/step.zig");
 pub const ar: type = @import("kernel/ar/ar.zig");
+pub const asl: type = @import("kernel/asl/asl.zig");
 pub const codes: type = @import("codes.zig");
 
 pub const core: type = struct {
