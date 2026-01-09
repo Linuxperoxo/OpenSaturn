@@ -15,16 +15,28 @@ const events: type = @import("root").interfaces.events;
 var my_listener: events.EventListener_T = .{
     // funcao chamada cada vez que o evento acontecer
     .handler = &handler,
+    // como no futuro vamos poder ter mais de uma interface de
+    // evento por bus-line, aqui especificamos quem queremos escutar,
+    // atualmente nao tem impacto nenhum
     .listening = 0,
-    .event = 0,
+    .event = 0, // evento especifico para escutar
     .flags = .{
         .control = .{
+            // listener esta satisfeito, ou seja, qualquer evento
+            // sera ignorado caso .satisfied = 1
             .satisfied = 0,
+            // escuta todos os eventos
             .all = 0,
         },
     },
 };
 
 fn handler(out: events.EventOut_T) ?events.EventInput_T {
-    
+    // caso o evento aceite return vindo do listener,
+    // voce pode retornar algo assim
+    return events.EventInput_T {
+        .data = 10,
+        .flags = 0b0001,
+        .sender = 0, // quem esta mandando
+    };
 }
