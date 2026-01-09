@@ -4,7 +4,7 @@
 // └──────────────────────────────────────────────┘
 
 const builtin: type = @import("builtin");
-const mm: type = @import("root").mm;
+const mm: type = @import("root").code.mm;
 const config: type = @import("root").config;
 const types: type = @import("types.zig");
 const std: type = @import("std");

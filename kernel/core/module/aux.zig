@@ -6,7 +6,7 @@
 const builtin: type = @import("builtin");
 const main: type = @import("main.zig");
 const types: type = @import("types.zig");
-const mem: type = if(!builtin.is_test) @import("root").kernel.utils.mem
+const mem: type = if(!builtin.is_test) @import("root").lib.utils.mem
     else @import("test/mem.zig");
 
 const Mod_T: type = types.Mod_T;
@@ -40,7 +40,7 @@ pub inline fn resolve_mod_type(mod: *const Mod_T) ModType_T {
     };
 }
 
-pub inline fn calling_handler(mod: *const Mod_T, comptime op: enum { install, remove }) ModErr_T!void {
+pub inline fn calling_handler(mod: *Mod_T, comptime op: enum { install, remove }) ModErr_T!void {
     const handler: *const ModHandler_T = find_handler(
         resolve_mod_type(mod)
     );

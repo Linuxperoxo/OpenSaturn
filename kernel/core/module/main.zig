@@ -9,10 +9,11 @@ const ModErr_T: type = @import("types.zig").ModErr_T;
 const ModHandler_T: type = @import("types.zig").ModHandler_T;
 const ModRoot_T: type = @import("types.zig").ModRoot_T;
 
+const c: type = @import("root").lib.utils.c;
 const aux: type = @import("aux.zig");
 const builtin: type = @import("builtin");
 const allocator: type = @import("allocator.zig");
-const mem: type = if(!builtin.is_test) @import("root").kernel.utils.mem else @import("test/mem.zig");
+const mem: type = if(!builtin.is_test) @import("root").lib.utils.mem else @import("test/mem.zig");
 const fs: type = @import("root").interfaces.fs;
 
 // poderiamos colocar os tipos nos index
@@ -21,10 +22,10 @@ const fs: type = @import("root").interfaces.fs;
 // tipos de modulos
 
 pub const handlers = [_]ModHandler_T {
-    .{
+    ModHandler_T {
         .filesystem = if(builtin.is_test) {} else .{
-            .install = fs.registerfs,
-            .remove = fs.unregisterfs,
+            .install = fs.register_fs,
+            .remove = fs.unregister_fs,
         },
     },
 };
@@ -34,7 +35,7 @@ pub const handlers = [_]ModHandler_T {
 // o modulo como anon
 
 pub var modules_entries = [_]ModRoot_T {
-    .{
+    ModRoot_T {
         .list = .{},
         .type = .filesystem,
         .flags = .{
@@ -94,9 +95,16 @@ pub fn inmod(mod: *Mod_T) ModErr_T!void {
             return;
         };
     }
+    if(c.c_bool(mod.flags.control.call.handler.install)) {
+        mod.flags.internal.call.handler.install = 1;
+        aux.calling_handler(mod, .install) catch {
+            mod.flags.internal.fault.call.handler.install = 1;
+            // klog()
+            // aqui nao deve dar return
+        };
+    }
     if(mod.flags.control.call.after == 1) {
         if(mod.after == null) {
-            mod.flags.internal.call.after = 0;
             mod.flags.internal.fault.call.after = 1;
             return;
         }
@@ -126,10 +134,12 @@ pub fn rmmod(mod: *Mod_T) ModErr_T!void {
         &allocator.sba.allocator,
     ) catch return ModErr_T.AllocatorError; // aqui so pode dar erro do alocador
     module_root.flags.init = @intFromBool(module_root.list.how_many_nodes() > 0);
-    aux.calling_handler(mod, .remove) catch {
-        @branchHint(.unlikely);
-        return ModErr_T.RemovedButWithHandlerError;
-    };
+    if(c.c_bool(mod.flags.control.call.handler.remove)) {
+        mod.flags.internal.call.handler.remove = 1;
+        aux.calling_handler(mod, .remove) catch {
+            mod.flags.internal.fault.call.handler.remove = 1;
+        };
+    }
     mod.flags.internal.installed = 0;
     mod.flags.internal.removed = 1;
     if(mod.flags.control.call.exit == 1) {

@@ -4,7 +4,7 @@
 // └──────────────────────────────────────────────┘
 
 const types: type = @import("types.zig");
-const pci: type = if(!builtin.is_test) @import("root").kernel.arch.io.pci else @import("test/types.zig");
+const pci: type = if(!builtin.is_test) @import("root").code.lib.kernel.io.pci else @import("test/types.zig");
 const allocator: type = @import("allocator.zig");
 const aux: type = @import("aux.zig");
 const builtin: type = @import("builtin");

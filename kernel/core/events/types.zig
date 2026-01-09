@@ -4,29 +4,27 @@
 // └──────────────────────────────────────────────┘
 
 const builtin: type = @import("builtin");
-const list: type = if(!builtin.is_test) @import("root").kernel.utils.list else @import("test/list.zig");
+const list: type = if(!builtin.is_test) @import("root").lib.utils.list else @import("test/list.zig");
 
 pub const Event_T: type = struct {
     bus: u2,
     line: u3,
     who: u8,
     listener_out: ?*const fn(EventInput_T) void,
-    flags: packed struct(u8) {
-        control: packed struct(u2) {
+    flags: packed struct {
+        control: packed struct {
             active: u1,
             block: u1,
         },
-        reserved: u6 = 0,
     },
 };
 
 pub const EventOut_T: type = struct {
     data: usize,
     event: u8,
-    flags: packed struct(u8) {
-        d: u1, // with data
-        e: u1, // with event
-        reserved: u6 = 0,
+    flags: packed struct {
+        data: u1, // with data
+        event: u1, // with event
     },
 };
 
@@ -46,7 +44,7 @@ pub const EventDefault_T: type = enum {
 pub const EventErr_T: type = error {
     EventCollision,
     NoNEvent,
-    BlockedEvent,
+    InactiveEvent,
     ListenerInteratorFailed,
     FreeEventFailed,
     NoNListenerInstall,
@@ -55,6 +53,7 @@ pub const EventErr_T: type = error {
     RemoveListenerInternalError,
     AllocFailed,
     ListInitFailed,
+    DisableEvent,
 };
 
 pub const EventListener_T: type = struct {
@@ -69,8 +68,8 @@ pub const EventListener_T: type = struct {
         },
         internal: packed struct {
             // flags changed by the event (READY ONLY FLAGS!)
-            listen: u1,
-        },
+            listen: u1 = 0,
+        } = .{},
         reserved: u5 = 0,
     },
 };

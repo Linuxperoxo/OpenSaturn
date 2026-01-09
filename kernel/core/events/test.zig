@@ -9,7 +9,7 @@ const types: type = @import("types.zig");
 
 // === Teste Info ===
 //
-// OpenSaturn: 0.1.1
+// OpenSaturn: 0.3.0
 // OS: Gentoo Linux x86_64
 // Zig: 0.15.2
 // Tester: Linuxperoxo
@@ -97,8 +97,8 @@ test "Event" {
         .data = 1,
         .event = 0,
         .flags = .{
-            .d = 1,
-            .e = 0,
+            .data = 1,
+            .event = 0,
         }
     });
     for(&listeners_hits) |*hit| {
@@ -115,8 +115,8 @@ test "Event" {
         .data = 1,
         .event = 0,
         .flags = .{
-            .d = 1,
-            .e = 0,
+            .data = 1,
+            .event = 0,
         }
     });
     if(listeners_hits[1] != 0 and listeners_hits[0] != 1) return error.UndefinedHit;
@@ -126,8 +126,8 @@ test "Event" {
         .data = 1,
         .event = 0,
         .flags = .{
-            .d = 1,
-            .e = 0,
+            .data = 1,
+            .event = 0,
         }
     });
     if(listeners_hits[0] != 0) return error.UndefinedHit;
@@ -137,8 +137,8 @@ test "Event" {
         .data = 1,
         .event = 0,
         .flags = .{
-            .d = 1,
-            .e = 0,
+            .data = 1,
+            .event = 0,
         }
     }) catch |err| switch(err) {
         types.EventErr_T.NoNEvent => return,

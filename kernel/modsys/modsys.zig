@@ -7,7 +7,7 @@ const decls: type = @import("root").decls;
 const modules: type = @import("root").modules;
 const config: type = @import("root").config;
 const interfaces: type = @import("root").interfaces;
-const kernel: type = @import("root").kernel;
+const lib: type = @import("root").lib;
 const deps: type = @import("deps.zig");
 const menuconfig: type = @import("menuconfig.zig");
 
@@ -50,7 +50,7 @@ pub const saturn_modules = r: {
             var collision_count: usize = 0;
             for(modules.__SaturnAllMods__, 0..) |mod, i| {
                 for(0..i) |j| {
-                    if(kernel.utils.mem.eql(
+                    if(lib.utils.mem.eql(
                         mod.__SaturnModuleDescription__.name, modules.__SaturnAllMods__[j].__SaturnModuleDescription__.name, .{
                             .len = true,
                             .case = false
@@ -79,13 +79,11 @@ pub const saturn_modules = r: {
         }
     };
     var modules_check_index: usize = 0;
-    var modules_check = [_]?interfaces.module.ModuleDescription_T {
-        null
-    } ** (modules.__SaturnAllMods__.len - aux.check_module_collision());
+    var modules_check: [(modules.__SaturnAllMods__.len - aux.check_module_collision())]interfaces.module.ModuleDescription_T = undefined;
     for(modules.__SaturnAllMods__, 0..) |mod, i| {
         t: {
             for(0..i) |j| {
-                if(kernel.utils.mem.eql(
+                if(lib.utils.mem.eql(
                     mod.__SaturnModuleDescription__.name, modules.__SaturnAllMods__[j].__SaturnModuleDescription__.name, .{
                         .len = true,
                         .case = false,
@@ -113,13 +111,9 @@ pub const saturn_modules = r: {
             modules_check_index += 1;
         }
     }
-    break :r t: {
-        var satisfied_modules: [modules_check_index]interfaces.module.ModuleDescription_T = undefined;
-        for(0..modules_check_index) |i| {
-            satisfied_modules[i] = modules_check[i].?;
-        }
-        break :t satisfied_modules;
-    };
+    break :r @as(
+        *const [modules_check_index]interfaces.module.ModuleDescription_T, @ptrCast(&modules_check)
+    ).*;
 };
 
 pub fn saturn_modules_loader() void {
@@ -146,7 +140,13 @@ pub fn saturn_modules_loader() void {
                     switch(comptime module.type.filesystem) {
                         // caso o modulo fs use compile, vamos fazer uma
                         // montagem do fs em tempo de compilacao
-                        .compile => {}, // call mount
+                        .compile => |fs_info| {
+                            @call(.never_inline, interfaces.vfs.mount, .{
+                                fs_info.mountpoint, null, fs_info.name
+                            }) catch {
+                                // klog()
+                            };
+                        },
                         .dynamic => break :skip,
                     }
                 },

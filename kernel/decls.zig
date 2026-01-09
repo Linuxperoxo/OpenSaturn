@@ -8,17 +8,24 @@ const interfaces: type = @import("root").interfaces;
 pub const saturn_especial_decls = [_][]const u8 {
     "__SaturnArchDescription__", // Descreve uma arch para o kernel
     "__SaturnModuleDescription__", // Descreve um modulo para o kernel
+    "__SaturnFusiumDescription__", // Descreve um fusioner para o kernel
 };
 
 pub const saturn_especial_decls_types = [_]type {
     interfaces.arch.ArchDescription_T,
     interfaces.module.ModuleDescription_T,
+    interfaces.fusium.FusiumDescription_T,
 };
 
 pub const DeclsOffset_T: type = enum {
     arch,
     module,
+    fusium,
 };
+
+pub fn decl_access(comptime container: type, comptime decl: DeclsOffset_T) @TypeOf(@field(container, what_is_decl(decl))) {
+    return @field(container, what_is_decl(decl));
+}
 
 pub fn container_decl_exist(comptime container: type, comptime decl: DeclsOffset_T) bool {
     return @hasDecl(container, saturn_especial_decls[

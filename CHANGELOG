@@ -1,8 +1,32 @@
-OpenSaturn 0.2.3 - Change Log
+OpenSaturn 0.3.0 - Change Log
 =============================
 
---- KERNEL
-* Melhorias no código do SMLL.
-* Novas funções em ModuleDescription_T para obter libs
-* Configs IgnoreLibSearchNoExistentMod e IgnoreFaultNoExistentLib removidas
-* Flags de controle para ModuleDescriptionLibOut_T
+[ KERNEL ]
+* kernel/core/vfs foi refatorado e agora está totalmente funcional.
+* kernel/core/fs foi refatorado.
+* Fusium adicionado ao kernel.
+* Melhorias no modsys.
+* Mudanças e adições em ArchDescription_T.
+* Nova declaração adicionada ao kernel: "SaturnFusiumDescription".
+* Nova descrição adicionada ao kernel: "FusiumDescription".
+* Novas configurações para o Fusium.
+* ASL adicionado ao kernel
+* AR adicionado ao kernel
+* kernel/loader.zig removido, agora o ASL é responsável por fazer a signature verify/sym export
+* Mudança completa na adição de novas arquiteturas no kernel
+* Resolução de arquitetura antiga foi removido, agora o AR é responsável por resolver
+* Remoção de código não utilizado
+* Mudança geral em saturn.zig
+* Adicionado field symbols em ArchDescription_T
+
+[ MODULES ]
+  [ ROOTFS ]
+    * rootfs foi totalmente refatorado e já pode ser usado.
+
+[ FUSIONERS ]
+  [ KTASK ]
+    * ktask adicionado aos fusioners e já pode ser usado.
+
+[ ARCH ]
+  [ i386 ]
+    * Modificação na decla "SaturnArchDescription" da arquitetura.

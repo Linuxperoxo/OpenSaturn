@@ -5,12 +5,13 @@
 
 const root: type = @import("root");
 
-const entry: type = root.entry;
-const init: type = root.init;
-const interrupts: type = root.interrupts;
-const mm: type = root.mm;
+const entry: type = root.code.entry;
+const init: type = root.code.init;
+const interrupts: type = root.code.interrupts;
+const mm: type = root.code.mm;
+const physio: type = root.code.physio;
+
 const interfaces: type = root.interfaces;
-const physio: type = root.physio;
 
 pub const linker: type = @import("linker.zig");
 pub const sections: type = @import("sections.zig");
@@ -42,6 +43,9 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
         .label = ".i386.physio",
         .entry = &physio.physio_init,
         .sync = &physio.physio_sync,
+    },
+    .symbols = .{
+        .segments = 1,
     },
     .extra = &[_]interfaces.arch.ArchDescription_T.Extra_T {
         .{
@@ -94,15 +98,18 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
             .ptr = &interrupts.idt_entries,
         },
     },
-    .overrider = &[_]interfaces.arch.ArchDescription_T.Overrider_T {
-        .{
-            .module = "ke_m_rootfs",
-            .value = .yes,
+    .overrider = interfaces.arch.ArchDescription_T.Overrider_T {
+        .modules = &[_]interfaces.arch.ArchDescription_T.ModuleOverrider_T {
+            .{
+                .module = "ke_m_rootfs",
+                .value = .yes,
+            },
+            .{
+                .module = "ke_m_devfs",
+                .value = .no,
+            },
         },
-        .{
-            .module = "ke_m_devfs",
-            .value = .no,
-        },
+        .fusioners = null,
     },
     // TODO:
     //

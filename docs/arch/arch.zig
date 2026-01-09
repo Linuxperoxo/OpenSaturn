@@ -99,6 +99,13 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
         .entry = &physio.physio_init,
         .sync = &physio.physio_sync,
     },
+    .symbols = .{
+        // exporta symbols de segmento do kernel, eles ficam
+        // em config/kernel/segments.zig. Deixar esse feild
+        // como 0 vai impedir o uso desses symbols dentro do
+        // linker.ld ou assembly
+        .segments = 1,
+    },
     // aqui temos o .extra e .data, eles sao usados para a arquitetura usar o @export
     // em certas coisas, como seus detalhes de ISA, isso evita ficar colocando @export
     // em varios arquivos diferentes, desse jeito fica tudo em um unico lugar
@@ -186,6 +193,7 @@ comptime {
     asm(
         aux.make_asm_set("AtlasLoadDest", atlas.atlas_load_dest) ++
         aux.make_asm_set("AtlasVMode", atlas.atlas_vmode) ++
+
         aux.make_asm_set("AtlasFlags", atlas.atlas_flags) ++
         \\  .set AtlasMagic, 0xAB00
         \\  .weak AtlasImgSize
@@ -239,21 +247,13 @@ pub fn entry() linksection(section_text_loader) callconv(.naked) noreturn {
 }
 
 // depois de criar a implementar todos os arquivos, precisamos adicionar ela ao kernel,
-// isso pode ser feito por 3 arquivos, o primeiro e em config/arch/types.zig, la vamor ter
+// isso pode ser feito por alguns arquivos, o primeiro e em config/arch/types.zig, la vamor ter
 // um enum:
-
-pub const Target_T: type = enum {
-    amd64,
-    arm,
-    avr,
-    xtensa,
-    riscv64,
-};
 
 // basta colocar sua nova arquitetura, digamos que seja i386
 
 pub const Target_T: type = enum {
-    i386,
+    i386, // novo target
     amd64,
     arm,
     avr,
@@ -261,47 +261,24 @@ pub const Target_T: type = enum {
     riscv64,
 };
 
-// feito isso, vamos precisar ir em saturn.zig, la temos uma grande struct chamada
-// Architectures, dentro dela temos todas as arquiteturas do kernel, e seus arquivos,
-// voce deve fazer a mesma coisa, seguindo a mesma ideia, vamos usar de exemplo i386
-// navamente
+// agora basta ir em codes.zig e adicionar os arquivos da sua nova arquitetura la
 
-pub const Architectures: type = struct {
-    pub const @"i386": type = struct {
-        // todos os arquivos da nossa arquitetura
-        pub const arch: type = @import("kernel/arch/i386/i386.zig"); // aqui fica o __SaturnArchDescription__
-        pub const entry: type = @import("kernel/entries/i386/entry.zig");
-        pub const init: type = @import("kernel/init/i386/init.zig");
-        pub const interrupts: type = @import("kernel/interrupts/i386/interrupts.zig");
-        pub const linker: type = @import("linkers/i386/linker.zig");
-        pub const physio: type = @import("kernel/physio/i386/physio.zig");
-        pub const mm: type = @import("mm/i386/mm.zig");
-        // essa struct lib provavalmente no futuro sera opcional existir, mas atualmente
-        // ela e obrigatoria
-        pub const lib: type = struct {
-            pub const kernel: type = @import("lib/saturn/kernel/arch/i386/lib.zig");
-            pub const userspace: type = @import("lib/saturn/userspace/i386/lib.zig");
-        };
-    };
+const ar: type = @import("root").ar;
 
-    pub const amd64: type = struct {
-        pub const arch: type = @import("kernel/arch/amd64/amd64.zig");
-        pub const entry: type = @import("kernel/entries/amd64/entry.zig");
-        pub const interrupts: type = @import("kernel/interrupts/amd64/interrupts.zig");
-        pub const linker: type = @import("linkers/amd64/linker.zig");
-        pub const mm: type = @import("mm/amd64/mm.zig");
-        pub const lib: type = struct {
-            pub const kernel: type = @import("lib/saturn/kernel/arch/amd64/lib.zig");
-            pub const userspace: type = @import("lib/saturn/userspace/amd64/lib.zig");
-        };
-    };
-};
-
-// e por fim, modificar o SelectedArch
-
-const SelectedArch: type = switch(config.arch.options.Target) {
-    .i386 => Architectures.i386,
-    .amd64 => Architectures.amd64,
+pub const __SaturnTargets__ = [_]ar.types.TargetCode_T {
+    .{
+        .target = .i386, // Target_T da sua arquitetura
+        .arch = @import("kernel/arch/i386/i386.zig"),
+        .entry = @import("kernel/entries/i386/entry.zig"),
+        .init = @import("kernel/init/i386/init.zig"),
+        .interrupts = @import("kernel/interrupts/i386/interrupts.zig"),
+        .physio = @import("kernel/physio/i386/physio.zig"),
+        .mm = @import("mm/i386/mm.zig"),
+        .lib = .{
+            .kernel = @import("lib/saturn/kernel/arch/i386/lib.zig"),
+            .userspace = @import("lib/saturn/userspace/i386/lib.zig"),
+        },
+    },
 };
 
 // agora a arquitetura já existe, e já é reconhecida pelo kernel, agora só precisa

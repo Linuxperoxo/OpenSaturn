@@ -3,21 +3,22 @@
 // │            Author: Linuxperoxo                  │
 // └─────────────────────────────────────────────────┘
 
-const arch: type = @import("root").arch;
+const arch: type = @import("root").code.arch;
 const config: type = @import("root").config;
 
 pub const ModulesSelection: config.modules.menuconfig.Menuconfig_T = r: {
     if(!config.modules.options.ForceModuleArchOverrider) break :r config.modules.menuconfig.ModulesSelection;
-    if(arch.__SaturnArchDescription__.overrider == null) {
+    if(arch.__SaturnArchDescription__.overrider.modules == null
+        or arch.__SaturnArchDescription__.overrider.modules.?.len == 0) {
         if(!config.modules.options.IgnoreOverriderIfNoExist) @compileError(
-            "modsys: ForceModuleArchOverrider = true expects an architecture overrider, but the " ++
+            "modsys: ForceModuleArchOverrider = true expects an architecture module overrider, but the " ++
             @tagName(config.arch.options.Target)
-            ++ " architecture does not have an overrider"
+            ++ " architecture does not have an module overrider"
         );
         break :r config.modules.menuconfig.ModulesSelection;
     }
     var over_menuconfig = config.modules.menuconfig.ModulesSelection;
-    for(arch.__SaturnArchDescription__.overrider.?) |overrider| {
+    for(arch.__SaturnArchDescription__.overrider.modules.?) |overrider| {
         if(!@hasField(config.modules.menuconfig.Menuconfig_T, overrider.module)) @compileError(
             "modsys: attempt to overrider a non-existent module " ++
             overrider.module ++
