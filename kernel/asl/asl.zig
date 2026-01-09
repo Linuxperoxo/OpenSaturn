@@ -5,6 +5,11 @@
 
 // Architecture Signature & Linker
 
+// o architecture signature & linker é o mecanismo do OpenSaturn
+// responsável por verificar a assinatura da arquitetura e carregar
+// os detalhes específicos da arquitetura no kernel. É nesse ponto
+// que o código da arquitetura é validado e integrado ao kernel.
+
 const code: type = @import("root").code;
 const decls: type = @import("root").decls;
 const config: type = @import("root").config;

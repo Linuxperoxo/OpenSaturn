@@ -3,6 +3,11 @@
 // │            Author: Linuxperoxo             │
 // └────────────────────────────────────────────┘
 
+// Architecture Resolver
+
+// o architecture resolver é responsável por obter o código de implementação
+// da arquitetura target, tornando esse código visível para todo o kernel.
+
 const config: type = @import("root").config;
 const arch: type = @import("root").interfaces.arch;
 const codes: type = @import("root").codes;

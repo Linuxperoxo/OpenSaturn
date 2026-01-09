@@ -25,4 +25,21 @@ var my_events: events.Event_T = .{
     // evento no mesmo bus-line, e aqui, vai fazer o listener saber exatamente quem
     // escutar
     .who = config.options.keyboard_event.who,
+    // caso != null, sera executado toda vez que algum listener retornar algo != null
+    .listener_out = null,
+    .flags = .{
+        .control = .{
+            .active = 1, // caso 0, nao e possivel chamar send_event() nem adicionar listener
+            .block = 0, // recusa novos listeners
+        },
+    },
 };
+
+fn event_sender() void {
+    // mandando eventos
+    events.send_event(my_events, .{
+        .event = 0,
+        .data = 10,
+        .flags = 0b1000,
+    });
+}
