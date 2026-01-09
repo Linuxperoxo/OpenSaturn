@@ -26,7 +26,48 @@ pub fn eql(noalias b0: []const u8, noalias b1: []const u8, comptime rule: struct
     };
 }
 
-pub fn zero(comptime T: type) T {
+pub fn zeroe_m(lhs: anytype) if(@typeInfo(@TypeOf(lhs)) == .pointer) void else @TypeOf(lhs){
+    switch(@typeInfo(@TypeOf(lhs))) {
+        .pointer => |ptr| {
+            switch(ptr.size) {
+                .one, .c => {
+                    lhs.* = zero(lhs.*);
+                },
+
+                .slice => {
+                    for(0..lhs.len) |i| {
+                        lhs[i] = zero(lhs[i]);
+                    }
+                },
+
+                .many => @compileError(
+                    "is not possible to initialize a [*], use slice!"
+                ),
+            }
+        },
+
+        .@"struct" => |str| {
+            var zero_struct = lhs;
+            inline for(str.fields) |field| {
+                @field(zero_struct, field.name) = zero(
+                    @field(zero_struct, field.name)
+                );
+            }
+            return zero_struct;
+        },
+
+        .int => return 0,
+
+        .optional => return null,
+
+        else => @compileError(
+            "type \"" ++ @typeName(@TypeOf(lhs)) ++ "\" not supported!"
+        ),
+    }
+}
+
+pub const zero = zeroe_t;
+pub fn zeroe_t(comptime T: type) T {
     @setEvalBranchQuota(4294967295);
     switch(@typeInfo(T)) {
         .int, .float => return @as(T, 0),
