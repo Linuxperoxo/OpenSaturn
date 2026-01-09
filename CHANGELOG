@@ -10,6 +10,14 @@ OpenSaturn 0.3.0 - Change Log
 * Nova declaração adicionada ao kernel: "SaturnFusiumDescription".
 * Nova descrição adicionada ao kernel: "FusiumDescription".
 * Novas configurações para o Fusium.
+* ASL adicionado ao kernel
+* AR adicionado ao kernel
+* kernel/loader.zig removido, agora o ASL é responsável por fazer a signature verify/sym export
+* Mudança completa na adição de novas arquiteturas no kernel
+* Resolução de arquitetura antiga foi removido, agora o AR é responsável por resolver
+* Remoção de código não utilizado
+* Mudança geral em saturn.zig
+* Adicionado field symbols em ArchDescription_T
 
 [ MODULES ]
   [ ROOTFS ]
