@@ -5,9 +5,10 @@
 
 const saturn: type = @import("saturn");
 
-pub const code: type = saturn.code;
+pub const code: type = ar.target_code;
 pub const core: type = saturn.core;
 pub const ar: type = saturn.ar;
+pub const asl: type = saturn.asl;
 pub const interfaces: type = saturn.interfaces;
 pub const supervisor: type = saturn.supervisor;
 pub const lib: type = saturn.lib.saturn;
@@ -16,17 +17,11 @@ pub const modules: type = saturn.modules;
 pub const decls: type = saturn.decls;
 pub const fusioners: type = saturn.fusioners;
 pub const codes: type = saturn.codes;
-
 pub const modsys: type = struct {
-    const core: type = saturn.modsys.core;
     pub const smll: type = saturn.modsys.smll;
+    const core: type = saturn.modsys.core;
 };
 
-pub const step: type = struct {
-    pub const saturn_get_phase = saturn.step.saturn_get_phase;
-};
-
-const loader: type = saturn.loader;
 const fusium: type = saturn.fusium;
 
 // Para obter mais detalhes de como funciona a inicializacao do
@@ -53,7 +48,7 @@ comptime {
 }
 
 comptime {
-    @call(.compile_time, loader.saturn_arch_verify, .{}); // verificamos a arch e exportamos suas labels
+    _ = asl; // verificamos a arch e exportamos suas labels
 }
 
 fn saturn_main() callconv(.c) noreturn {
@@ -72,16 +67,10 @@ fn saturn_main() callconv(.c) noreturn {
     // exported symbol collision, como resolver isso então? Simplemente usando o .never_inline
     // ou usando somente loader.SaturnArch, isso evita de criar um possivel .never_inline
     // implicito
-    @call(.always_inline, saturn.step.saturn_set_phase, .{
-        .init
-    });
     @call(.always_inline, fusium.saturn_fusium_loader, .{ .before });
     // Depois da arquitetura resolver todos os seus detalhes, podemos iniciar
     // os modulos linkados ao kernel
     @call(.always_inline, modsys.core.saturn_modules_loader, .{});
     @call(.always_inline, fusium.saturn_fusium_loader, .{ .after });
-    @call(.always_inline, saturn.step.saturn_set_phase, .{
-        .runtime
-    });
-    @call(.always_inline, loader.saturn_running, .{}); // noreturn fn
+    @call(.always_inline, opaque { pub fn trap() noreturn { while(true) {} } }.trap, .{}); // noreturn fn
 }

@@ -35,6 +35,7 @@ pub const ArchDescription_T: type = struct {
         entry: *const fn() callconv(.c) void,
         sync: *const fn() void,
     },
+    symbols: Symbols_T,
     extra: ?[]const Extra_T,
     data: ?[]const Data_T,
     overrider: Overrider_T,
@@ -46,8 +47,19 @@ pub const ArchDescription_T: type = struct {
             // apenas para deixar mais explicito, @ptrCast
             // e capaz de mudar o callconv, parametros e return
             c: *const fn() callconv(.c) void,
-            naked: *const fn() callconv(.naked) void
-        }
+            naked: *const fn() callconv(.naked) void,
+
+            pub fn actived_field(comptime self: *const @This()) @FieldType(@This(), if(self.* == .c) "c" else "naked") {
+                return switch(self.*) {
+                    .c => |c| c,
+                    .naked => |naked| naked,
+                };
+            }
+        },
+    };
+
+    pub const Symbols_T: type = struct {
+        segments: u1,
     };
 
     pub const Data_T: type = struct {
