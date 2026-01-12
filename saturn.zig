@@ -22,7 +22,6 @@ pub const core: type = struct {
     pub const vfs: type = @import("kernel/core/vfs/vfs.zig");
     pub const devices: type = @import("kernel/core/devices/devices.zig");
     pub const fs: type = @import("kernel/core/fs/fs.zig");
-    pub const drivers: type = @import("kernel/core/drivers/drivers.zig");
     pub const events: type = @import("kernel/core/events/events.zig");
 };
 
