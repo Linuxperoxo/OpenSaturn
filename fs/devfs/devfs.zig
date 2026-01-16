@@ -1,28 +1,31 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: module.zig   │
+// │  (c) 2025 Linuxperoxo  •  FILE: devfs.zig    │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const Mod_T: type = @import("root").interfaces.module.Mod_T;
-const ModErr_T: type = @import("root").interfaces.module.ModErr_T;
-const ModuleDescription_T: type = @import("root").interfaces.module.ModuleDescription_T;
-const ModuleDescriptionTarget_T: type = @import("root").interfaces.module.ModuleDescriptionTarget_T;
-const ModuleDescriptionLibMine_T: type = @import("root").interfaces.module.ModuleDescriptionLibMine_T;
-const ModuleDescriptionLibOut_T: type = @import("root").interfaces.module.ModuleDescriptionLibOut_T;
+const ops: type = @import("ops.zig");
+const module: type = @import("root").interfaces.module;
 
-const Fs_T: type = @import("root").interfaces.fs.Fs_T;
-
-const inmod = @import("root").interfaces.module.inmod;
-const rmmod = @import("root").interfaces.module.rmmod;
-
-const devfs_mount = &@import("main.zig").devfs_mount;
-const devfs_umount = &@import("main.zig").devfs_umount;
+const Mod_T: type = module.Mod_T;
+const ModErr_T: type = module.ModErr_T;
+const ModuleDescription_T: type = module.ModuleDescription_T;
+const ModuleDescriptionTarget_T: type = module.ModuleDescriptionTarget_T;
+const ModuleDescriptionLibMine_T: type = module.ModuleDescriptionLibMine_T;
+const ModuleDescriptionLibOut_T: type = module.ModuleDescriptionLibOut_T;
 
 pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .name = "ke_m_devfs",
     .load = .linkable,
     .init = &init,
-    .after = &after,
+    .after = &opaque {
+        // fn chamada apos mount
+        pub fn after() anyerror!void {
+            if(devfs.flags.check_op_status(.init) == 0) {
+                // klog()
+            }
+            devfs.flags.control.anon = 1;
+        }
+    }.after,
     .deps = &[_][]const u8{
         "ke_m_rootfs",
     },
@@ -70,8 +73,8 @@ var devfs: Mod_T = .{
     .private = .{
         .filesystem = .{
             .name = "devfs",
-            .mount = devfs_mount,
-            .umount = devfs_umount,
+            .mount = ops.devfs_mount,
+            .umount = ops.devfs_umount,
             .flags = .{
                 .control = .{
                     .nomount = 0,
@@ -101,21 +104,14 @@ var devfs: Mod_T = .{
     },
 };
 
-fn init() ModErr_T!void {
-    return @call(.never_inline, inmod, .{
+fn init() anyerror!void {
+    return @call(.never_inline, module.inmod, .{
         &devfs
     });
 }
 
-fn after() ModErr_T!void {
-    if(devfs.flags.check_op_status(.init) == 0) {
-        // klog()
-    }
-    devfs.flags.control.anon = 1;
-}
-
-fn exit() ModErr_T!void {
-    return @call(.never_inline, rmmod, .{
+fn exit() anyerror!void {
+    return @call(.never_inline, module.rmmod, .{
         &devfs
     });
 }

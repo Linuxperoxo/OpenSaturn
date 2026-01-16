@@ -1,7 +1,9 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: main.zig     │
+// │  (c) 2025 Linuxperoxo  •  FILE: ops.zig      │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
+
+const vfs: type = @import("root").interfaces.vfs;
 
 const Dentry_T: type = @import("root").interfaces.vfs.Dentry_T;
 const Superblock_T: type = @import("root").interfaces.vfs.Superblock_T;
