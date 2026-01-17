@@ -47,6 +47,7 @@ pub const DevOps_T: type = struct {
 };
 
 pub const Dev_T: type = struct {
+    name: []const u8,
     ops: *const DevOps_T, // device op
     type: DevType_T,
     minor: ?*const fn(Minor_T) anyerror!void = null,

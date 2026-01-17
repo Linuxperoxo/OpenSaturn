@@ -21,6 +21,8 @@ pub const valid_minor = main.valid_minor;
 pub const dev_add = main.dev_add;
 pub const dev_rm = main.dev_rm;
 
+pub const write = ops.write;
+pub const read = ops.read;
 pub const ioctl = ops.ioctl;
 pub const mount = ops.mount;
 pub const umount = ops.umount;

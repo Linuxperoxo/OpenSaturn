@@ -9,8 +9,6 @@ const arch: type = @import("root").interfaces.arch;
 const fs: type = @import("root").interfaces.fs;
 const modsys: type = @import("root").modsys;
 
-// Interfaces
-
 pub const ModuleDescriptionTarget_T: type = arch.Target_T;
 
 pub const ModuleDescriptionLoad_T: type = enum {
@@ -34,7 +32,7 @@ pub const Mod_T: type = struct {
         driver: void,
         syscall: void,
         irq: void,
-        filesystem: if(!builtin.is_test) fs.Fs_T else void,
+        filesystem: if(!builtin.is_test) *fs.Fs_T else void,
     },
     flags: packed struct {
         control: packed struct {

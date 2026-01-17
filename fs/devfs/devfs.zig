@@ -1,10 +1,11 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: devfs.zig    │
+// │  (c) 2026 Linuxperoxo  •  FILE: devfs.zig    │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
 const ops: type = @import("ops.zig");
 const module: type = @import("root").interfaces.module;
+const fs: type = @import("fs.zig");
 
 const Mod_T: type = module.Mod_T;
 const ModErr_T: type = module.ModErr_T;
@@ -52,12 +53,35 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
         },
     },
     .libs = .{
-        .mines = null,
+        .mines = &[_]module.ModuleDescriptionLibMine_T {
+            module.ModuleDescriptionLibMine_T {
+                .name = "devfs-operations",
+                .stable = 0,
+                .current = 0,
+                .whitelist = null,
+                .m_types = &[_]module.ModType_T {
+                    .driver,
+                    .filesystem,
+                },
+                .versions = &[_]module.ModuleDescriptionLibMine_T.Version_T {
+                    module.ModuleDescriptionLibMine_T.Version_T {
+                        .tag = "1.0.0",
+                        .lib = opaque {
+                            pub const create_device_node = ops.create_device_node;
+                            pub const unlink_device_node = ops.unlink_device_node;
+                        },
+                        .flags = .{
+                            .enable = 1,
+                        },
+                    },
+                },
+            },
+        },
         .outside = null,
     },
 };
 
-var devfs: Mod_T = .{
+pub var devfs: Mod_T = .{
     .name = __SaturnModuleDescription__.name,
     .desc = "Core Kernel Devices Filesystem",
     .author = "Linuxperoxo",
@@ -71,20 +95,7 @@ var devfs: Mod_T = .{
     .after = null,
     .exit = &exit,
     .private = .{
-        .filesystem = .{
-            .name = "devfs",
-            .mount = ops.devfs_mount,
-            .umount = ops.devfs_umount,
-            .flags = .{
-                .control = .{
-                    .nomount = 0,
-                    .noumount = 1,
-                    .readonly = 0,
-                    .anon = 0,
-                },
-                .internal = .{},
-            },
-        },
+        .filesystem = &fs.devfs,
     },
     .flags = .{
         .control = .{
