@@ -23,8 +23,8 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .load = .linkable,
     .init = &init,
     .after = &after,
-    .deps = &[_][]const u8{
-        "ke_m_rootfs",
+    .deps = &[_][]const u8 {
+        "ke_m_rootfs"
     },
     .type = .{
         .filesystem = .{
