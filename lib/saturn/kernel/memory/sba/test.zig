@@ -175,3 +175,12 @@ test "SBA Resize After Free For Resized Frame" {
     const new_frame: []u8 = free_pool.bytes.?;
     if(@intFromPtr(new_frame.ptr) == @intFromPtr(unsed_frame.ptr)) return TestResizedErr_T.NonNewFrame;
 }
+
+test "SBA Slice Len Test" {
+    var sba_allocator: SBAResized_T = .{};
+    const some: type = struct { usize, usize, usize };
+    const slice: []const u8 = try sba_allocator.alloc(u8, 8);
+    const other_slice: []const some = try sba_allocator.alloc(some, 8);
+    if(slice.len != 8) return error.SliceSizeFailed;
+    if(other_slice.len != 8) return error.SliceSizeFailed;
+}

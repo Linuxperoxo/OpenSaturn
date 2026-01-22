@@ -165,9 +165,7 @@ pub fn buildByteAllocator(
 
         inline fn mark_blocks(pool: *Pool_T, index: usize, blocks: usize) err_T!void {
             // total_bytes_of_pool / block_size = bitmap.len
-            if((index + blocks) > pool.bitmap.len) {
-                return err_T.IndexOutBounds;
-            }
+            if((index + blocks) > pool.bitmap.len) return err_T.IndexOutBounds;
             for(index..(index + blocks)) |i|
                 pool.bitmap[i] = 1;
         }
@@ -178,7 +176,8 @@ pub fn buildByteAllocator(
             var current_pool: *Pool_T = &self.root;
             while(true) {
                 if(check_bounds(current_pool, ptr)) {
-                    child_pool = current_pool; break;
+                    child_pool = current_pool;
+                    break;
                 }
                 if(current_pool.flags.parent == 0) break;
                 parent_pool = current_pool;
@@ -196,8 +195,10 @@ pub fn buildByteAllocator(
 
         fn alloc_sigle_frame(self: *@This(), bytes: usize) err_T![]u8 {
             if(self.root.flags.full == 1) return err_T.OutOfMemory;
-            var index: usize = self.root.next orelse 0;
+
             const blocks_to_alloc: usize = cast_bytes_to_block(bytes);
+            var index: usize = self.root.next orelse 0;
+
             for(index..self.root.bitmap.len) |_| {
                 const check = check_blocks_range(&self.root, blocks_to_alloc, index, 0);
                 if(check.result) break;
@@ -205,8 +206,10 @@ pub fn buildByteAllocator(
                 index = check.index.? + 1;
             }
             try mark_blocks(&self.root, index, blocks_to_alloc);
+
             self.root.refs += blocks_to_alloc;
             self.root.flags.full = if(self.root.refs >= self.root.bitmap.len) 1 else 0;
+
             return self.root.bytes.?[cast_block_to_byte(index)..cast_block_to_byte(index + blocks_to_alloc)];
         }
 
@@ -217,8 +220,9 @@ pub fn buildByteAllocator(
                 });
                 break :r self.top.?;
             };
-            var index: usize = current_pool.next orelse blocks_reserved;
             const blocks_to_alloc: usize = cast_bytes_to_block(bytes);
+            var index: usize = current_pool.next orelse blocks_reserved;
+
             for(index..current_pool.bitmap.len) |_| {
                 const check = check_blocks_range(current_pool, blocks_to_alloc, index, 0);
                 if(check.result) break;
@@ -233,8 +237,10 @@ pub fn buildByteAllocator(
                 index = check.index.? + 1;
             }
             try mark_blocks(current_pool, index, blocks_to_alloc);
+
             current_pool.refs += blocks_to_alloc;
             current_pool.flags.full = if(current_pool.refs >= current_pool.bitmap.len) 1 else 0;
+
             return current_pool.bytes.?[cast_block_to_byte(index)..cast_block_to_byte(index + blocks_to_alloc)];
         }
 
@@ -251,22 +257,25 @@ pub fn buildByteAllocator(
             if(comptime personality.resize) {
                 return @as([]T, @alignCast(@ptrCast(try @call(.always_inline, alloc_resized_frame, .{
                     self, bytes
-                }))));
+                }))))[0..N];
             }
             return @as([]T, @alignCast(@ptrCast(try @call(.always_inline, alloc_sigle_frame, .{
                 self, bytes
-            }))));
+            }))))[0..N];
         }
 
         fn free_resized_frame(self: *@This(), ptr: []u8) err_T!void {
             const parent_pool, const alloc_pool = self.found_pool_of_ptr(ptr);
-            if(alloc_pool == null) return err_T.IndexOutBounds;
+            if(alloc_pool == null)
+                return err_T.IndexOutBounds;
+
             const block_to_free: usize = cast_bytes_to_block(ptr.len);
-            const initial_block: usize = cast_bytes_to_block(
-                @intFromPtr(ptr.ptr) - @intFromPtr(&alloc_pool.?.bytes.?[0])
-            );
+            const initial_block: usize = cast_bytes_to_block(@intFromPtr(ptr.ptr) - @intFromPtr(&alloc_pool.?.bytes.?[0]));
+
             const check = check_blocks_range(alloc_pool.?, block_to_free, initial_block, null); // NULL == 1
-            if(check.index != null and !check.result) return err_T.DoubleFree;
+            if(check.index != null and !check.result)
+                return err_T.DoubleFree;
+
             if((alloc_pool.?.refs - block_to_free) == blocks_reserved and parent_pool != null) {
                 @branchHint(.cold);
                 self.top = if(alloc_pool.?.flags.parent == 0) parent_pool else self.top;
@@ -280,10 +289,10 @@ pub fn buildByteAllocator(
                     const src: *Pool_T = @alignCast(@ptrCast(&alloc_pool.?.bytes.?[0]));
                     dest.* = src.*;
                 }
-                if(builtin.is_test)
-                    self.pools -= 1;
+                if(builtin.is_test) self.pools -= 1;
                 return;
             }
+
             for(initial_block..(initial_block + block_to_free)) |i| {
                 alloc_pool.?.bitmap[i] = 0;
             }
@@ -293,13 +302,16 @@ pub fn buildByteAllocator(
 
         fn free_single_frame(self: *@This(), ptr: []u8) err_T!void {
             if(self.root.bytes == null) return err_T.NonPoolInitialized;
-            if(!check_bounds(&self.root, ptr)) return err_T.IndexOutBounds;
+            if(!check_bounds(&self.root, ptr))
+                return err_T.IndexOutBounds;
+
             const block_to_free: usize = cast_bytes_to_block(ptr.len);
-            const initial_block: usize = cast_bytes_to_block(
-                @intFromPtr(ptr.ptr) - @intFromPtr(&self.root.bytes.?[0])
-            );
+            const initial_block: usize = cast_bytes_to_block(@intFromPtr(ptr.ptr) - @intFromPtr(&self.root.bytes.?[0]));
+
             const check = check_blocks_range(&self.root, block_to_free, initial_block, null); // NULL == 1
-            if(check.index != null and !check.result) return err_T.DoubleFree;
+            if(check.index != null and !check.result)
+                return err_T.DoubleFree;
+
             for(initial_block..(initial_block + block_to_free)) |i| {
                 self.root.bitmap[i] = 0;
             }

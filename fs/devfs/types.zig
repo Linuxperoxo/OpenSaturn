@@ -23,4 +23,6 @@ pub const DevfsErr_T: type = error {
     UnexpectedAction,
     InvalidMajor,
     InvalidMinor,
+    AllocatorFailed,
+    ListOperationFailed,
 };

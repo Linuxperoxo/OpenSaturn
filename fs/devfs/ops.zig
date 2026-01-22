@@ -6,10 +6,12 @@
 const vfs: type = @import("root").interfaces.vfs;
 const kfs: type = @import("root").interfaces.fs;
 const mem: type = @import("root").lib.utils.mem;
+const fmt: type = @import("root").lib.utils.fmt;
 const dfs: type = @import("fs.zig");
 const aux: type = @import("aux.zig");
 const types: type = @import("types.zig");
 const devices: type = @import("root").interfaces.devices;
+const allocator: type = @import("allocator.zig");
 
 const Dentry_T: type = vfs.Dentry_T;
 const Superblock_T: type = vfs.Superblock_T;
@@ -80,7 +82,13 @@ pub fn lookup(parent: *Dentry_T, child: []const u8) anyerror!*const Dentry_T {
 pub fn create_device_node(major: devices.Major_T, minor: devices.Minor_T, uid: uid_T, gid: gid_T) anyerror!void {
     if(!devices.valid_major(major)) return types.DevfsErr_T.InvalidMajor;
     if(devices.valid_minor(major, minor)) return types.DevfsErr_T.InvalidMinor;
-    
+
+    const dev_list: *types.DevfsList_T = @ptrCast(@alignCast(if(dfs.devfs_superblock.private_data != null) dfs.devfs_superblock.? else r: {
+        dfs.devfs_superblock.private_data = &(allocator.sba.allocator.alloc(types.DevfsList_T, 1)
+            catch return types.DevfsErr_T.UnexpectedAction)[0];
+        break :r dfs.devfs_superblock.private_data.?;
+    }));
+
 }
 
 pub fn unlink_device_node(major: devices.Major_T, minor: devices.Minor_T) anyerror!void {
