@@ -6,6 +6,8 @@
 #ifndef MODULE_H
 #define MODULE_H
 
+#include <saturn/kernel/utils/int.h>
+
 #ifndef NULL
 #define NULL (void*)0
 #endif
@@ -28,17 +30,17 @@
 // control struct fields
 
 typedef struct {
-  int anon: 1;
+  u8 anon: 1;
 
   struct {
-    int init: 1;
-    int after: 1;
-    int exit: 1;
-    int remove: 1;
+    u8 init: 1;
+    u8 after: 1;
+    u8 exit: 1;
+    u8 remove: 1;
 
     struct {
-      int install: 1;
-      int remove: 1;
+      u8 install: 1;
+      u8 remove: 1;
     }__attribute__((packed)) handler;
 
   }__attribute__((packed)) call;
@@ -50,37 +52,37 @@ typedef struct {
 // internal struct fields
 
 typedef struct {
-  int installed: 1;
-  int removed: 1;
+  u8 installed: 1;
+  u8 removed: 1;
 
   struct {
-    int name: 1;
-    int pointer: 1;
+    u8 name: 1;
+    u8 pointer: 1;
   }__attribute__((packed)) collision;
 
   struct {
-    int init: 1;
-    int after: 1;
-    int exit: 1;
+    u8 init: 1;
+    u8 after: 1;
+    u8 exit: 1;
 
     struct {
-      int install: 1;
-      int remove: 1;
+      u8 install: 1;
+      u8 remove: 1;
     }__attribute__((packed)) handler;
 
   }__attribute__((packed)) call;
 
   struct {
-    int remove: 1;
+    u8 remove: 1;
 
     struct {
-      int init: 1;
-      int after: 1;
-      int exit: 1;
+      u8 init: 1;
+      u8 after: 1;
+      u8 exit: 1;
 
       struct {
-        int install: 1;
-        int remove: 1;
+        u8 install: 1;
+        u8 remove: 1;
       }__attribute__((packed)) handler;
 
     }__attribute__((packed)) call;
@@ -101,17 +103,17 @@ typedef struct {
   const char* desc;
   const char* version;
   const char* author;
-  int license;
-  int type;
+  u16 license;
+  u8 type;
   const char** deps;
-  int (*init)();
+  usize (*init)();
   void (*exit)();
   void* private;
   ModFlags_T flags;
 } Mod_T;
 
-extern int inmod(Mod_T*);
-extern int rmmod(Mod_T*);
+extern i8 inmod(Mod_T*);
+extern i8 rmmod(Mod_T*);
 extern Mod_T* srchmod(char*, int);
 
 #endif // !MODULE_H
