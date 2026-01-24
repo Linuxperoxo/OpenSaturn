@@ -1,15 +1,22 @@
 // ┌─────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: types.zig   │
+// │  (c) 2026 Linuxperoxo  •  FILE: slice.h     │
 // │            Author: Linuxperoxo              │
 // └─────────────────────────────────────────────┘
 
-const interfaces: type = @import("root").interfaces;
+#ifndef SLICE_H
+#define SLICE_H
 
-pub const Vertex_T: type = struct {
-    module: ?*const interfaces.module.ModuleDescription_T,
-    childs: [16]?*Vertex_T,
-    flags: struct {
-        done: bool,
-        any: bool,
-    },
-};
+#include <saturn/kernel/utils/int.h>
+
+#define CREATE_SLICE(field_type, type_name) \
+  typedef struct { \
+    field_type ptr; \
+    usize len; \
+  } type_name; \
+
+typedef struct {
+  void* ptr;
+  usize len;
+} slice_T;
+
+#endif // SLICE_H
