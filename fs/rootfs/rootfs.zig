@@ -5,7 +5,6 @@
 
 const c: type = @import("root").lib.utils.c;
 const interfaces: type = @import("root").interfaces;
-const list: type = @import("root").lib.utils.list;
 
 const Mod_T: type = interfaces.module.Mod_T;
 const ModErr_T: type = interfaces.module.ModErr_T;
@@ -111,9 +110,7 @@ pub var rootfs: Mod_T = .{
     .author = "Linuxperoxo",
     .version = "0.1.0",
     .deps = null,
-    .license = .{
-        .know = .GPL2_only,
-    },
+    .license = .GPL2_only,
     .type = .filesystem,
     .init = &init,
     .after = null,

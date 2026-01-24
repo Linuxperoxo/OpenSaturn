@@ -1,13 +1,14 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: options.zig  │
+// │  (c) 2026 Linuxperoxo  •  FILE: c_types.zig  │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const types: type = @import("types.zig");
+pub const utils: type = @cImport({
+    @cInclude("saturn/kernel/utils/int.h");
+    @cInclude("saturn/kernel/utils/err.h");
+});
 
-const CodeMode_T: type = types.CodeMode_T;
-const OptimizeMode_T: type = types.OptimizeMode_T;
+pub const interfaces: type = @cImport({
+    @cInclude("saturn/interfaces/module.h");
+});
 
-pub const CodeMode: CodeMode_T = .Debug;
-pub const OptimizeMode: OptimizeMode_T = .Small;
-pub const CSupport: bool = true;

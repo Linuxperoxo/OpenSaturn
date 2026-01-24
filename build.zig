@@ -8,6 +8,7 @@ const std: type = @import("std");
 const SaturnArchConfig: type = @import("config/arch/config.zig");
 const SaturnCompileConfig: type = @import("config/compile/config.zig");
 const SaturnLinkers = @import("linkers/linkers.zig") {};
+const saturn_c: type = @import("c.zig");
 
 pub const target: std.Target.Cpu.Arch = switch(SaturnArchConfig.options.Target) {
     .i386 => .x86,
@@ -34,7 +35,7 @@ pub fn build(b: *std.Build) void {
             }),
             .optimize = optimize,
             .stack_protector = false,
-            .code_model = .kernel,
+            .code_model = .default,
             .imports = &[_]std.Build.Module.Import {
                 .{
                     .name = "saturn",
@@ -48,7 +49,6 @@ pub fn build(b: *std.Build) void {
                                 .cpu_arch = target,
                                 .os_tag = .freestanding,
                             }),
-                            .code_model = .kernel,
                         }
                     ),
                 },
@@ -87,6 +87,14 @@ pub fn build(b: *std.Build) void {
     };
 
     saturn.setLinkerScript(b.path(path));
+    saturn.root_module.addIncludePath(b.path("include"));
+
+    for(saturn_c.c_sources) |c_source| {
+        saturn.root_module.addCSourceFile(.{
+            .file = b.path(c_source),
+            .language = .c,
+        });
+    }
 
     saturn_step.makeFn = &struct {
         pub fn make(_: *std.Build.Step, _: std.Build.Step.MakeOptions) anyerror!void {
