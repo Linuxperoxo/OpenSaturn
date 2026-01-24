@@ -34,7 +34,7 @@ pub inline fn find_handler(mod_type: ModType_T) *const ModHandler_T {
 }
 
 pub inline fn resolve_mod_type(mod: *const Mod_T) ModType_T {
-    return switch(mod.private) {
+    return switch(mod.type) {
         .filesystem => ModType_T.filesystem,
         else => unreachable,
     };
@@ -52,7 +52,7 @@ pub inline fn calling_handler(mod: *Mod_T, comptime op: enum { install, remove }
             }
             if(@field(f, @tagName(op)) != null) {
                 @call(.never_inline, @field(f, @tagName(op)).?, .{
-                    &mod.private.filesystem
+                    mod.private.filesystem
                 }) catch return ModErr_T.SectionHandlerError;
             }
         },
