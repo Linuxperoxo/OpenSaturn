@@ -52,7 +52,7 @@ pub inline fn calling_handler(mod: *Mod_T, comptime op: enum { install, remove }
             }
             if(@field(f, @tagName(op)) != null) {
                 @call(.never_inline, @field(f, @tagName(op)).?, .{
-                    mod.private.filesystem
+                    &mod.private.filesystem
                 }) catch return ModErr_T.SectionHandlerError;
             }
         },
