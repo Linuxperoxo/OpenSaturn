@@ -20,7 +20,6 @@
 // --- SATURN MODULES ---
 pub const __SaturnAllMods__ = [_]type {
     // Module Location!
-//    @import("fs/rootfs/rootfs.zig"),
-//    @import("fs/devfs/module.zig"),
-    @import("fs/cfs/module.zig"),
+    @import("fs/rootfs/rootfs.zig"),
+    @import("fs/devfs/module.zig"),
 };
