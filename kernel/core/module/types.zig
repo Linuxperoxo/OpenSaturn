@@ -8,6 +8,7 @@ const list: type = @import("test/list.zig");
 const arch: type = @import("root").interfaces.arch;
 const fs: type = @import("root").interfaces.fs;
 const modsys: type = @import("root").modsys;
+const csl: type = @import("root").interfaces.csl;
 
 // Interfaces
 
@@ -24,17 +25,17 @@ pub const Mod_T: type = struct {
     desc: []const u8,
     version: []const u8,
     author: []const u8,
-    deps: ?[]const []const u8,
+    deps: ?[]const []const u8 = null,
     license: ModLicense_T,
     type: ModType_T,
     init: *const fn() anyerror!void,
-    after: ?*const fn() anyerror!void,
+    after: ?*const fn() anyerror!void = null,
     exit: *const fn() anyerror!void,
     private: union(ModType_T) {
         driver: void,
         syscall: void,
         irq: void,
-        filesystem: if(!builtin.is_test) *fs.Fs_T else void,
+        filesystem: if(!builtin.is_test) fs.Fs_T else void,
     },
     flags: packed struct {
         control: packed struct(u8) {
@@ -198,13 +199,14 @@ pub const ModuleDescription_T: type = struct {
     name: []const u8,
     load: ModuleDescriptionLoad_T,
     init: *const fn() anyerror!void, // ponteiro para a funcao init
-    after: ?*const fn() anyerror!void, // funcao executada apos init
+    after: ?*const fn() anyerror!void = null, // funcao executada apos init
     arch: []const ModuleDescriptionTarget_T, // arch suportadas
-    deps: ?[]const[]const u8,
+    deps: ?[]const[]const u8 = null,
+    c_sources: ?[]const[]const u8 = null,
     libs: struct {
-        mines: ?[]const ModuleDescriptionLibMine_T,
-        outside: ?[]const ModuleDescriptionLibOut_T,
-    },
+        mines: ?[]const ModuleDescriptionLibMine_T = null,
+        outside: ?[]const ModuleDescriptionLibOut_T = null,
+    } = .{},
     type: union(ModType_T) {
         driver: void,
         syscall: void,

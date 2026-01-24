@@ -4,13 +4,13 @@
 // └─────────────────────────────────────────────┘
 
 const interfaces: type = @import("root").interfaces;
-const modsys: type = @import("modsys.zig");
+const modules: type = @import("modules.zig");
 const types: type = @import("types.zig");
 const mem: type = @import("root").lib.utils.mem;
 
 fn add_vertex_init(
     comptime vertex: *types.Vertex_T,
-    comptime init_order: *[modsys.saturn_modules.len]*const interfaces.module.ModuleDescription_T,
+    comptime init_order: *[modules.saturn_modules.len]*const interfaces.module.ModuleDescription_T,
     comptime init_order_index: *usize,
 ) void {
     comptime {
@@ -24,7 +24,7 @@ fn add_vertex_init(
 
 fn vertex_recursive(
     comptime current_vertex: *types.Vertex_T,
-    comptime init_order: *[modsys.saturn_modules.len]*const interfaces.module.ModuleDescription_T,
+    comptime init_order: *[modules.saturn_modules.len]*const interfaces.module.ModuleDescription_T,
     comptime init_order_index: *usize,
     comptime root_vertex: *types.Vertex_T,
 ) void {
@@ -50,7 +50,7 @@ fn vertex_recursive(
     add_vertex_init(current_vertex, init_order, init_order_index);
 }
 
-pub fn resolve_dependencies() [modsys.saturn_modules.len]*const interfaces.module.ModuleDescription_T {
+pub fn resolve_dependencies() [modules.saturn_modules.len]*const interfaces.module.ModuleDescription_T {
     const max_childs = @typeInfo(@FieldType(types.Vertex_T, "childs")).array.len;
 
     var graph_vertex_pool = [_]types.Vertex_T {
@@ -62,11 +62,11 @@ pub fn resolve_dependencies() [modsys.saturn_modules.len]*const interfaces.modul
                 .any = false,
             },
         },
-    } ** modsys.saturn_modules.len;
+    } ** modules.saturn_modules.len;
 
     // dando uma vertice para cada modulo
-    for(0..modsys.saturn_modules.len) |i|
-        graph_vertex_pool[i].module = &modsys.saturn_modules[i];
+    for(0..modules.saturn_modules.len) |i|
+        graph_vertex_pool[i].module = &modules.saturn_modules[i];
 
     // montando grafo
     for(&graph_vertex_pool, 0..) |*vertex, j| {
@@ -89,7 +89,7 @@ pub fn resolve_dependencies() [modsys.saturn_modules.len]*const interfaces.modul
         }
     }
 
-    var init_order: [modsys.saturn_modules.len]*const interfaces.module.ModuleDescription_T = undefined;
+    var init_order: [modules.saturn_modules.len]*const interfaces.module.ModuleDescription_T = undefined;
     var init_order_index: usize = 0;
     for(&graph_vertex_pool) |*vertex| {
         vertex_recursive(vertex, &init_order, &init_order_index, vertex);
