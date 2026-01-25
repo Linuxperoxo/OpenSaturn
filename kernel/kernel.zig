@@ -8,7 +8,6 @@ const saturn: type = @import("saturn");
 pub const code: type = ar.target_code;
 pub const core: type = saturn.core;
 pub const ar: type = saturn.ar;
-pub const asl: type = saturn.asl;
 pub const interfaces: type = saturn.interfaces;
 pub const supervisor: type = saturn.supervisor;
 pub const lib: type = saturn.lib.saturn;
@@ -18,11 +17,14 @@ pub const decls: type = saturn.decls;
 pub const fusioners: type = saturn.fusioners;
 pub const codes: type = saturn.codes;
 pub const modsys: type = struct {
-    pub const smll: type = saturn.modsys.smll;
     const core: type = saturn.modsys.core;
+    pub const modules: type = saturn.modsys.modules;
+    pub const smll: type = saturn.modsys.smll;
 };
 
 const fusium: type = saturn.fusium;
+const asl: type = saturn.asl;
+const csl: type = saturn.csl;
 
 // Para obter mais detalhes de como funciona a inicializacao do
 // kernel voce pode olhar o arquivo kernel/loader.zig, nele vai ter toda
@@ -49,6 +51,7 @@ comptime {
 
 comptime {
     _ = asl; // verificamos a arch e exportamos suas labels
+    _ = csl; // carregado c sources
 }
 
 fn saturn_main() callconv(.c) noreturn {

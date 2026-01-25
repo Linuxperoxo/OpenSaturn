@@ -15,6 +15,7 @@ pub const supervisor: type = if(enable_obsolete) @import("kernel/supervisor/supe
 pub const decls: type = @import("kernel/decls.zig");
 pub const ar: type = @import("kernel/ar/ar.zig");
 pub const asl: type = @import("kernel/asl/asl.zig");
+pub const csl: type = @import("kernel/csl/csl.zig");
 pub const codes: type = @import("codes.zig");
 
 pub const core: type = struct {
@@ -27,6 +28,7 @@ pub const core: type = struct {
 
 pub const modsys: type = struct {
     pub const core: type = @import("kernel/modsys/modsys.zig");
+    pub const modules: type = @import("kernel/modsys/modules.zig");
     pub const smll: type = @import("kernel/modsys/smll.zig");
 };
 

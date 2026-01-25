@@ -5,10 +5,10 @@
 
 const module: type = @import("root").interfaces.module;
 const mem: type = @import("root").lib.utils.mem;
-const modsys: type = @import("modsys.zig");
+const modules: type = @import("modules.zig");
 
 pub fn find_module_by_name(mod_name: []const u8) anyerror!*const module.ModuleDescription_T {
-    for(&modsys.saturn_modules) |*mod_desc| {
+    for(&modules.saturn_modules) |*mod_desc| {
         if(mem.eql(mod_desc.name, mod_name, .{ .case = true}))
             return mod_desc;
     }

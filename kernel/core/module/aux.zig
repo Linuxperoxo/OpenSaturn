@@ -34,7 +34,7 @@ pub inline fn find_handler(mod_type: ModType_T) *const ModHandler_T {
 }
 
 pub inline fn resolve_mod_type(mod: *const Mod_T) ModType_T {
-    return switch(mod.private) {
+    return switch(mod.type) {
         .filesystem => ModType_T.filesystem,
         else => unreachable,
     };

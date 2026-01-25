@@ -5,11 +5,11 @@
 
 const std: type = @import("std");
 
-const SaturnArchConfig: type = @import("config/arch/config.zig");
-const SaturnCompileConfig: type = @import("config/compile/config.zig");
+const arch: type = @import("config/arch/config.zig");
+const compile: type = @import("config/compile/config.zig");
 const SaturnLinkers = @import("linkers/linkers.zig") {};
 
-pub const target: std.Target.Cpu.Arch = switch(SaturnArchConfig.options.Target) {
+pub const target: std.Target.Cpu.Arch = switch(arch.options.Target) {
     .i386 => .x86,
     .amd64 => .x86_64,
     .arm => .arm,
@@ -18,7 +18,7 @@ pub const target: std.Target.Cpu.Arch = switch(SaturnArchConfig.options.Target) 
     .riscv64 => .riscv,
 };
 
-pub const optimize: std.builtin.OptimizeMode = switch(SaturnCompileConfig.options.OptimizeMode) {
+pub const optimize: std.builtin.OptimizeMode = switch(compile.options.OptimizeMode) {
     .Small => .ReleaseSmall,
     .Fast => .ReleaseFast,
 };
@@ -34,7 +34,7 @@ pub fn build(b: *std.Build) void {
             }),
             .optimize = optimize,
             .stack_protector = false,
-            .code_model = .kernel,
+            .code_model = .default,
             .imports = &[_]std.Build.Module.Import {
                 .{
                     .name = "saturn",
@@ -48,7 +48,6 @@ pub fn build(b: *std.Build) void {
                                 .cpu_arch = target,
                                 .os_tag = .freestanding,
                             }),
-                            .code_model = .kernel,
                         }
                     ),
                 },
@@ -64,10 +63,10 @@ pub fn build(b: *std.Build) void {
     const cache_dir = b.cache_root;
     const path = fs.path.join(allocator, &.{
         cache_dir.path.?,
-        @tagName(SaturnArchConfig.options.Target) ++ "-linker.ld",
+        @tagName(arch.options.Target) ++ "-linker.ld",
     }) catch {
         @panic(
-            @tagName(SaturnArchConfig.options.Target) ++
+            @tagName(arch.options.Target) ++
             " linker error"
         );
     };
@@ -75,22 +74,23 @@ pub fn build(b: *std.Build) void {
         .truncate = true,
     }) catch {
         @panic(
-            @tagName(SaturnArchConfig.options.Target) ++
+            @tagName(arch.options.Target) ++
             " linker error"
         );
     };
-    _ = file.write(@field(SaturnLinkers, @tagName(SaturnArchConfig.options.Target))) catch {
+    _ = file.write(@field(SaturnLinkers, @tagName(arch.options.Target))) catch {
         @panic(
-            @tagName(SaturnArchConfig.options.Target) ++
+            @tagName(arch.options.Target) ++
             " linker error"
         );
     };
 
     saturn.setLinkerScript(b.path(path));
+    saturn.root_module.addIncludePath(b.path("include"));
 
     saturn_step.makeFn = &struct {
         pub fn make(_: *std.Build.Step, _: std.Build.Step.MakeOptions) anyerror!void {
-            if(SaturnCompileConfig.options.CodeMode == .Debug) {
+            if(compile.options.CodeMode == .Debug) {
                 std.debug.print("\x1b[33mWARNING:\x1b[0m Debug Mode Enable\n", .{});
             }
             std.debug.print("Done!\n", .{});
