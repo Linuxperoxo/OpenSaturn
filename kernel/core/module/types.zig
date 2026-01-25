@@ -8,6 +8,7 @@ const list: type = @import("test/list.zig");
 const arch: type = @import("root").interfaces.arch;
 const fs: type = @import("root").interfaces.fs;
 const modsys: type = @import("root").modsys;
+const csl: type = @import("root").interfaces.csl;
 
 // Interfaces
 
@@ -24,11 +25,11 @@ pub const Mod_T: type = struct {
     desc: []const u8,
     version: []const u8,
     author: []const u8,
+    deps: ?[]const []const u8 = null,
     license: ModLicense_T,
     type: ModType_T,
-    deps: ?[]const []const u8,
     init: *const fn() anyerror!void,
-    after: ?*const fn() anyerror!void,
+    after: ?*const fn() anyerror!void = null,
     exit: *const fn() anyerror!void,
     private: union(ModType_T) {
         driver: void,
@@ -37,7 +38,7 @@ pub const Mod_T: type = struct {
         filesystem: if(!builtin.is_test) fs.Fs_T else void,
     },
     flags: packed struct {
-        control: packed struct {
+        control: packed struct(u8) {
             anon: u1, // srchmod() nao expoe modulo
             call: packed struct {
                 init: u1, // chama init logo no inmod()
@@ -49,8 +50,9 @@ pub const Mod_T: type = struct {
                     remove: u1,
                 },
             },
+            reserved: u1 = 0,
         },
-        internal: packed struct {
+        internal: packed struct(u16) {
             installed: u1 = 0, // foi instalado
             removed: u1 = 0, // foi removido
             collision: packed struct {
@@ -66,7 +68,7 @@ pub const Mod_T: type = struct {
                     remove: u1 = 0,
                 } = .{},
             } = .{},
-            fault: packed struct(u6) {
+            fault: packed struct {
                 remove: u1 = 0, // tentativa de remover o modulo que nao aceita ser removido
                 // para saber se a operacao deu certo basta fazer
                 // (control.call.init & internal.call.init & ~internal.fault.call.init) == 1
@@ -79,11 +81,8 @@ pub const Mod_T: type = struct {
                         remove: u1 = 0,
                     } = .{},
                 } = .{},
-
-                pub fn status(self: *const @This()) u6 {
-                    return @as(*const u6, @alignCast(@ptrCast(self))).*;
-                }
             } = .{},
+            reserved: u1 = 0,
         } = .{},
 
         pub inline fn check_op_status(self: *const @This(), comptime op: enum { init, after, exit, install, remove }) u1 {
@@ -98,11 +97,23 @@ pub const Mod_T: type = struct {
     },
 };
 
-pub const ModType_T: type = enum(u2) {
+pub const ModType_T: type = enum(u8) {
     driver,
     syscall,
     irq,
     filesystem,
+};
+
+pub const ModLicense_T: type = enum(u8) {
+    GPL2_only,
+    GPL2_or_later,
+    GPL3_only,
+    GPL3_or_later,
+    BSD_2_Clause,
+    BSD_3_Clause,
+    MIT,
+    APACHE_2_0,
+    PROPRIETARY,
 };
 
 pub const ModFoundByType_T: type = enum(u2) {
@@ -117,21 +128,6 @@ pub const ModRoot_T: type = struct {
         init: u1,
         reserved: u7 = 0,
     },
-};
-
-pub const ModLicense_T: type = union {
-    know: enum {
-        GPL2_only,
-        GPL2_or_later,
-        GPL3_only,
-        GPL3_or_later,
-        BSD_2_Clause,
-        BSD_3_Clause,
-        MIT,
-        APACHE_2_0,
-        PROPRIETARY,
-    },
-    other: []const u8,
 };
 
 pub const ModErr_T: type = error {
@@ -203,13 +199,14 @@ pub const ModuleDescription_T: type = struct {
     name: []const u8,
     load: ModuleDescriptionLoad_T,
     init: *const fn() anyerror!void, // ponteiro para a funcao init
-    after: ?*const fn() anyerror!void, // funcao executada apos init
+    after: ?*const fn() anyerror!void = null, // funcao executada apos init
     arch: []const ModuleDescriptionTarget_T, // arch suportadas
-    deps: ?[]const[]const u8,
+    deps: ?[]const[]const u8 = null,
+    c_sources: ?[]const[]const u8 = null,
     libs: struct {
-        mines: ?[]const ModuleDescriptionLibMine_T,
-        outside: ?[]const ModuleDescriptionLibOut_T,
-    },
+        mines: ?[]const ModuleDescriptionLibMine_T = null,
+        outside: ?[]const ModuleDescriptionLibOut_T = null,
+    } = .{},
     type: union(ModType_T) {
         driver: void,
         syscall: void,
