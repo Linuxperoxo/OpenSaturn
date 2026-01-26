@@ -143,29 +143,3 @@ pub const format: type = opaque {
         return total;
     }
 };
-
-pub const broken_str: type = opaque {
-    inline fn broken_info(strr: []const u8, brokenn: u8) anyerror!struct { usize, usize, usize } {
-        if(strr.len == 0) return error.Empty;
-        r: {
-            for(0..strr.len) |i|
-                if(strr[i] != brokenn) break :r {};
-            return error.WithoutSub;
-        }
-        const final_offset: usize = r: {
-            var count: usize = strr.len;
-            while(strr[count - 1] == brokenn) : (count -= 1) {}
-            break :r count;
-        };
-        const initial_offset: usize = if(strr[0] != brokenn) 1 else 0;
-        var subs: usize = initial_offset;
-        for(subs..final_offset) |i| {
-            subs += if(strr[i] == brokenn) 1 else 0;
-        }
-        return .{
-            initial_offset,
-            final_offset,
-            subs,
-        };
-    }
-};

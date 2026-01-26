@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo                  │
 // └─────────────────────────────────────────────────┘
 
-const lib: type = @import("root").lib;
+const fmt: type = @import("root").lib.utils.compile.fmt;
 const events: type = @import("root").core.events;
 const csi: type = @import("csi.zig");
 
@@ -14,7 +14,7 @@ pub var csi_isr =  r: {
             comptime {
                 // apenas para facilitar a busca no assembly
                 @export(&isr_handler, .{
-                    .name = ".i386.csi.isr" ++ lib.utils.fmt.intFromArray(i),
+                    .name = &fmt.format(".i386.csi.isr{d}\n", .{ i }),
                 });
             }
             pub fn isr_handler() callconv(.naked) void {

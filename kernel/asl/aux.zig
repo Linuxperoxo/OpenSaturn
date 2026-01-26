@@ -5,12 +5,6 @@
 
 const lib: type = @import("root").lib;
 
-pub fn asm_set(comptime name: []const u8, comptime value: u32) []const u8 {
-    return ".set " ++ name ++ ", " ++ lib.utils.fmt.intFromArray(value) ++ "\n"
-        ++ ".globl " ++ name ++ "\n"
-    ;
-}
-
 pub fn ret_export_entry(comptime lhs: anytype, comptime field: []const u8) *anyopaque {
     const field_access = @field(lhs, field);
     return @constCast(switch(@typeInfo(@TypeOf(field_access))) {

@@ -23,26 +23,32 @@ pub fn format(allocator: anytype, comptime fmt: []const u8, args: anytype) anyer
             fmt_index += 1;
             continue;
         }
+
         if(comptime inside) switch(comptime char) {
             's' => {
                 const src = @field(args, fields[fields_index].name);
                 const dest = buffer[buffer_index..(buffer_index + src.len)];
+
                 @memcpy(dest, src);
+
                 buffer_index += src.len;
                 fmt_index += 2;
                 fields_index += 1;
                 inside = false;
                 continue;
             },
+
             'd' => {
                 const int = @field(args, fields[fields_index].name);
                 const dest = buffer[buffer_index..(buffer_index + aux.format.int_to_bytes(int))];
+
                 buffer_index += aux.format.str_from_int(int, dest);
                 fmt_index += 2;
                 fields_index += 1;
                 inside = false;
                 continue;
             },
+
             else => unreachable,
         };
         buffer[buffer_index] = char;
@@ -57,14 +63,18 @@ pub fn broken_str(str: []const u8, broken: u8, allocator: anytype) anyerror![][]
     const final_offset,
     const subs = try aux.broken_str.broken_info(str, broken);
     const sub_strs: [][]const u8 = try allocator.alloc([]const u8, subs);
+
     var sub_strs_index: usize = 0;
     var i: usize = initial_offset;
+
     while(i < final_offset) : (i += 1) {
         while(i < final_offset and str[i] == broken)
             : (i += 1) {}
+
         var sub_str_end: usize = i;
         while(sub_str_end < final_offset and str[sub_str_end] != broken)
             : (sub_str_end += 1) {}
+
         sub_strs[sub_strs_index] = str[i..sub_str_end];
         sub_strs_index += 1;
         i = sub_str_end;
