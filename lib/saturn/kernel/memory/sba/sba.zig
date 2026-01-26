@@ -8,6 +8,31 @@ const mm: type = @import("root").code.mm;
 const config: type = @import("root").config;
 const types: type = @import("types.zig");
 const std: type = @import("std");
+const vtable: type = if(!builtin.is_test) @import("root").lib.memory.vtable else struct {
+    pub const AllocVTable_T: type = struct {
+        fn_alloc: *const fn(self: *const @This(), bytes: usize) anyerror![]u8,
+        fn_free: *const fn(self: *const @This(), ptr: []u8) anyerror!void,
+        private: *anyopaque,
+
+        pub fn alloc(self: *const @This(), comptime T: type, N: usize) anyerror![]T {
+            return @alignCast(@ptrCast(
+                (try self.fn_alloc(self, @sizeOf(T) * N))
+            ));
+        }
+
+        pub fn free(self: *const @This(), ptr: anytype) anyerror!void {
+            return self.fn_free(self, comptime sw: switch(@typeInfo(@TypeOf(ptr))) {
+                .pointer => |p| {
+                    if(p.size == .c or p.size == .many)
+                        continue :sw @typeInfo(void);
+                    break :sw @alignCast(@ptrCast(ptr[0..if(p.size == .one) 1 else ptr.len]));
+                },
+
+                else => @compileError("expect slice or single pointer to free. Found \"" ++ @typeName(@TypeOf(ptr)) ++ "\""),
+            });
+        }
+    };
+};
 
 // === Saturn Byte Allocator ===
 
@@ -79,8 +104,8 @@ pub fn buildByteAllocator(
         fn pool_init(pool: *Pool_T) err_T!void {
             if(builtin.is_test) {
                 var gpa = std.heap.GeneralPurposeAllocator(.{}) {};
-                var allocator = gpa.allocator();
-                pool.bytes = allocator.alloc(u8, total_bytes_of_pool_test) catch return err_T.PoolInitFailed;
+                var alc = gpa.allocator();
+                pool.bytes = alc.alloc(u8, total_bytes_of_pool_test) catch return err_T.PoolInitFailed;
                 return;
             }
             switch(config.arch.options.Target) {
@@ -238,8 +263,8 @@ pub fn buildByteAllocator(
             return current_pool.bytes.?[cast_block_to_byte(index)..cast_block_to_byte(index + blocks_to_alloc)];
         }
 
-        pub fn alloc(self: *@This(), comptime T: type, N: usize) err_T![]T {
-            const bytes: usize = @sizeOf(T) * N;
+        fn alloc(self_vtable: *const vtable.AllocVTable_T, bytes: usize) err_T![]u8 {
+            const self: *@This() = @alignCast(@ptrCast(self_vtable.private));
             self.top = self.top orelse &self.root;
             if(bytes == 0) return err_T.ZeroBytes;
             if(self.root.bytes == null) {
@@ -249,19 +274,22 @@ pub fn buildByteAllocator(
                 });
             }
             if(comptime personality.resize) {
-                return @as([]T, @alignCast(@ptrCast(try @call(.always_inline, alloc_resized_frame, .{
+                return @call(.always_inline, alloc_resized_frame, .{
                     self, bytes
-                }))));
+                });
             }
-            return @as([]T, @alignCast(@ptrCast(try @call(.always_inline, alloc_sigle_frame, .{
+            return @call(.always_inline, alloc_sigle_frame, .{
                 self, bytes
-            }))));
+            });
         }
 
         fn free_resized_frame(self: *@This(), ptr: []u8) err_T!void {
             const parent_pool, const alloc_pool = self.found_pool_of_ptr(ptr);
             if(alloc_pool == null) return err_T.IndexOutBounds;
             const block_to_free: usize = cast_bytes_to_block(ptr.len);
+        //fn_init: *const fn(self: *const @This()) anyerror!void,
+        //fn_deinit: *const fn(self: *const @This()) void,
+        //fn_is_initialized: *const fn(self: *const @This()) bool,
             const initial_block: usize = cast_bytes_to_block(
                 @intFromPtr(ptr.ptr) - @intFromPtr(&alloc_pool.?.bytes.?[0])
             );
@@ -307,36 +335,24 @@ pub fn buildByteAllocator(
             self.root.flags.full = 0;
         }
 
-        pub fn free(self: *@This(), ptr: anytype) err_T!void {
-            const byte_slice_fn = comptime sw0: switch(@typeInfo(@TypeOf(ptr))) {
-                .pointer => |ptr_info| {
-                    switch(ptr_info.size) {
-                        .slice => break :sw0 opaque {
-                            pub fn cast(slice: []ptr_info.child) []u8 {
-                                return @as([]u8, @ptrCast(slice));
-                            }
-                        }.cast,
-                        .one => break :sw0 opaque {
-                            pub fn cast(single: *ptr_info.child) []u8 {
-                                return @as([]u8, @ptrCast(@as([*]ptr_info.child, @ptrCast(single))[0..1]));
-                            }
-                        }.cast,
-                        else => continue :sw0 @typeInfo(void),
-                    }
-                },
-                else => @compileError("expect slice to free or single pointer"),
-            };
-            const byte_slice = @call(.always_inline, byte_slice_fn, .{
-                ptr
-            });
+        fn free(self_vtable: *const vtable.AllocVTable_T, ptr: []u8) anyerror!void {
+            const self: *@This() = @alignCast(@ptrCast(self_vtable.private));
             if(comptime personality.resize) {
                 return @call(.always_inline, free_resized_frame, .{
-                    self, byte_slice
+                    self, ptr
                 });
             }
             return @call(.always_inline, free_single_frame, .{
-                self, byte_slice
+                self, ptr
             });
+        }
+
+        pub fn allocator(self: *@This()) vtable.AllocVTable_T {
+            return vtable.AllocVTable_T {
+                .fn_alloc = &alloc,
+                .fn_free = &free,
+                .private = self,
+            };
         }
     };
 }

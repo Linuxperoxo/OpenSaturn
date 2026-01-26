@@ -73,7 +73,7 @@ fn bitmap_check(comptime Pool_T: type, pool: *Pool_T, state: u1, index: usize) b
 }
 
 test "SBA Alloc Test For Single Frame" {
-    var sba_allocator: SBASingle_T = .{};
+    var sba_allocator = @constCast(&SBASingle_T {}).allocator();
     var old_ptr: ?[]u8 = null;
     for(0..SBASingle_T.Pool_T.pool_bitmap_len) |_| {
         const ptr = try sba_allocator.alloc(u8, 1);
