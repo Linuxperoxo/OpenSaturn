@@ -6,9 +6,9 @@
 pub const AllocVTable_T: type = struct {
     fn_alloc: *const fn(self: *const @This(), bytes: usize) anyerror![]u8,
     fn_free: *const fn(self: *const @This(), ptr: []u8) anyerror!void,
-    //fn_init: *const fn(self: *const @This()) anyerror!void,
-    //fn_deinit: *const fn(self: *const @This()) void,
-    //fn_is_initialized: *const fn(self: *const @This()) bool,
+    fn_init: *const fn(self: *const @This()) anyerror!void,
+    fn_deinit: *const fn(self: *const @This()) void,
+    fn_is_initialized: *const fn(self: *const @This()) bool,
     private: *anyopaque,
 
     pub fn alloc(self: *const @This(), comptime T: type, N: usize) anyerror![]T {
@@ -29,15 +29,15 @@ pub const AllocVTable_T: type = struct {
         });
     }
 
-    pub fn init(_: *const @This()) anyerror!void {
-        //return self.fn_init();
+    pub fn init(self: *const @This()) anyerror!void {
+        return self.fn_init();
     }
 
-    pub fn deinit(_: *const @This()) void {
-        //return self.fn_deinit();
+    pub fn deinit(self: *const @This()) void {
+        return self.fn_deinit();
     }
 
-    pub fn is_initialized(_: *const @This()) bool {
-        //return self.fn_is_initialized();
+    pub fn is_initialized(self: *const @This()) bool {
+        return self.fn_is_initialized();
     }
 };
