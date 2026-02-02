@@ -59,7 +59,7 @@ const Allocator_T: type = if(!builtin.is_test) @import("root").lib.memory.alloca
         return self.vtable.init(self.private);
     }
 
-    pub fn deinit(self: Allocator_T) void {
+    pub fn deinit(self: Allocator_T) Err_T!void {
         return self.vtable.deinit(self.private);
     }
 
@@ -120,7 +120,7 @@ pub fn buildByteAllocator(
                 full: u1 = 0,
             } = .{},
 
-            // ============================== TEST
+// ============================== TEST
             inline fn test_init_pool(self: *@This()) Err_T!void {
                 var gpa = std.heap.GeneralPurposeAllocator(.{}) {};
                 var gpa_allocator = gpa.allocator();
@@ -131,9 +131,9 @@ pub fn buildByteAllocator(
             inline fn test_deinit_pool(_: *@This()) Err_T!void {
                 return;
             }
-            // ==============================
+// ==============================
 
-            // ============================ TARGET
+// ============================ TARGET
             inline fn target_init_pool(self: *@This()) Err_T!void {
                 switch(comptime ar.target_code.target) {
                     .i386 => {
@@ -154,9 +154,9 @@ pub fn buildByteAllocator(
                     else => @compileError(""),
                 }
             }
-            // ==================================
+// ==================================
 
-            // ================================== AUX
+// ================================== AUX
             inline fn child(self: *@This()) *Pool_T {
                 return @alignCast(@ptrCast(&self.pool.?[0]));
             }
@@ -179,7 +179,7 @@ pub fn buildByteAllocator(
             inline fn empty(self: *@This()) bool {
                 return ~@as(BitmapInt_T, @bitCast(self.bitmap)) == 0;
             }
-            // ====================================
+// ====================================
 
             pub noinline fn init(self: *@This()) Err_T!void {
                 self.* = .{};
@@ -248,6 +248,16 @@ pub fn buildByteAllocator(
         root: Pool_T = .{},
         debug: Debug_T = .{},
 
+// =================== AUX
+        inline fn last_pool(self: *@This()) *Pool_T {
+            var current_pool: *Pool_T = &self.root;
+            while(current_pool.flags.child == 1)
+                current_pool = current_pool.child();
+            return current_pool;
+        }
+// =======================
+
+// =================== ALLOCATOR OPS
         noinline fn init(context: *anyopaque) Err_T!void {
             const self: *@This() = @alignCast(@ptrCast(context));
             try self.root.init();
@@ -260,12 +270,19 @@ pub fn buildByteAllocator(
 
         noinline fn deinit(context: *anyopaque) Err_T!void {
             const self: *@This() = @alignCast(@ptrCast(context));
-            try self.root.deinit();
-            // ============== DEBUG
-            if(comptime options.debug) {
-                self.debug.pools -= 1;
+
+            var last: ?*Pool_T = self.last_pool();
+            var prev: ?*Pool_T = null;
+
+            while(last != null) : (last = prev) {
+                prev = last.?.prev;
+                try last.?.deinit();
+                // ============== DEBUG
+                if(comptime options.debug) {
+                    self.debug.pools -= 1;
+                }
+                // =====================
             }
-            // =====================
         }
 
         noinline fn alloc(context: *anyopaque, bytes: usize) Err_T![]u8 {
@@ -285,6 +302,7 @@ pub fn buildByteAllocator(
                         if(comptime !options.resize) return err;
                         if(current_pool.flags.child == 0) {
                             try current_pool.child().init();
+                            current_pool.child().prev = current_pool;
                             current_pool.flags.child = 1;
                             // ============== DEBUG
                             if(comptime options.debug) {
@@ -344,6 +362,7 @@ pub fn buildByteAllocator(
             const self: *@This() = @alignCast(@ptrCast(context));
             return (self.root.pool != null);
         }
+// =======================
 
         pub inline fn allocator(self: *@This()) Allocator_T {
             return Allocator_T {
@@ -388,7 +407,7 @@ test "Full Alloc" {
 }
 
 test "Full Free" {
-
+    
 }
 
 // TEST WITH RESIZE
@@ -403,7 +422,6 @@ test "Resized Full Alloc" {
     try allocator.init();
 
     var current: []u8 = undefined;
-    //var prev: []u8 = @as([*]u8, @ptrFromInt(0x10))[0..1];
 
     for(0..sba.debug.blocks * 12) |_| {
         current = try allocator.alloc(u8, 1);
@@ -411,8 +429,5 @@ test "Resized Full Alloc" {
 
     if(sba.debug.pools != 12)
         return error.ResizeMiss;
-
-    std.debug.print("{any}\n", .{
-        sba.debug
-    });
+    try allocator.deinit();
 }

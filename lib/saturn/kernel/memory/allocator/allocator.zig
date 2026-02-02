@@ -52,7 +52,7 @@ pub const Allocator_T: type = struct {
         return self.vtable.init(self.private);
     }
 
-    pub fn deinit(self: Allocator_T) void {
+    pub fn deinit(self: Allocator_T) Err_T!void {
         return self.vtable.deinit(self.private);
     }
 
