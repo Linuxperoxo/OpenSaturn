@@ -13,7 +13,6 @@ pub const DevfsListErr_T: type = DevfsList_T.ListErr_T;
 pub const DevfsPrivate_T: type = struct {
     major: devices.Major_T,
     minor: devices.Minor_T,
-    device: *const devices.Dev_T,
 };
 
 pub const DevfsErr_T: type = error {

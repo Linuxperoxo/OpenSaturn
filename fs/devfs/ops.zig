@@ -89,8 +89,15 @@ pub fn create_device_node(major: devices.Major_T, minor: devices.Minor_T, uid: u
         break :r dfs.devfs_superblock.private_data.?;
     }));
 
+    const new_node: *types.DevfsPrivate_T = &(allocator.sba.allocator.alloc(types.DevfsPrivate_T, 1)
+        catch return types.DevfsErr_T.UnexpectedAction)[0];
+
+    new_node.* = .{
+        .major = major,
+        .minor = minor,
+    };
 }
 
 pub fn unlink_device_node(major: devices.Major_T, minor: devices.Minor_T) anyerror!void {
-
+    
 }
