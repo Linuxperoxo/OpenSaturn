@@ -17,6 +17,7 @@ const Err_T: type = if(!builtin.is_test) @import("root").lib.memory.allocator.Er
     AlreadyInitialized,
     NoNInitialized,
     InternalError,
+    DoubleFree,
 };
 
 const VTable_T: type = if(!builtin.is_test) @import("root").lib.memory.allocator.VTable_T else struct {
@@ -88,7 +89,6 @@ pub fn buildByteAllocator(
             bytes: usize = 0,
             size: usize = block_size,
             blocks: usize = vector_blocks,
-            bmarks: usize = 0,
         } else void;
 
         const block_size: comptime_int = block orelse default_block_size;
@@ -172,8 +172,9 @@ pub fn buildByteAllocator(
             }
 
             inline fn outbounds(self: *@This(), ptr: []u8) Err_T!void {
-                return if((@intFromPtr(ptr.ptr) - @intFromPtr(self.pool.?)) > total_bytes_of_pool) Err_T.IndexOutBounds else
-                    {};
+                return if((@intFromPtr(ptr.ptr) > @intFromPtr(&self.pool.?[comptime(total_bytes_of_pool - 1)]))
+                    or @intFromPtr(ptr.ptr) < @intFromPtr(&self.pool.?[0])) Err_T.IndexOutBounds else
+                {};
             }
 
             inline fn empty(self: *@This()) bool {
@@ -239,6 +240,8 @@ pub fn buildByteAllocator(
                 const initial_block_index: usize = (@intFromPtr(ptr.ptr) - @intFromPtr(self.pool.?)) / block_size;
 
                 for(0..blocks) |i| {
+                    if(self.bitmap[initial_block_index + i] == 1)
+                        return Err_T.DoubleFree;
                     self.bitmap[initial_block_index + i] = 1;
                 }
                 self.flags.full = 0;
@@ -328,6 +331,7 @@ pub fn buildByteAllocator(
                             const child_pool: Pool_T = current_pool.child().*;
                             try current_pool.deinit();
                             current_pool.* = child_pool;
+                            current_pool.prev = null;
                         } else {
                             @as(*Pool_T, @alignCast(@ptrCast(&current_pool.prev.?.pool.?[0]))).*
                                 = @as(*Pool_T, @alignCast(@ptrCast(&current_pool.pool.?[0]))).*;
@@ -407,12 +411,45 @@ test "Full Alloc" {
 }
 
 test "Full Free" {
-    
+    var sba = buildByteAllocator(null, .{
+        .resize = false,
+        .debug = true,
+    }) {};
+
+    const BitmapInt_T: type = @Type(.{
+        .int = .{
+            .bits = @truncate(total_bytes_of_pool_test / 16),
+            .signedness = .unsigned,
+        },
+    });
+
+    var allocator = sba.allocator();
+    try allocator.init();
+
+    var allocs: [256][]u8 = undefined;
+    for(0..sba.debug.blocks) |i| {
+        allocs[i] = try allocator.alloc(u8, 1);
+    }
+
+    for(0..sba.debug.blocks) |i| {
+        try allocator.free(
+            allocs[i]
+        );
+        allocator.free(allocs[i]) catch |err| switch(err) {
+            Err_T.DoubleFree => continue,
+            else => return err,
+        };
+        return error.NoNDoubleFree;
+    }
+
+    if(~@as(BitmapInt_T, @bitCast(sba.root.bitmap)) != 0) return error.BusyBlock;
+    if(sba.debug.allocs != 0) return error.HaveAllocs;
+    if(sba.debug.bytes != 0) return error.HaveBytes;
 }
 
 // TEST WITH RESIZE
 
-test "Resized Full Alloc" {
+test "Resized Full Alloc And Free" {
     var sba = buildByteAllocator(null, .{
         .resize = true,
         .debug = true,
@@ -421,13 +458,22 @@ test "Resized Full Alloc" {
     var allocator = sba.allocator();
     try allocator.init();
 
-    var current: []u8 = undefined;
-
-    for(0..sba.debug.blocks * 12) |_| {
-        current = try allocator.alloc(u8, 1);
+    var allocs: [256 * 12][]u8 = undefined;
+    for(0..sba.debug.blocks * 12) |i| {
+        allocs[i] = try allocator.alloc(u8, 1);
     }
 
-    if(sba.debug.pools != 12)
-        return error.ResizeMiss;
-    try allocator.deinit();
+    if(sba.debug.pools != 12) return error.ResizeMiss;
+    if(sba.debug.bytes != (sba.debug.blocks * 12)) return error.ByteMiss;
+    if(sba.debug.allocs != (sba.debug.blocks * 12)) return error.AllocMiss;
+
+    for(0..12) |i| {
+        const total_pool: usize = sba.debug.pools;
+        for(0..256) |j| {
+            try allocator.free(
+                allocs[(256 * i) + j]
+            );
+        }
+        if((total_pool - 1) != sba.debug.pools and total_pool > 1) return error.EmptyChildPool;
+    }
 }
