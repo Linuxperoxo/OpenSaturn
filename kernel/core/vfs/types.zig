@@ -29,8 +29,8 @@ pub const FileType_T: type = enum {
 };
 
 pub const InodeOp_T: type = struct {
-    read: ?*const fn(*Dentry_T) anyerror![]u8 = null,
-    write: ?*const fn(*Dentry_T, []const u8) anyerror!void = null,
+    read: ?*const fn(*Dentry_T, usize) anyerror![]u8 = null,
+    write: ?*const fn(*Dentry_T, []const u8, usize) anyerror!void = null,
     lookup: ?*const fn(*Dentry_T, []const u8) anyerror!*Dentry_T = null,
     mkdir: ?*const fn(*Dentry_T, []const u8, uid_T, gid_T, mode_T) anyerror!void = null,
     create: ?*const fn(*Dentry_T, []const u8, uid_T, gid_T, mode_T) anyerror!void = null,

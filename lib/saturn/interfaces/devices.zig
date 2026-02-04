@@ -18,6 +18,7 @@ pub const valid_major = devices.valid_major;
 pub const valid_minor = devices.valid_minor;
 pub const dev_add = devices.dev_add;
 pub const dev_rm = devices.dev_rm;
+pub const dev_info = devices.dev_info;
 
 pub const write = devices.write;
 pub const read = devices.read;

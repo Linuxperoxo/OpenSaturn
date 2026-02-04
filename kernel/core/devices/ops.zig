@@ -13,7 +13,7 @@ pub fn ioctl(
     minor: types.Minor_T,
     command: usize,
     data: ?*anyopaque
-) anyerror!void {
+) anyerror!usize {
     const dev_info: *const types.DevBranch_T = try aux.major_ptr(major);
     if(!aux.is_valid_minor(major, minor)) return types.DevErr_T.MinorNoExist;
     try aux.is_valid_op(dev_info.dev.ops, .ioctl);

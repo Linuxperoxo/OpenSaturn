@@ -30,8 +30,8 @@ pub const devfs_superblock: vfs.Superblock_T = .{
     .inode_table_start = 0,
     .data_block_start = 0,
     .private_data = null,
-    .inode_op = &devfs_ops,
-    .fs = devfs,
+    .inode_op = @constCast(&devfs_ops),
+    .fs = &devfs,
 };
 
 pub const devfs_ops: vfs.InodeOp_T = .{

@@ -75,6 +75,10 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
                         },
                     },
                 },
+                .flags = .{
+                    .enable = 1,
+                    .whitelist = 0,
+                },
             },
         },
         .outside = null,
@@ -87,9 +91,7 @@ pub var devfs: Mod_T = .{
     .author = "Linuxperoxo",
     .version = "0.1.0",
     .deps = __SaturnModuleDescription__.deps,
-    .license = .{
-        .know = .GPL2_only,
-    },
+    .license = .GPL2_only,
     .type = .filesystem,
     .init = &init,
     .after = null,

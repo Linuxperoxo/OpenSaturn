@@ -39,7 +39,7 @@ pub fn write(dentry: *Dentry_T, src: []const u8, offset: usize) anyerror!void {
     return devices.write(dev.major, dev.minor, src, offset);
 }
 
-pub fn read(dentry: *Dentry_T, offset: usize) []u8!void {
+pub fn read(dentry: *Dentry_T, offset: usize) anyerror![]u8 {
     const dev: *const types.DevfsPrivate_T = try aux.dentry_device_info(dentry);
     return devices.read(dev.major, dev.minor, offset);
 }
@@ -58,7 +58,7 @@ pub fn ioctl(dentry: *Dentry_T, command: usize, data: *anyopaque) anyerror!usize
     return devices.ioctl(dev.major, dev.minor, command, data);
 }
 
-pub fn lookup(parent: *Dentry_T, child: []const u8) anyerror!*const Dentry_T {
+pub fn lookup(parent: *Dentry_T, child: []const u8) anyerror!*Dentry_T {
     if(parent.d_private == null) return types.DevfsErr_T.CorruptFilesystem;
 
     const dev_list: *types.DevfsList_T = @ptrCast(@alignCast(parent.d_private.?));
@@ -79,7 +79,7 @@ pub fn lookup(parent: *Dentry_T, child: []const u8) anyerror!*const Dentry_T {
     };
 }
 
-pub fn create_device_node(major: devices.Major_T, minor: devices.Minor_T, uid: uid_T, gid: gid_T) anyerror!void {
+pub fn create_device_node(major: devices.Major_T, minor: devices.Minor_T, uid: uid_T, gid: gid_T, mode: mode_T) anyerror!void {
     if(!devices.valid_major(major)) return types.DevfsErr_T.InvalidMajor;
     if(devices.valid_minor(major, minor)) return types.DevfsErr_T.InvalidMinor;
 
@@ -89,15 +89,17 @@ pub fn create_device_node(major: devices.Major_T, minor: devices.Minor_T, uid: u
         break :r dfs.devfs_superblock.private_data.?;
     }));
 
-    const new_node: *types.DevfsPrivate_T = &(allocator.sba.allocator.alloc(types.DevfsPrivate_T, 1)
-        catch return types.DevfsErr_T.UnexpectedAction)[0];
-
-    new_node.* = .{
-        .major = major,
-        .minor = minor,
-    };
+    const device = try aux.new_dentry_device(major, minor, uid, gid, mode);
+    errdefer {
+        allocator.sba.allocator.free(device.d_inode.?) catch unreachable;
+        allocator.sba.allocator.free(device.d_private.?) catch unreachable;
+        allocator.sba.allocator.free(device.d_name) catch unreachable;
+        allocator.sba.allocator.free(device) catch unreachable;
+    }
+    try dev_list.push_in_list(&allocator.sba.allocator, device);
 }
 
 pub fn unlink_device_node(major: devices.Major_T, minor: devices.Minor_T) anyerror!void {
-    
+    _ = major;
+    _ = minor;
 }

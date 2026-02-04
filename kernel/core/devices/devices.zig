@@ -20,6 +20,7 @@ pub const valid_major = main.valid_major;
 pub const valid_minor = main.valid_minor;
 pub const dev_add = main.dev_add;
 pub const dev_rm = main.dev_rm;
+pub const dev_info = main.dev_info;
 
 pub const write = ops.write;
 pub const read = ops.read;

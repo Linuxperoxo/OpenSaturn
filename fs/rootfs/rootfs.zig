@@ -116,7 +116,7 @@ pub var rootfs: Mod_T = .{
     .after = null,
     .exit = &exit,
     .private = .{
-        .filesystem = .{
+        .filesystem = @constCast(&.{
             .name = "rootfs",
             .mount = rootfs_mount,
             .umount = rootfs_umount,
@@ -129,7 +129,7 @@ pub var rootfs: Mod_T = .{
                 },
                 .internal = .{},
             },
-        },
+        }),
     },
     .flags = .{
         .control = .{
