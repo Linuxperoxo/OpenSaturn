@@ -1,15 +1,11 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: types.zig    │
+// │  (c) 2026 Linuxperoxo  •  FILE: libs.zig     │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const Load_T: type = enum {
-    no,
-    yes,
-};
+const ops: type = @import("ops.zig");
 
-pub const Menuconfig_T: type = struct {
-    ke_m_rootfs: Load_T,
-    ke_m_devfs: Load_T,
-    ke_m_vga_fb: Load_T,
+pub const @"devfs-operations-1.0.0": type = opaque {
+    pub const create_device_node = ops.create_device_node;
+    pub const unlink_device_node = ops.unlink_device_node;
 };

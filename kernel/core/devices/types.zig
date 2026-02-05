@@ -58,7 +58,7 @@ pub const Dev_T: type = struct {
         },
         internal: packed struct {
             total: u4 = 0, // numero de minors
-        },
+        } = .{},
     },
 };
 

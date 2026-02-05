@@ -145,7 +145,7 @@ pub const format: type = opaque {
 };
 
 pub const broken_str: type = opaque {
-    inline fn broken_info(strr: []const u8, brokenn: u8) anyerror!struct { usize, usize, usize } {
+    pub inline fn broken_info(strr: []const u8, brokenn: u8) anyerror!struct { usize, usize, usize } {
         if(strr.len == 0) return error.Empty;
         r: {
             for(0..strr.len) |i|

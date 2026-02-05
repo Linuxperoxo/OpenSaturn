@@ -20,26 +20,27 @@ pub fn saturn_modules_loader() void {
                     };
                 },
             }
-            if(module.flags.call.handler == 0) break :skip {};
-            // resolvendo modulo com base no seu tipo
-            switch(comptime module.type) {
-                .driver => {},
-                .syscall => {},
-                .irq => {},
-                .filesystem => {
-                    switch(comptime module.type.filesystem) {
-                        // caso o modulo fs use compile, vamos fazer uma
-                        // montagem do fs em tempo de compilacao
-                        .compile => |fs_info| {
-                            @call(.never_inline, interfaces.vfs.mount, .{
-                                fs_info.mountpoint, null, fs_info.name
-                            }) catch {
-                                // klog()
-                            };
-                        },
-                        .dynamic => break :skip,
-                    }
-                },
+            if(module.flags.call.handler == 1) {
+                // resolvendo modulo com base no seu tipo
+                switch(comptime module.type) {
+                    .driver => {},
+                    .syscall => {},
+                    .irq => {},
+                    .filesystem => {
+                        switch(comptime module.type.filesystem) {
+                            // caso o modulo fs use compile, vamos fazer uma
+                            // montagem do fs em tempo de compilacao
+                            .compile => |fs_info| {
+                                @call(.never_inline, interfaces.vfs.mount, .{
+                                    fs_info.mountpoint, null, fs_info.name
+                                }) catch {
+                                    // klog()
+                                };
+                            },
+                            .dynamic => break :skip,
+                        }
+                    },
+                }
             }
             if(module.flags.call.after == 1) {
                 if(module.after == null) @compileError(

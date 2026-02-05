@@ -7,8 +7,8 @@ const builtin: type = @import("builtin");
 const list: type = @import("test/list.zig");
 const arch: type = @import("root").interfaces.arch;
 const fs: type = @import("root").interfaces.fs;
+const devices: type = @import("root").interfaces.devices;
 const modsys: type = @import("root").modsys;
-const csl: type = @import("root").interfaces.csl;
 
 pub const ModuleDescriptionTarget_T: type = arch.Target_T;
 
@@ -30,7 +30,7 @@ pub const Mod_T: type = struct {
     after: ?*const fn() anyerror!void = null,
     exit: *const fn() anyerror!void,
     private: union(ModType_T) {
-        driver: void,
+        driver: if(!builtin.is_test) *devices.Dev_T else void,
         syscall: void,
         irq: void,
         filesystem: if(!builtin.is_test) *fs.Fs_T else void,

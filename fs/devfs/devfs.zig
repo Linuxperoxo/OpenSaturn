@@ -6,6 +6,7 @@
 const ops: type = @import("ops.zig");
 const module: type = @import("root").interfaces.module;
 const fs: type = @import("fs.zig");
+const libs: type = @import("libs.zig");
 
 const Mod_T: type = module.Mod_T;
 const ModErr_T: type = module.ModErr_T;
@@ -13,6 +14,8 @@ const ModuleDescription_T: type = module.ModuleDescription_T;
 const ModuleDescriptionTarget_T: type = module.ModuleDescriptionTarget_T;
 const ModuleDescriptionLibMine_T: type = module.ModuleDescriptionLibMine_T;
 const ModuleDescriptionLibOut_T: type = module.ModuleDescriptionLibOut_T;
+
+pub const create_device_node = ops.create_device_node;
 
 pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .name = "ke_m_devfs",
@@ -66,10 +69,7 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
                 .versions = &[_]module.ModuleDescriptionLibMine_T.Version_T {
                     module.ModuleDescriptionLibMine_T.Version_T {
                         .tag = "1.0.0",
-                        .lib = opaque {
-                            pub const create_device_node = ops.create_device_node;
-                            pub const unlink_device_node = ops.unlink_device_node;
-                        },
+                        .lib = @field(libs, "devfs-operations-1.0.0"),
                         .flags = .{
                             .enable = 1,
                         },

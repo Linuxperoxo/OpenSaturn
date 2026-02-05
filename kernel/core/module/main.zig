@@ -51,7 +51,7 @@ pub const test_fn = if(!builtin.is_test) @compileError("only in tests") else opa
 };
 
 /// * search module by name and type
-pub fn srchmod(name: []const u8, mod_type: ModType_T) ModErr_T!*const Mod_T {
+pub noinline fn srchmod(name: []const u8, mod_type: ModType_T) ModErr_T!*const Mod_T {
     const module_root: *ModRoot_T = aux.module_root_entry(
         mod_type
     );
@@ -67,7 +67,7 @@ pub fn srchmod(name: []const u8, mod_type: ModType_T) ModErr_T!*const Mod_T {
 }
 
 /// * install module
-pub fn inmod(mod: *Mod_T) ModErr_T!void {
+pub noinline fn inmod(mod: *Mod_T) ModErr_T!void {
     const module_root: *ModRoot_T = aux.module_root_entry(
         aux.resolve_mod_type(mod)
     );
@@ -92,10 +92,9 @@ pub fn inmod(mod: *Mod_T) ModErr_T!void {
         mod.flags.internal.call.init = 1;
         mod.init() catch {
             mod.flags.internal.fault.call.init = 1;
-            return;
         };
     }
-    if(c.c_bool(mod.flags.control.call.handler.install)) {
+    if(mod.flags.internal.fault.call.init == 1 and c.c_bool(mod.flags.control.call.handler.install)) {
         mod.flags.internal.call.handler.install = 1;
         aux.calling_handler(mod, .install) catch {
             mod.flags.internal.fault.call.handler.install = 1;
@@ -116,7 +115,7 @@ pub fn inmod(mod: *Mod_T) ModErr_T!void {
 }
 
 /// * remove module
-pub fn rmmod(mod: *Mod_T) ModErr_T!void {
+pub noinline fn rmmod(mod: *Mod_T) ModErr_T!void {
     const module_root: *ModRoot_T = aux.module_root_entry(
         aux.resolve_mod_type(mod)
     );
