@@ -12,23 +12,16 @@ pub const __SaturnModuleDescription__: module.ModuleDescription_T = .{
     .name = "ke_m_vga_fb",
     .load = .linkable,
     .init = &init,
+    .type = .driver,
     .arch = &[_]module.ModuleDescriptionTarget_T {
         .i386,
     },
     .deps = &[_][]const u8 {
         //"ke_m_devfs",
     },
-    .type = .{
-        .driver = {},
-    },
-    .flags = .{
-        .call = .{
-            .after = 0,
-            .handler = 0,
-        },
-    },
 };
 
+var major: devices.Major_T = 0;
 var vga_fb: module.Mod_T = .{
     .name = __SaturnModuleDescription__.name,
     .desc = "Core Kernel VGA Framebuffer",
@@ -39,7 +32,6 @@ var vga_fb: module.Mod_T = .{
     .type = .driver,
     .init = &init,
     .exit = &exit,
-    .after = &after,
     .private = .{
         .driver = &device.fb_device,
     },
@@ -47,13 +39,9 @@ var vga_fb: module.Mod_T = .{
         .control = .{
             .call = .{
                 .after = 1,
-                .init = 1,
-                .exit = 1,
+                .init = 0,
+                .exit = 0,
                 .remove = 1,
-                .handler = .{
-                    .install = 1,
-                    .remove = 1,
-                },
             },
             .anon = 1,
         },
@@ -61,22 +49,19 @@ var vga_fb: module.Mod_T = .{
 };
 
 fn init() anyerror!void {
-    return module.inmod(&vga_fb);
-}
-
-fn after() anyerror!void {
-    if(vga_fb.flags.internal.fault.call.init == 1)
-        return exit();
-
-    ops.video_physio() catch |err| {
-        // klog();
-        exit() catch return err;
-        return err;
-    };
+    try module.inmod(&vga_fb);
+    errdefer module.rmmod(&vga_fb) catch {};
+    major = try devices.next_major();
+    try devices.dev_add(major, vga_fb.private.driver);
+    errdefer devices.dev_rm(major, vga_fb.private.driver) catch unreachable;
+    try ops.set_video_physio();
 }
 
 fn exit() anyerror!void {
-    module.rmmod(&vga_fb) catch {
-        // klog();
-    };
+    errdefer {
+        // klog()
+    }
+    try module.rmmod(&vga_fb);
+    try devices.dev_rm(major, vga_fb.private.driver);
+    ops.unset_video_physio();
 }

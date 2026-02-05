@@ -10,6 +10,7 @@ const ops: type = @import("ops.zig");
 pub const Major_T: type = types.Major_T;
 pub const Minor_T: type = types.Minor_T;
 pub const Dev_T: type = types.Dev_T;
+pub const DevErr_T: type = types.DevErr_T;
 pub const DevOps_T: type = types.DevOps_T;
 pub const DevType_T: type = types.DevType_T;
 

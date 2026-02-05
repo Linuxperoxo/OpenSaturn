@@ -8,6 +8,7 @@ const devices: type = @import("root").core.devices;
 pub const Major_T: type = devices.Major_T;
 pub const Minor_T: type = devices.Minor_T;
 pub const Dev_T: type = devices.Dev_T;
+pub const DevErr_T: type = devices.DevErr_T;
 pub const DevOps_T: type = devices.DevOps_T;
 pub const Devdevices_T: type = devices.DevOps_T;
 pub const DevType_T: type = devices.DevType_T;

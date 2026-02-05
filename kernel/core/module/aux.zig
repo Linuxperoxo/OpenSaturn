@@ -25,25 +25,14 @@ pub inline fn module_root_entry(mod_type: ModType_T) *ModRoot_T {
 
 pub inline fn find_handler(mod_type: ModType_T) *const ModHandler_T {
     for(&main.handlers) |*handler| {
-        switch(handler.*) {
-            .filesystem => if(mod_type == .filesystem) return handler else continue,
-            else => unreachable,
-        }
+        if(handler.* == mod_type)
+            return handler;
     }
     unreachable;
 }
 
-pub inline fn resolve_mod_type(mod: *const Mod_T) ModType_T {
-    return switch(mod.type) {
-        .filesystem => ModType_T.filesystem,
-        else => unreachable,
-    };
-}
-
 pub inline fn calling_handler(mod: *Mod_T, comptime op: enum { install, remove }) ModErr_T!void {
-    const handler: *const ModHandler_T = find_handler(
-        resolve_mod_type(mod)
-    );
+    const handler: *const ModHandler_T = find_handler(mod.type);
     switch(handler.*) {
         .filesystem => |f| {
             switch(@typeInfo(@TypeOf(f))) {
