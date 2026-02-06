@@ -9,7 +9,7 @@ const modules: type = @import("modules.zig");
 
 pub fn find_module_by_name(mod_name: []const u8) anyerror!*const module.ModuleDescription_T {
     for(&modules.saturn_modules) |*mod_desc| {
-        if(mem.eql(mod_desc.name, mod_name, .{ .case = true}))
+        if(mem.eql(mod_desc.mod.name, mod_name, .{ .case = true}))
             return mod_desc;
     }
     return error.NoNFound;
@@ -53,7 +53,7 @@ pub fn find_lib_version(mod_out: module.ModuleDescriptionLibOut_T, mod_mine: mod
 pub fn valid_type_for_lib(mod: *const module.ModuleDescription_T, mod_mine: module.ModuleDescriptionLibMine_T) bool {
     if(mod_mine.m_types == null or mod_mine.m_types.?.len == 0) return true;
     for(mod_mine.m_types.?) |m_type| {
-        if(m_type == mod.type) return true;
+        if(m_type == mod.mod.type) return true;
     }
     return false;
 }

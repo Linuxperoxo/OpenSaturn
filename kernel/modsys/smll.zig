@@ -15,7 +15,7 @@ pub fn search_all(comptime mod: *const module.ModuleDescription_T) struct { [
         mod.libs.outside.?.len
 ]?type, bool } {
     if(mod.libs.outside == null or mod.libs.outside.?.len == 0) @compileError(
-        "modsys: " ++  mod.name ++ " request libs without outside lib"
+        "modsys: " ++  mod.mod.name ++ " request libs without outside lib"
     );
     return comptime search_libs(mod, r: {
         var libs: [mod.libs.outside.?.len][]const u8 = undefined;
@@ -42,7 +42,7 @@ pub fn search_libs(mod: *const module.ModuleDescription_T, libs: []const[]const 
 
 pub fn search_lib(mod: *const module.ModuleDescription_T, lib: []const u8) ?type {
     if(mod.libs.outside == null or mod.libs.outside.?.len == 0) @compileError(
-        "modsys: \"" ++  mod.name ++ "\" request libs without outside lib"
+        "modsys: \"" ++  mod.mod.name ++ "\" request libs without outside lib"
     );
     const outside_lib = r: {
         for(mod.libs.outside.?) |outside_lib| {
@@ -57,7 +57,7 @@ pub fn search_lib(mod: *const module.ModuleDescription_T, lib: []const u8) ?type
     const mod_found = aux.find_module_by_name(outside_lib.mod)
         catch if(outside_lib.flags.required == 0) return null else
             @compileError(
-                "modsys: lib request by \"" ++ mod.name ++ "\" " ++
+                "modsys: lib request by \"" ++ mod.mod.name ++ "\" " ++
                 "for module \"" ++ outside_lib.mod ++ "\", " ++
                 "but this mod is not added to the kernel! check the architecture " ++ @tagName(config.arch.options.Target) ++ " " ++
                 "overrider and menuconfig to see if the module really exists"
@@ -66,7 +66,7 @@ pub fn search_lib(mod: *const module.ModuleDescription_T, lib: []const u8) ?type
     const lib_found = aux.find_module_lib_by_name(mod_found, outside_lib.lib)
         catch if(config.modules.options.IgnoreFaultNoExistentLib) return null else
             @compileError(
-                "modsys: module \"" ++ mod.name ++ "\" " ++
+                "modsys: module \"" ++ mod.mod.name ++ "\" " ++
                 "is requesting lib \"" ++ outside_lib.lib ++ "\" " ++
                 "for module \"" ++ outside_lib.mod ++ "\", " ++
                 "but this lib does not exist"
@@ -77,14 +77,14 @@ pub fn search_lib(mod: *const module.ModuleDescription_T, lib: []const u8) ?type
         "is disable"
     );
     // verifica se o modulo esta na whitelist da lib
-    if(!aux.mod_whitelisted(mod.name, lib_found)) @compileError(
-        "modsys: module \"" ++ mod.name ++ "\" " ++
+    if(!aux.mod_whitelisted(mod.mod.name, lib_found)) @compileError(
+        "modsys: module \"" ++ mod.mod.name ++ "\" " ++
         "is not whitelisted in lib \"" ++ lib_found.name ++ "\" " ++
         "of module \"" ++ mod_found.name ++ "\""
     );
     if(aux.find_lib_version(outside_lib, lib_found)) |version_found| {
         if(version_found.flags.enable == 0) @compileError(
-            "modsys: module \"" ++ mod.name ++ "\" is requesting lib" ++ " " ++
+            "modsys: module \"" ++ mod.mod.name ++ "\" is requesting lib" ++ " " ++
             "\"" ++ outside_lib.lib ++ "\" version \"" ++  outside_lib.version.tag ++ "\" " ++
             "for module \"" ++ outside_lib.mod ++ "\", but this lib version is disable"
         );
@@ -97,7 +97,7 @@ pub fn search_lib(mod: *const module.ModuleDescription_T, lib: []const u8) ?type
         if(config.modules.options.IgnoreVersionNoFound)
             return null;
         @compileError(
-            "modsys: module \"" ++ mod.name ++ "\" is requesting lib" ++ " " ++
+            "modsys: module \"" ++ mod.mod.name ++ "\" is requesting lib" ++ " " ++
             "\"" ++ outside_lib.lib ++ "\" version \"" ++  outside_lib.version.tag ++ "\" " ++
             "for module \"" ++ outside_lib.mod ++ "\", but this lib version does not exist"
         );

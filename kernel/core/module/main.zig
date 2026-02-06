@@ -25,54 +25,45 @@ pub var modules_entries = [_]ModRoot_T {
     ModRoot_T {
         .list = .{},
         .type = .filesystem,
-        .flags = .{
-            .init = 0
-        },
+        .init = 0
     },
 
     ModRoot_T {
         .list = .{},
         .type = .driver,
-        .flags = .{
-            .init = 0,
-        },
+        .init = 0,
     },
 };
 
 pub const test_fn = if(!builtin.is_test) @compileError("only in tests") else opaque {
     pub fn entry_init_flag(index: usize) u1 {
-        return modules_entries[index].flags.init;
+        return modules_entries[index].init;
     }
 };
 
 /// * search module by name and type
 pub noinline fn srchmod(name: []const u8, mod_type: ModType_T) ModErr_T!*const Mod_T {
     const module_root: *ModRoot_T = aux.module_root_entry(mod_type);
-    if(module_root.flags.init == 0)
-        return ModErr_T.NoNFound;
     if(aux.search_by_module(module_root, null, name)) |mod_found| {
-        const module, _ = mod_found;
-        if(module.flags.control.anon == 1)
+        if(mod_found.control.anon == 1)
             return ModErr_T.NoNFound;
-        return module;
+        return mod_found;
     } else |err| {
         return err;
     }
 }
 
 /// * install module
-pub noinline fn inmod(mod: *Mod_T) ModErr_T!void {
+pub noinline fn inmod(mod: *const Mod_T) ModErr_T!void {
     const module_root: *ModRoot_T = aux.module_root_entry(mod.type);
 
-    module_root.flags.init = if(module_root.flags.init == 1) module_root.flags.init else r: {
+    module_root.init = if(module_root.init == 1) module_root.init else r: {
         module_root.list.init(&allocator.sba.allocator)
             catch return ModErr_T.ListInitFailed;
         break :r 1;
     };
 
-    if(aux.search_by_module(module_root, mod, mod.name)) |mod_found| {
-        const module, const collision = mod_found;
-        @as(*u2, @alignCast(@ptrCast(&module.flags.internal.collision))).* = @as(u2, @intCast(@intFromEnum(collision)));
+    if(aux.search_by_module(module_root, mod, mod.name)) |_| {
         return ModErr_T.ModuleCollision;
     } else |err| switch(err) {
         ModErr_T.NoNFound => {},
@@ -82,28 +73,21 @@ pub noinline fn inmod(mod: *Mod_T) ModErr_T!void {
     module_root.list.push_in_list(&allocator.sba.allocator, mod)
         catch return ModErr_T.ListOperationError;
 
-    mod.flags.internal = .{};
-    mod.flags.internal.installed = 1;
-
-    if(mod.flags.control.call.init == 1) {
-        mod.flags.internal.call.init = 1;
-        mod.init() catch {
-            mod.flags.internal.fault.call.init = 1;
-        };
-    }
+    if(mod.control.init == 1)
+        mod.init() catch return ModErr_T.InitFailed;
 }
 
 /// * remove module
-pub noinline fn rmmod(mod: *Mod_T) ModErr_T!void {
+pub noinline fn rmmod(mod: *const Mod_T) ModErr_T!void {
     const module_root: *ModRoot_T = aux.module_root_entry(mod.type);
+    if(module_root.init == 0)
+        return ModErr_T.NoNFound;
 
     // esse iterator serve para colocar o index do iterator exatamente
     // no modulo que queremos
     _ = try aux.search_by_module(module_root, mod, null);
-    if(mod.flags.control.call.remove == 0) {
-        mod.flags.internal.fault.remove = 1;
+    if(mod.control.remove == 0)
         return ModErr_T.OperationDenied;
-    }
 
     module_root.list.drop_on_list(
         // o index do iterator - 1 vai estar exatamente no modulo
@@ -112,15 +96,8 @@ pub noinline fn rmmod(mod: *Mod_T) ModErr_T!void {
         &allocator.sba.allocator,
     ) catch return ModErr_T.AllocatorError; // aqui so pode dar erro do alocador
 
-    module_root.flags.init = @intFromBool(module_root.list.how_many_nodes() > 0);
+    module_root.init = @intFromBool(module_root.list.how_many_nodes() > 0);
 
-    mod.flags.internal.installed = 0;
-    mod.flags.internal.removed = 1;
-
-    if(mod.flags.control.call.exit == 1) {
-        mod.flags.internal.call.exit = 1;
-        mod.exit() catch {
-            mod.flags.internal.fault.call.exit = 1;
-        };
-    }
+    if(mod.control.exit == 1)
+        mod.exit() catch return ModErr_T.ExitFailed;
 }

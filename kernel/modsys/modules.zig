@@ -17,7 +17,7 @@ pub const saturn_modules = r: {
                 if(config.arch.options.Target == mod_arch) return;
             }
             if(!config.modules.options.IgnoreModuleWithArchNotSupported) {
-                @compileError("module name " ++ mod.name ++
+                @compileError("module name " ++ mod.mode.name ++
                     " is not supported by target architecture " ++
                     @tagName(config.arch.options.Target)
                 );
@@ -26,9 +26,8 @@ pub const saturn_modules = r: {
         }
 
         pub fn check_module_in_menuconfig(mod: *const interfaces.module.ModuleDescription_T) void {
-            if(!@hasField(config.modules.menuconfig.Menuconfig_T, mod.name)) @compileError(
-                "module " ++ mod.name ++
-                " needs to be added in Menuconfig_T"
+            if(!@hasField(config.modules.menuconfig.Menuconfig_T, mod.mod.name)) @compileError(
+                "module \"" ++ mod.mod.name ++ "\" needs to be added in Menuconfig_T"
             );
         }
 
@@ -38,7 +37,7 @@ pub const saturn_modules = r: {
 
         pub fn check_module_menuconfig_enable(mod: *const interfaces.module.ModuleDescription_T) anyerror!void {
             if(config.modules.options.UseMenuconfigAsRef) {
-                switch(@field(menuconfig.ModulesSelection, mod.name)) {
+                switch(@field(menuconfig.ModulesSelection, mod.mod.name)) {
                     .yes => {},
                     .no => return error.IgnoreThis,
                 }
@@ -50,7 +49,7 @@ pub const saturn_modules = r: {
             for(modules.__SaturnAllMods__, 0..) |mod, i| {
                 for(0..i) |j| {
                     if(lib.utils.mem.eql(
-                        mod.__SaturnModuleDescription__.name, modules.__SaturnAllMods__[j].__SaturnModuleDescription__.name, .{
+                        mod.__SaturnModuleDescription__.mod.name, modules.__SaturnAllMods__[j].__SaturnModuleDescription__.mod.name, .{
                             .len = true,
                             .case = false
                         }
@@ -58,14 +57,14 @@ pub const saturn_modules = r: {
                         // caso modulos diferentes compartilham do mesmo nome, precisa dar erro, isso e critico
                         if(&mod.__SaturnModuleDescription__ != &modules.__SaturnAllMods__[j].__SaturnModuleDescription__) {
                             @compileError(
-                                "modsys: collision module name " ++ modules.__SaturnAllMods__[j].__SaturnModuleDescription__.name ++
+                                "modsys: collision module name " ++ modules.__SaturnAllMods__[j].__SaturnModuleDescription__.mod.name ++
                                 " files " ++ @typeName(modules.__SaturnAllMods__[j]) ++
                                 " " ++ @typeName(mod)
                             );
                         }
                         if(!config.modules.options.IgnoreModuleCollision) {
                             @compileError(
-                                "modsys: collision with the module " ++ mod.__SaturnModuleDescription__.name ++
+                                "modsys: collision with the module " ++ mod.__SaturnModuleDescription__.mod.name ++
                                 " itself (double module register)"
                             );
                         }
@@ -83,7 +82,7 @@ pub const saturn_modules = r: {
         t: {
             for(0..i) |j| {
                 if(lib.utils.mem.eql(
-                    mod.__SaturnModuleDescription__.name, modules.__SaturnAllMods__[j].__SaturnModuleDescription__.name, .{
+                    mod.__SaturnModuleDescription__.mod.name, modules.__SaturnAllMods__[j].__SaturnModuleDescription__.mod.name, .{
                         .len = true,
                         .case = false,
                     }

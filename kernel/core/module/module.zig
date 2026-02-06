@@ -4,6 +4,7 @@
 // └──────────────────────────────────────────────┘
 
 pub const Mod_T: type = @import("types.zig").Mod_T;
+pub const ModControlFlags_T: type = @import("types.zig").ModControlFlags_T;
 pub const ModType_T: type = @import("types.zig").ModType_T;
 pub const ModErr_T: type = @import("types.zig").ModErr_T;
 pub const ModuleDescriptionTarget_T: type =  @import("types.zig").ModuleDescriptionTarget_T;

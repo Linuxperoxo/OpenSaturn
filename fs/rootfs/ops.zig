@@ -4,12 +4,12 @@
 // └──────────────────────────────────────────────┘
 
 const interfaces: type = @import("root").interfaces;
-const rootfs: type = @import("rootfs.zig");
 const types: type = @import("types.zig");
 const mem: type = @import("root").lib.utils.mem;
 const c: type = @import("root").lib.utils.c;
 const allocator: type = @import("allocator.zig");
 const aux: type = @import("aux.zig");
+const rfs: type = @import("fs.zig");
 
 const Dentry_T: type = interfaces.vfs.Dentry_T;
 const Superblock_T: type = interfaces.vfs.Superblock_T;
@@ -41,7 +41,7 @@ pub var dir_inode_ops: InodeOp_T = .{
 };
 
 var superblock: Superblock_T = .{
-    .fs = @alignCast(@ptrCast(&rootfs.rootfs.private)),
+    .fs = &rfs.rootfs,
     .block_size = 0,
     .data_block_start = 0,
     .inode_table_start = 0,

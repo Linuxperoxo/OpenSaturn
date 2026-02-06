@@ -8,15 +8,34 @@ const deps: type = @import("deps.zig");
 
 pub fn saturn_modules_loader() void {
     inline for(comptime deps.resolve_dependencies()) |module| {
-        // Skip nao pode ser comptime se nao vamos ter um
-        // erro de compilacao, ja que ele vai tentar carregar
-        // os modulos em comptime
         skip: {
             switch(comptime module.load) {
                 .dynamic, .unlinkable => break :skip {},
                 .linkable => {
-                    @call(.never_inline, module.init, .{}) catch {
-                        // klog error
+                    @call(.never_inline, interfaces.module.inmod, .{ module.mod }) catch |err| {
+                        switch(err) {
+                            interfaces.module.ModErr_T.InitFailed => {
+                                // klog()
+                                interfaces.module.rmmod(module.mod) catch {
+                                    // klog()
+                                };
+                            },
+
+                            interfaces.module.ModErr_T.ModuleCollision => {
+                                // klog()
+                            },
+
+                            interfaces.module.ModErr_T.ListInitFailed,
+                            interfaces.module.ModErr_T.ListOperationError => {
+                                // klog()
+                            },
+
+                            else => unreachable,
+                        }
+                        if(module.panic) {
+                            // panic();
+                            //unreachable;
+                        }
                     };
                 },
             }
