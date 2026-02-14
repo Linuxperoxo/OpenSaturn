@@ -10,6 +10,11 @@ const dfs: type = @import("fs.zig");
 const devices: type = @import("root").interfaces.devices;
 const fmt: type = @import("root").lib.utils.fmt;
 
+pub inline fn check_init(dev_list: *types.DevfsList_T) types.DevfsListErr_T!void {
+    if(!dev_list.is_initialized())
+        try dev_list.init(&allocator.sba.allocator);
+}
+
 pub inline fn dentry_device_info(dentry: *vfs.Dentry_T) types.DevfsErr_T!*const types.DevfsPrivate_T {
     if(dentry.d_private == null)
         return types.DevfsErr_T.CorruptDentry;
