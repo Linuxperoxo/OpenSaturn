@@ -7,12 +7,28 @@ const devices: type = @import("root").interfaces.devices;
 const module: type = @import("root").interfaces.module;
 const device: type = @import("device.zig");
 const ops: type = @import("ops.zig");
+const vfs: type = @import("root").interfaces.vfs;
+const devfs: type = __SaturnModuleDescription__.request_lib("devfs-operations").?;
 
 pub const __SaturnModuleDescription__: module.ModuleDescription_T = .{
     .mod = &vga_fb,
     .load = .linkable,
     .arch = &[_]module.ModuleDescriptionTarget_T {
         .i386,
+    },
+    .libs = .{
+        .outside = &[_]module.ModuleDescriptionLibOut_T {
+            module.ModuleDescriptionLibOut_T {
+                .mod = "ke_m_devfs",
+                .lib = "devfs-operations",
+                .version = .{
+                    .current = {},
+                },
+                .flags = .{
+                    .required = 1,
+                },
+            },
+        },
     },
 };
 
@@ -45,6 +61,15 @@ fn init() anyerror!void {
     try devices.dev_add(major, &device.fb_device);
     errdefer devices.dev_rm(major, &device.fb_device) catch unreachable;
     try ops.set_video_physio();
+    asm volatile(
+        \\ jmp .
+        \\ jmp 0xAA000
+    );
+    try devfs.create_device_node(major, 0, 0, 0, vfs.mode_T {
+        .owner = vfs.R | vfs.W,
+        .group = vfs.R | vfs.W,
+        .other = 0,
+    });
 }
 
 fn exit() anyerror!void {

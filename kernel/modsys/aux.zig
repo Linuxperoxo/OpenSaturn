@@ -16,8 +16,7 @@ pub fn find_module_by_name(mod_name: []const u8) anyerror!*const module.ModuleDe
 }
 
 pub fn find_module_lib_by_name(mod: *const module.ModuleDescription_T, lib_name: []const u8) anyerror!module.ModuleDescriptionLibMine_T {
-    if(mod.libs.mines == null
-        or mod.libs.outside.?.len == 0) return error.NoNFound;
+    if(mod.libs.mines == null) return error.NoNFound;
     for(mod.libs.mines.?) |mine_lib| {
         if(mem.eql(lib_name, mine_lib.name, .{ .case = true }))
             return mine_lib;
