@@ -76,7 +76,7 @@ pub fn umount(path: []const u8, current: ?*Dentry_T) VfsErr_T!void {
 // preferi deixar create/mkdir e chmod/chown em funcoes diferentes por mais que a logica
 // seja exatamente a mesma, isso facilita achar problemas
 
-pub fn create(
+pub noinline fn create(
     parent: []const u8,
     name: []const u8,
     current: ?*Dentry_T,
@@ -94,7 +94,7 @@ pub fn create(
     };
 }
 
-pub fn mkdir(
+pub noinline fn mkdir(
     parent: []const u8,
     name: []const u8,
     current: ?*Dentry_T,
@@ -112,7 +112,7 @@ pub fn mkdir(
     };
 }
 
-pub fn chmod(
+pub noinline fn chmod(
     path: []const u8,
     current: ?*Dentry_T,
     mode: mode_T,
@@ -127,7 +127,7 @@ pub fn chmod(
     };
 }
 
-pub fn chown(
+pub noinline fn chown(
     path: []const u8,
     current: ?*Dentry_T,
     uid: uid_T,
@@ -143,29 +143,29 @@ pub fn chown(
     };
 }
 
-pub fn read(path: []const u8, current: ?*Dentry_T) VfsErr_T![]u8 {
+pub noinline fn read(path: []const u8, offset: usize, current: ?*Dentry_T) VfsErr_T![]u8 {
     const dentry_read: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{
         path, current, &root
     });
     try aux.is_valid_op(dentry_read, .read);
-    return @call(.never_inline, dentry_read.d_op.?.read.?, .{ dentry_read }) catch {
+    return @call(.never_inline, dentry_read.d_op.?.read.?, .{ dentry_read, offset }) catch {
         // klog()
         return VfsErr_T.OperationFailed;
     };
 }
 
-pub fn write(path: []const u8, current: ?*Dentry_T, src: []const u8) VfsErr_T!void {
+pub noinline fn write(path: []const u8, src: []const u8, offset: usize, current: ?*Dentry_T) VfsErr_T!void {
     const dentry_write: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{
         path, current, &root
     });
     try aux.is_valid_op(dentry_write, .write);
-    @call(.never_inline,dentry_write.d_op.?.write.?, .{ dentry_write, src }) catch {
+    @call(.never_inline,dentry_write.d_op.?.write.?, .{ dentry_write, src, offset }) catch {
         // klog()
         return VfsErr_T.OperationFailed;
     };
 }
 
-pub fn unlink(path: []const u8, current: ?*Dentry_T) VfsErr_T!void {
+pub noinline fn unlink(path: []const u8, current: ?*Dentry_T) VfsErr_T!void {
     const dentry_unlink: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{
         path, current, &root
     });
@@ -186,7 +186,7 @@ pub fn unlink(path: []const u8, current: ?*Dentry_T) VfsErr_T!void {
     };
 }
 
-pub fn touch(path: []const u8, current: ?*Dentry_T) VfsErr_T!void {
+pub noinline fn touch(path: []const u8, current: ?*Dentry_T) VfsErr_T!void {
     _ = try @call(.never_inline, aux.resolve_path, .{
         path, current, &root
     });

@@ -87,10 +87,11 @@ pub var devfs_control: ModControlFlags_T = .{
 fn init() anyerror!void {
     try fs.register_fs(&dfs.devfs);
     errdefer fs.unregister_fs(&dfs.devfs) catch {};
+    // FIXME: nao esta montando
     try vfs.mount("/dev", null, "devfs");
     dfs.devfs.flags.control = .{
         .anon = 1,
-        .nomount = 1,
+        .nomount = 0,
         .noumount = 1,
         .readonly = 0,
     };

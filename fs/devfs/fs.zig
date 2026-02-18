@@ -22,7 +22,7 @@ pub var devfs: fs.Fs_T = .{
     },
 };
 
-pub const devfs_superblock: vfs.Superblock_T = .{
+pub var devfs_superblock: vfs.Superblock_T = .{
     .magic = 0x703,
     .block_size = 0,
     .total_blocks = 0,
@@ -34,7 +34,7 @@ pub const devfs_superblock: vfs.Superblock_T = .{
     .fs = &devfs,
 };
 
-pub const devfs_ops: vfs.InodeOp_T = .{
+pub var devfs_ops: vfs.InodeOp_T = .{
     .write = ops.write,
     .read = ops.read,
     .chmod = ops.chmod,

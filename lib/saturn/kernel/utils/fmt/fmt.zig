@@ -6,7 +6,7 @@
 const aux: type = @import("aux.zig");
 
 pub fn format(allocator: anytype, comptime fmt: []const u8, args: anytype) anyerror![]u8 {
-    const buffer_len: usize = (comptime aux.format.total_bytes_fmt(fmt, args)) + aux.format.total_bytes_args(args);
+    const buffer_len: usize = (aux.format.total_bytes_fmt(fmt, args) + aux.format.total_bytes_args(args));
     const buffer: []u8 = try allocator.alloc(u8, buffer_len);
     var buffer_index: usize = 0;
 
@@ -35,6 +35,7 @@ pub fn format(allocator: anytype, comptime fmt: []const u8, args: anytype) anyer
                 fmt_index += 2;
                 fields_index += 1;
                 inside = false;
+
                 continue;
             },
 
@@ -46,6 +47,7 @@ pub fn format(allocator: anytype, comptime fmt: []const u8, args: anytype) anyer
                 fmt_index += 2;
                 fields_index += 1;
                 inside = false;
+
                 continue;
             },
 

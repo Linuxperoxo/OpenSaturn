@@ -6,5 +6,5 @@
 const buildByteAllocator = @import("root").lib.memory.sba.buildByteAllocator;
 
 pub const sba: type = struct {
-    pub const allocator = buildByteAllocator(null, .{}) {};
+    pub var allocator = buildByteAllocator(null, .{}) {};
 };

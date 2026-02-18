@@ -30,20 +30,3 @@ pub const mount = ops.mount;
 pub const umount = ops.umount;
 pub const open = ops.open;
 pub const close = ops.close;
-
-pub inline fn new_dev(dtype: DevType_T, dops: *const DevOps_T) Dev_T {
-    return Dev_T {
-        .type = dtype,
-        .ops = dops,
-        .minor = null,
-        .flags = .{
-            .control = .{
-                .minor = 0,
-                .max = 0,
-            },
-            .internal = .{
-                .total = 0,
-            },
-        },
-    };
-}

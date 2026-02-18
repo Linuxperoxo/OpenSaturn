@@ -51,74 +51,92 @@ pub const format: type = opaque {
         return buffer;
     }
 
+
     pub fn str_from_int(int: usize, buffer: []u8) usize {
         var current: usize = int;
-        var i: usize = 0;
-        while(current != 0 and i < buffer.len) : ({ current /= 10; i += 1; })
+        var i: usize = @intFromBool(int == 0);
+        buffer[0] = '0';
+        while (current != 0 and i < buffer.len) : ({current /= 10; i += 1; })
             buffer[buffer.len - 1 - i] = @as(u8, @truncate(current % 10)) + '0';
         return i;
     }
 
     pub fn total_bytes_fmt(comptime fmt: []const u8, args: anytype) usize {
-        if(@typeInfo(@TypeOf(args)) != .@"struct")
-            @compileError("expect a tuple");
-        const fields = @typeInfo(@TypeOf(args)).@"struct".fields;
-        var fields_index: usize = 0;
-        var inside: bool = false;
         var fmt_len: usize = 0;
-        var fmt_index: usize = 0;
-        while(fmt_index < fmt.len) : (fmt_index += 1) {
-            const char: u8 = fmt[fmt_index];
-            switch(char) {
-                '{' => {
-                    if(inside) @compileError("missing clossing }");
-                    inside = true;
-                    continue;
-                },
-                '}' => @compileError("missing openning }"),
-                else => {},
-            }
-            if(inside) {
-                if(fields_index + 1 > fields.len)
-                    @compileError("too many args");
-                const field: type = fields[fields_index].type;
-                sw0: switch(char) {
-                    's' => {
-                        sw1: switch(@typeInfo(field)) {
-                            .pointer => |ptr| {
-                                if(ptr.size == .c or ptr.size == .many) {
-                                    if(@typeInfo(ptr.child) == .array)
-                                        continue :sw1 1;
-                                    continue :sw0 0;
-                                }
-                            },
-                            .array => |arr| {
-                                if(arr.child != u8)
-                                    continue :sw0 0;
-                            },
-                            else => continue :sw0 0,
-                        }
+        comptime {
+            if(@typeInfo(@TypeOf(args)) != .@"struct")
+                @compileError("expect a tuple");
+
+            const fields = @typeInfo(@TypeOf(args)).@"struct".fields;
+
+            var fields_index: usize = 0;
+            var inside: bool = false;
+            var fmt_index: usize = 0;
+
+            while(fmt_index < fmt.len) : (fmt_index += 1) {
+                const char: u8 = fmt[fmt_index];
+                switch(char) {
+                    '{' => {
+                        if(inside) @compileError("missing clossing }");
+                        inside = true;
+                        continue;
                     },
-                    'd' => {
-                        switch(@typeInfo(field)) {
-                            .int => {},
-                            .comptime_int => {},
-                            else => continue :sw0 ' ',
-                        }
-                    },
-                    else => @compileError("invalid format string \"" ++ fmt[fmt_index..fmt_index + 1] ++ "\" for type \"" ++ @typeName(field) ++ "\""),
+
+                    '}' => @compileError("missing openning }"),
+
+                    else => {},
                 }
-                if(fmt_index + 1 > fmt.len or fmt[fmt_index + 1] != '}')
-                    @compileError("missing clossing }");
-                fmt_index += 1;
-                fields_index += 1;
-                inside = false;
-                continue;
+
+                if(inside) {
+                    if(fields_index + 1 > fields.len) @compileError("too many args");
+
+                    const field: type = fields[fields_index].type;
+                    sw0: switch(char) {
+                        's' => {
+                            sw1: switch(@typeInfo(field)) {
+                                .pointer => |ptr| {
+                                    if(ptr.size == .c or ptr.size == .many) {
+                                        if(@typeInfo(ptr.child) == .array)
+                                            continue :sw1 1;
+                                        continue :sw0 0;
+                                    }
+                                },
+
+                                .array => |arr| {
+                                    if(arr.child != u8)
+                                        continue :sw0 0;
+                                },
+
+                                else => continue :sw0 0,
+                            }
+                        },
+
+                        'd' => {
+                            switch(@typeInfo(field)) {
+                                .int => {},
+                                .comptime_int => {},
+                                else => continue :sw0 ' ',
+                            }
+                        },
+
+                        else => @compileError("invalid format string \"" ++ fmt[fmt_index..fmt_index + 1] ++ "\" for type \"" ++ @typeName(field) ++ "\""),
+                    }
+
+                    if(fmt_index + 1 > fmt.len or fmt[fmt_index + 1] != '}')
+                        @compileError("missing clossing }");
+
+                    fmt_index += 1;
+                    fields_index += 1;
+                    inside = false;
+
+                    continue;
+                }
+                fmt_len += 1;
             }
-            fmt_len += 1;
+
+            if(fields_index != fields.len)
+                @compileError("too many args");
         }
-        if(fields_index != fields.len)
-            @compileError("too many args");
         return fmt_len;
     }
 

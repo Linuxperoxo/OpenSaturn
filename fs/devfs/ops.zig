@@ -81,19 +81,20 @@ pub fn lookup(parent: *Dentry_T, child: []const u8) anyerror!*Dentry_T {
 
 pub fn create_device_node(major: devices.Major_T, minor: devices.Minor_T, uid: uid_T, gid: gid_T, mode: mode_T) anyerror!void {
     if(!devices.valid_major(major)) return types.DevfsErr_T.InvalidMajor;
-    if(devices.valid_minor(major, minor)) return types.DevfsErr_T.InvalidMinor;
+    if(!devices.valid_minor(major, minor)) return types.DevfsErr_T.InvalidMinor;
 
-    const dev_list: *types.DevfsList_T = @ptrCast(@alignCast(if(dfs.devfs_superblock.private_data != null) dfs.devfs_superblock.? else r: {
+    const dev_list: *types.DevfsList_T = @ptrCast(@alignCast(if(dfs.devfs_superblock.private_data != null) dfs.devfs_superblock.private_data.? else r: {
         dfs.devfs_superblock.private_data = &(allocator.sba.allocator.alloc(types.DevfsList_T, 1)
             catch return types.DevfsErr_T.UnexpectedAction)[0];
+        try @as(*types.DevfsList_T, @alignCast(@ptrCast(dfs.devfs_superblock.private_data.?))).init(&allocator.sba.allocator);
         break :r dfs.devfs_superblock.private_data.?;
     }));
 
     const device = try aux.new_dentry_device(major, minor, uid, gid, mode);
     errdefer {
         allocator.sba.allocator.free(device.d_inode.?) catch unreachable;
-        allocator.sba.allocator.free(device.d_private.?) catch unreachable;
-        allocator.sba.allocator.free(device.d_name) catch unreachable;
+        allocator.sba.allocator.free(@as(*vfs.Inode_T, @alignCast(@ptrCast(device.d_private.?)))) catch unreachable;
+        allocator.sba.allocator.free(@constCast(device.d_name)) catch unreachable;
         allocator.sba.allocator.free(device) catch unreachable;
     }
     try dev_list.push_in_list(&allocator.sba.allocator, device);
