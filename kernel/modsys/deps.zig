@@ -37,7 +37,7 @@ fn vertex_recursive(
                 if(child.?.flags.done) continue;
 
                 if(child.? == root_vertex)
-                    @compileError("circular dependency \"" ++ current_vertex.module.?.mod.name ++ "\" with \"" ++ root_vertex.module.?.mod.name ++ "\"");
+                    @compileError("Modsys Error: circular dependency \"" ++ current_vertex.module.?.mod.name ++ "\" with \"" ++ root_vertex.module.?.mod.name ++ "\"");
 
                 if(child.?.flags.any)
                     vertex_recursive(child.?, init_order, init_order_index, root_vertex);
@@ -73,7 +73,7 @@ pub fn resolve_dependencies() [modules.saturn_modules.len]*const interfaces.modu
         var i: usize = 0;
         if(vertex.module.?.mod.deps == null or vertex.module.?.mod.deps.?.len == 0) continue;
         if(vertex.module.?.mod.deps.?.len > max_childs)
-            @compileError(vertex.module.?.mod.name ++ "deps.len > 16");
+            @compileError("Modsys Error: " ++ vertex.module.?.mod.name ++ "deps.len > 16");
 
         graph_vertex_pool[j].flags.any = true;
 
@@ -83,7 +83,7 @@ pub fn resolve_dependencies() [modules.saturn_modules.len]*const interfaces.modu
                     if(mem.eql(current_dep_vertex.module.?.mod.name, dep, .{ .case = true } ))
                         break :r current_dep_vertex;
                 }
-                @compileError("\"" ++ dep ++ "\" dependency of \"" ++ vertex.module.?.mod.name ++ "\" does not exist");
+                @compileError("Modsys Error: \"" ++ dep ++ "\" dependency of \"" ++ vertex.module.?.mod.name ++ "\" does not exist");
             };
             i += 1;
         }

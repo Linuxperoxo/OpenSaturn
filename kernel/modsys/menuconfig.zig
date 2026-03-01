@@ -11,7 +11,7 @@ pub const ModulesSelection: config.modules.menuconfig.Menuconfig_T = r: {
     if(arch.__SaturnArchDescription__.overrider.modules == null
         or arch.__SaturnArchDescription__.overrider.modules.?.len == 0) {
         if(!config.modules.options.IgnoreOverriderIfNoExist) @compileError(
-            "modsys: ForceModuleArchOverrider = true expects an architecture module overrider, but the " ++
+            "Modsys Error: ForceModuleArchOverrider = true expects an architecture module overrider, but the " ++
             @tagName(config.arch.options.Target)
             ++ " architecture does not have an module overrider"
         );
@@ -20,7 +20,7 @@ pub const ModulesSelection: config.modules.menuconfig.Menuconfig_T = r: {
     var over_menuconfig = config.modules.menuconfig.ModulesSelection;
     for(arch.__SaturnArchDescription__.overrider.modules.?) |overrider| {
         if(!@hasField(config.modules.menuconfig.Menuconfig_T, overrider.module)) @compileError(
-            "modsys: attempt to overrider a non-existent module " ++
+            "Modsys Error: attempt to overrider a non-existent module " ++
             overrider.module ++
             " in arch " ++
             @tagName(config.arch.options.Target)

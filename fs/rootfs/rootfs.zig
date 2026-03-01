@@ -22,6 +22,9 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .mod = &rootfs,
     .load = .linkable,
     .panic = true,
+    .blacklist = &[_][]const u8 {
+        "ke_m_devfs"
+    },
     .arch = &[_]ModuleDescriptionTarget_T {
         .i386,
         .amd64,

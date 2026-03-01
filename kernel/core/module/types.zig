@@ -44,6 +44,7 @@ pub const ModuleDescription_T: type = struct {
     arch: []const ModuleDescriptionTarget_T, // arch suportadas
     c_sources: ?[]const[]const u8 = null,
     panic: bool = false,
+    blacklist: ?[]const[]const u8 = null,
     libs: struct {
         mines: ?[]const ModuleDescriptionLibMine_T = null,
         outside: ?[]const ModuleDescriptionLibOut_T = null,
