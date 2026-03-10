@@ -44,16 +44,23 @@ pub fn mount(
     const dentry_mount: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{
         path, current, &root
     });
-    if(dentry_mount.d_sblock != null) return VfsErr_T.AlreadyMounted;
-    const fs_struct: *fs.Fs_T = @constCast(fs.search_fs(fs_name) catch return VfsErr_T.FilesystemMountError);
+
+    if(dentry_mount.d_sblock != null)
+        return VfsErr_T.AlreadyMounted;
+
+    const fs_struct: *fs.Fs_T = @constCast(fs.search_fs(fs_name)
+        catch return VfsErr_T.FilesystemMountError);
+
     if(c.c_bool(fs_struct.flags.control.nomount)) {
         fs_struct.flags.internal.fault.mount = 1;
         return VfsErr_T.FilesystemMountError;
     }
+
     const sblock = fs_struct.mount() catch {
         fs_struct.flags.internal.fault.mount = 1;
         return VfsErr_T.FilesystemMountError;
     };
+
     dentry_mount.d_sblock = @constCast(sblock);
     dentry_mount.d_op = sblock.inode_op;
     fs_struct.flags.internal.mounted = 1;

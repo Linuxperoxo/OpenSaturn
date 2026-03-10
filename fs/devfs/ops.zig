@@ -26,7 +26,10 @@ const gid_T: type = vfs.gid_T;
 const Fs_T: type = kfs.Fs_T;
 const FsErr_T: type = kfs.FsErr_T;
 
+var devices_list: types.DevfsList_T = .{};
+
 pub fn devfs_mount() anyerror!*const Superblock_T {
+    dfs.devfs_superblock.private_data = &devices_list;
     return &dfs.devfs_superblock;
 }
 
@@ -59,23 +62,21 @@ pub fn ioctl(dentry: *Dentry_T, command: usize, data: *anyopaque) anyerror!usize
 }
 
 pub fn lookup(parent: *Dentry_T, child: []const u8) anyerror!*Dentry_T {
-    if(parent.d_private == null) return types.DevfsErr_T.CorruptFilesystem;
+    if(parent.d_sblock == null
+        or parent.d_sblock.?.private_data == null
+        or @as(@TypeOf(&devices_list), @ptrCast(@alignCast(parent.d_sblock.?.private_data.?))) != &devices_list) return types.DevfsErr_T.CorruptFilesystem;
 
-    const dev_list: *types.DevfsList_T = @ptrCast(@alignCast(parent.d_private.?));
-    if(!dev_list.is_initialized() or dev_list.how_many_nodes() == 0)
+    if(!devices_list.is_initialized())
         return types.DevfsErr_T.DeviceNoFound;
 
-    return dev_list.iterator_handler(
-        child,
-        &opaque {
-            pub fn handler(dentry: *Dentry_T, device_name: []const u8) anyerror!void {
-                if(!mem.eql(dentry.d_name, device_name, .{ .case = true }))
-                    return error.Continue;
-            }
-        }.handler,
-    ) catch |err| return switch(err) {
+    return devices_list.iterator_handler(child, &opaque {
+        pub fn handler(device_dentry: *Dentry_T, device_target_name: @TypeOf(child)) anyerror!void {
+            if(!mem.eql(device_dentry.d_name, device_target_name, .{}))
+                return error.Continue;
+        }
+    }.handler) catch |err| return switch(err) {
         types.DevfsListErr_T.EndOfIterator => types.DevfsErr_T.DeviceNoFound,
-        else => types.DevfsErr_T.UnexpectedAction,
+        else => types.DevfsErr_T.ListOperationFailed,
     };
 }
 
@@ -83,12 +84,8 @@ pub fn create_device_node(major: devices.Major_T, minor: devices.Minor_T, uid: u
     if(!devices.valid_major(major)) return types.DevfsErr_T.InvalidMajor;
     if(!devices.valid_minor(major, minor)) return types.DevfsErr_T.InvalidMinor;
 
-    const dev_list: *types.DevfsList_T = @ptrCast(@alignCast(if(dfs.devfs_superblock.private_data != null) dfs.devfs_superblock.private_data.? else r: {
-        dfs.devfs_superblock.private_data = &(allocator.sba.allocator.alloc(types.DevfsList_T, 1)
-            catch return types.DevfsErr_T.UnexpectedAction)[0];
-        try @as(*types.DevfsList_T, @alignCast(@ptrCast(dfs.devfs_superblock.private_data.?))).init(&allocator.sba.allocator);
-        break :r dfs.devfs_superblock.private_data.?;
-    }));
+    if(!devices_list.is_initialized())
+        try devices_list.init(&allocator.sba.allocator);
 
     const device = try aux.new_dentry_device(major, minor, uid, gid, mode);
     errdefer {
@@ -97,7 +94,7 @@ pub fn create_device_node(major: devices.Major_T, minor: devices.Minor_T, uid: u
         allocator.sba.allocator.free(@constCast(device.d_name)) catch unreachable;
         allocator.sba.allocator.free(device) catch unreachable;
     }
-    try dev_list.push_in_list(&allocator.sba.allocator, device);
+    try devices_list.push_in_list(&allocator.sba.allocator, device);
 }
 
 pub fn unlink_device_node(major: devices.Major_T, minor: devices.Minor_T) anyerror!void {

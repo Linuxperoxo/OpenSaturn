@@ -8,7 +8,7 @@ const config: type = @import("config.zig");
 const types: type = @import("types.zig");
 const devices: type = @import("root").interfaces.devices;
 
-var pci_physio_video: ?*phys.PhysIo_T = null;
+pub var pci_physio_video: ?*phys.PhysIo_T = null;
 
 // ===================== AUX
 
@@ -47,7 +47,7 @@ pub noinline fn write(_: devices.Minor_T, data: []const u8, offset: usize) types
 pub noinline fn read(_: devices.Minor_T, offset: usize) types.FbErr_T![]u8 {
     try check_video_physio();
     _ = offset;
-    return @constCast("Hello, World!");
+    return @constCast("Hello, World!"); // NOTE: TEST
 }
 
 pub noinline fn ioctl(_: devices.Minor_T, command: usize, data: ?*anyopaque) types.FbErr_T!usize {

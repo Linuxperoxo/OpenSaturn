@@ -54,35 +54,21 @@ var vga_control: module.ModControlFlags_T = .{
     .anon = 1,
 };
 
-var major: devices.Major_T = 0;
+var major: devices.Major_T = undefined;
 
 fn init() anyerror!void {
-    major = try devices.next_major();
+    major =
+    try devices.next_major();
     try devices.dev_add(major, &device.fb_device);
+
     errdefer devices.dev_rm(major, &device.fb_device) catch unreachable;
     try ops.set_video_physio();
+
     try devfs.create_device_node(major, 0, 0, 0, vfs.mode_T {
         .owner = vfs.R | vfs.W,
         .group = vfs.R | vfs.W,
         .other = 0,
     });
-    const some = vfs.read("/dev/fb0", 0, null) catch |err| {
-        // FIXME: retornando erro
-        if(err == vfs.VfsErr_T.NoNFound) {
-            asm volatile(
-                \\ jmp .
-                \\ jmp 0x100001
-            );
-            unreachable;
-        }
-        return;
-    };
-    asm volatile(
-        \\ jmp .
-        \\ jmp 0x100000
-        :
-        :[_] "{eax}" (some.ptr)
-    );
 }
 
 fn exit() anyerror!void {

@@ -86,9 +86,23 @@ pub var devfs_control: ModControlFlags_T = .{
 
 fn init() anyerror!void {
     try fs.register_fs(&dfs.devfs);
+
+    vfs.touch("/dev", null) catch |err| switch(err) {
+        vfs.VfsErr_T.NoNFound => {
+            try vfs.mkdir("/", "dev", null, 0, 0, .{
+                .owner = vfs.R | vfs.W,
+                .group = vfs.R,
+                .other = vfs.R,
+            });
+
+        },
+
+        else => return err,
+    };
+
     errdefer fs.unregister_fs(&dfs.devfs) catch {};
-    // FIXME: nao esta montando
     try vfs.mount("/dev", null, "devfs");
+
     dfs.devfs.flags.control = .{
         .anon = 1,
         .nomount = 0,

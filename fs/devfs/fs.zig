@@ -6,6 +6,7 @@
 const fs: type = @import("root").interfaces.fs;
 const vfs: type = @import("root").interfaces.vfs;
 const ops: type = @import("ops.zig");
+const types: type = @import("types.zig");
 
 pub var devfs: fs.Fs_T = .{
     .name = "devfs",
