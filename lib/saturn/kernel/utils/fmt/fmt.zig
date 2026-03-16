@@ -3,70 +3,80 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-fn numSize(comptime num: usize) usize {
-    if(num < 10) return 1;
-    var context: usize = num;
-    var size: usize = 0;
-    while(context != 0) : (context /= 10) {
-        size += 1;
-    }
-    return size;
-}
+const aux: type = @import("aux.zig");
 
-pub fn intFromArray(comptime num: usize) [r: {
-    break :r numSize(num);
-}]u8 {
-    const size = numSize(num);
-    var context: usize = num;
-    var result = [_]u8 {
-        0
-    } ** size;
-    context = num;
-    for(0..size) |i| {
-        result[(size - 1) - i] = (context % 10) + '0';
-        context /= 10;
+pub fn format(allocator: anytype, comptime fmt: []const u8, args: anytype) anyerror![]u8 {
+    const buffer_len: usize = (aux.format.total_bytes_fmt(fmt, args) + aux.format.total_bytes_args(args));
+    const buffer: []u8 = try allocator.alloc(u8, buffer_len);
+    var buffer_index: usize = 0;
+
+    const fields = @typeInfo(@TypeOf(args)).@"struct".fields;
+
+    comptime var fmt_index: usize = 0;
+    comptime var fields_index: usize = 0;
+    comptime var inside: bool = false;
+
+    inline while(fmt_index < fmt.len) {
+        const char: u8 = fmt[fmt_index];
+        if(char == '{') {
+            inside = true;
+            fmt_index += 1;
+            continue;
+        }
+
+        if(comptime inside) switch(comptime char) {
+            's' => {
+                const src = @field(args, fields[fields_index].name);
+                const dest = buffer[buffer_index..(buffer_index + src.len)];
+
+                @memcpy(dest, src);
+
+                buffer_index += src.len;
+                fmt_index += 2;
+                fields_index += 1;
+                inside = false;
+
+                continue;
+            },
+
+            'd' => {
+                const int = @field(args, fields[fields_index].name);
+                const dest = buffer[buffer_index..(buffer_index + aux.format.int_to_bytes(int))];
+
+                buffer_index += aux.format.str_from_int(int, dest);
+                fmt_index += 2;
+                fields_index += 1;
+                inside = false;
+
+                continue;
+            },
+
+            else => unreachable,
+        };
+        buffer[buffer_index] = char;
+        buffer_index += 1;
+        fmt_index += 1;
     }
-    return result;
+    return buffer;
 }
 
 pub fn broken_str(str: []const u8, broken: u8, allocator: anytype) anyerror![][]const u8 {
-    const aux: type = opaque {
-        inline fn BrokenInfo(strr: []const u8, brokenn: u8) anyerror!struct { usize, usize, usize } {
-            if(strr.len == 0) return error.Empty;
-            r: {
-                for(0..strr.len) |i|
-                    if(strr[i] != brokenn) break :r {};
-                return error.WithoutSub;
-            }
-            const final_offset: usize = r: {
-                var count: usize = strr.len;
-                while(strr[count - 1] == brokenn) : (count -= 1) {}
-                break :r count;
-            };
-            const initial_offset: usize = if(strr[0] != brokenn) 1 else 0;
-            var subs: usize = initial_offset;
-            for(subs..final_offset) |i| {
-                subs += if(strr[i] == brokenn) 1 else 0;
-            }
-            return .{
-                initial_offset,
-                final_offset,
-                subs,
-            };
-        }
-    };
     const initial_offset,
     const final_offset,
-    const subs = try aux.BrokenInfo(str, broken);
-    const sub_strs: [][]const u8 = (try allocator.alloc([]const u8, subs)).ptr[0..subs]; // FIXME: alloc retorna .len errado para o slice
+    const subs = try aux.broken_str.broken_info(str, broken);
+    const sub_strs: [][]const u8 = try allocator.alloc([]const u8, subs);
+
     var sub_strs_index: usize = 0;
     var i: usize = initial_offset;
+
     while(i < final_offset) : (i += 1) {
         while(i < final_offset and str[i] == broken)
             : (i += 1) {}
+
         var sub_str_end: usize = i;
         while(sub_str_end < final_offset and str[sub_str_end] != broken)
             : (sub_str_end += 1) {}
+
         sub_strs[sub_strs_index] = str[i..sub_str_end];
         sub_strs_index += 1;
         i = sub_str_end;

@@ -1,5 +1,5 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: asl.zig      │
+// │  (c) 2026 Linuxperoxo  •  FILE: asl.zig      │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
@@ -13,6 +13,7 @@
 const code: type = @import("root").code;
 const decls: type = @import("root").decls;
 const config: type = @import("root").config;
+const fmt: type = @import("root").lib.utils.compile.fmt;
 const aux: type = @import("aux.zig");
 
 comptime {
@@ -37,13 +38,20 @@ comptime {
     // usada dentro de um linker ou assembly, isso iria dar um erro de simbolo nao encontrado, ja que como
     // nao foi usada dentro do proprio codigo zig, o compilador so iria ignorar e nem colocar o export nela
     if(@field(code.arch, decls.what_is_decl(.arch)).symbols.segments == 1 ) asm(
-        aux.asm_set("kernel_phys_address", config.kernel.mem.phys.kernel_phys) ++
-        aux.asm_set("kernel_virtual_address", config.kernel.mem.virtual.kernel_text) ++
-        aux.asm_set("kernel_text_virtual", config.kernel.mem.virtual.kernel_text) ++
-        aux.asm_set("kernel_stack_base_virtual", config.kernel.mem.virtual.kernel_stack_base) ++
-        aux.asm_set("kernel_data_virtual", config.kernel.mem.virtual.kernel_data) ++
-        aux.asm_set("kernel_paged_memory_virtual", config.kernel.mem.virtual.kernel_paged_memory) ++
-        aux.asm_set("kernel_mmio_virtual", config.kernel.mem.virtual.kernel_mmio)
+        &fmt.format(".set {s}, {d}\n", .{ "kernel_phys_address", config.kernel.mem.phys.kernel_phys }) ++
+        &fmt.format(".global {s}\n", .{ "kernel_phys_address" }) ++
+        &fmt.format(".set {s}, {d}\n", .{ "kernel_virtual_address", config.kernel.mem.virtual.kernel_text }) ++
+        &fmt.format(".global {s}\n", .{ "kernel_virtual_address" }) ++
+        &fmt.format(".set {s}, {d}\n", .{ "kernel_text_virtual", config.kernel.mem.virtual.kernel_text }) ++
+        &fmt.format(".global {s}\n", .{ "kernel_text_virtual" }) ++
+        &fmt.format(".set {s}, {d}\n", .{ "kernel_stack_base_virtual", config.kernel.mem.virtual.kernel_stack_base }) ++
+        &fmt.format(".global {s}\n", .{ "kernel_stack_base_virtual" }) ++
+        &fmt.format(".set {s}, {d}\n", .{ "kernel_data_virtual", config.kernel.mem.virtual.kernel_data }) ++
+        &fmt.format(".global {s}\n", .{ "kernel_data_virtual" }) ++
+        &fmt.format(".set {s}, {d}\n", .{ "kernel_paged_memory_virtual", config.kernel.mem.virtual.kernel_paged_memory }) ++
+        &fmt.format(".global {s}\n", .{ "kernel_paged_memory_virtual" }) ++
+        &fmt.format(".set {s}, {d}\n", .{ "kernel_mmio_virtual", config.kernel.mem.virtual.kernel_mmio }) ++
+        &fmt.format(".global {s}\n", .{ "kernel_mmio_virtual" })
     );
 
     const arch_decl_type: type = decls.what_is_decl_type(.arch);

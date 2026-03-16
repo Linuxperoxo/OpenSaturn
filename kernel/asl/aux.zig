@@ -1,15 +1,9 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: aux.zig      │
+// │  (c) 2026 Linuxperoxo  •  FILE: aux.zig      │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
 const lib: type = @import("root").lib;
-
-pub fn asm_set(comptime name: []const u8, comptime value: u32) []const u8 {
-    return ".set " ++ name ++ ", " ++ lib.utils.fmt.intFromArray(value) ++ "\n"
-        ++ ".globl " ++ name ++ "\n"
-    ;
-}
 
 pub fn ret_export_entry(comptime lhs: anytype, comptime field: []const u8) *anyopaque {
     const field_access = @field(lhs, field);

@@ -26,7 +26,7 @@ pub fn eql(noalias b0: []const u8, noalias b1: []const u8, comptime rule: struct
     };
 }
 
-pub fn zeroe_m(lhs: anytype) if(@typeInfo(@TypeOf(lhs)) == .pointer) void else @TypeOf(lhs){
+pub fn zeroe_mem(lhs: anytype) if(@typeInfo(@TypeOf(lhs)) == .pointer) void else @TypeOf(lhs){
     switch(@typeInfo(@TypeOf(lhs))) {
         .pointer => |ptr| {
             switch(ptr.size) {
@@ -66,8 +66,9 @@ pub fn zeroe_m(lhs: anytype) if(@typeInfo(@TypeOf(lhs)) == .pointer) void else @
     }
 }
 
-pub const zero = zeroe_t;
-pub fn zeroe_t(comptime T: type) T {
+pub const zero = zeroe_type;
+
+pub fn zeroe_type(comptime T: type) T {
     @setEvalBranchQuota(4294967295);
     switch(@typeInfo(T)) {
         .int, .float => return @as(T, 0),

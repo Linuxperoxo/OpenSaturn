@@ -74,6 +74,14 @@ fn saturn_main() callconv(.c) noreturn {
     // Depois da arquitetura resolver todos os seus detalhes, podemos iniciar
     // os modulos linkados ao kernel
     @call(.always_inline, modsys.core.saturn_modules_loader, .{});
-    @call(.always_inline, fusium.saturn_fusium_loader, .{ .after });
+    //@call(.always_inline, fusium.saturn_fusium_loader, .{ .after });
+
+    //modules.__SaturnAllMods__[1].create_device_node() catch {
+    //    asm volatile(
+    //        \\ jmp .
+    //        \\ jmp 0xAA000
+    //    );
+    //};
+
     @call(.always_inline, opaque { pub fn trap() noreturn { while(true) {} } }.trap, .{}); // noreturn fn
 }

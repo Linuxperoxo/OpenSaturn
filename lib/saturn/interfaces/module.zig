@@ -7,6 +7,7 @@ const module: type = @import("root").core.module;
 
 pub const ModType_T: type = module.ModType_T;
 pub const Mod_T: type = module.Mod_T;
+pub const ModControlFlags_T: type = module.ModControlFlags_T;
 pub const ModErr_T: type = module.ModErr_T;
 pub const ModuleDescriptionTarget_T: type =  module.ModuleDescriptionTarget_T;
 pub const ModuleDescription_T: type = module.ModuleDescription_T;

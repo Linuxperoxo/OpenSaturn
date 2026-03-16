@@ -1,27 +1,29 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: rootfs.zig   │
+// │  (c) 2026 Linuxperoxo  •  FILE: devfs.zig    │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const c: type = @import("root").lib.utils.c;
+const ops: type = @import("ops.zig");
 const module: type = @import("root").interfaces.module;
 const fs: type = @import("root").interfaces.fs;
 const vfs: type = @import("root").interfaces.vfs;
-const rfs: type = @import("fs.zig");
+const dfs: type = @import("fs.zig");
+const libs: type = @import("libs.zig");
 
 const Mod_T: type = module.Mod_T;
 const ModControlFlags_T: type = module.ModControlFlags_T;
 const ModErr_T: type = module.ModErr_T;
-const ModType_T: type = module.ModType_T;
 const ModuleDescription_T: type = module.ModuleDescription_T;
 const ModuleDescriptionTarget_T: type = module.ModuleDescriptionTarget_T;
 const ModuleDescriptionLibMine_T: type = module.ModuleDescriptionLibMine_T;
 const ModuleDescriptionLibOut_T: type = module.ModuleDescriptionLibOut_T;
 
+pub const create_device_node = ops.create_device_node;
+
 pub const __SaturnModuleDescription__: ModuleDescription_T = .{
-    .mod = &rootfs,
-    .load = .linkable,
+    .mod = &devfs,
     .panic = true,
+    .load = .linkable,
     .arch = &[_]ModuleDescriptionTarget_T {
         .i386,
         .amd64,
@@ -31,58 +33,51 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
         .xtensa,
     },
     .libs = .{
-        .mines = &[_]ModuleDescriptionLibMine_T {
-            .{
-                .name = "inode-utils",
+        .mines = &[_]module.ModuleDescriptionLibMine_T {
+            module.ModuleDescriptionLibMine_T {
+                .name = "devfs-operations",
+                .stable = 0,
+                .current = 0,
                 .whitelist = null,
-                .m_types = &[_]ModType_T {
+                .m_types = &[_]module.ModType_T {
+                    .driver,
                     .filesystem,
                 },
-                .current = 0,
-                .stable = 0,
-                .versions = &[_]ModuleDescriptionLibMine_T.Version_T {
-                    .{
-                        .lib = @import("lib/inode.zig"),
-                        .tag = "0.1.0",
+                .versions = &[_]module.ModuleDescriptionLibMine_T.Version_T {
+                    module.ModuleDescriptionLibMine_T.Version_T {
+                        .tag = "1.0.0",
+                        .lib = @field(libs, "devfs-operations-1.0.0"),
                         .flags = .{
                             .enable = 1,
                         },
                     },
                 },
                 .flags = .{
-                    .whitelist = 0,
                     .enable = 1,
+                    .whitelist = 0,
                 },
             },
         },
-        .outside = &[_]ModuleDescriptionLibOut_T {
-            .{
-                .lib = "inode-utils",
-                .mod = "ke_m_rootfs",
-                .version = .{
-                    .tag = "0.1.0",
-                },
-                .flags = .{
-                    .required = 1,
-                },
-            },
-        },
+        .outside = null,
     },
 };
 
-pub const rootfs: Mod_T = .{
-    .name = "ke_m_rootfs",
-    .desc = "Core Kernel Root Filesystem",
+pub const devfs: Mod_T = .{
+    .name = "ke_m_devfs",
+    .desc = "Core Kernel Devices Filesystem",
     .author = "Linuxperoxo",
     .version = "0.1.0",
     .license = .GPL2_only,
     .type = .filesystem,
+    .deps = &[_][]const u8{
+        "ke_m_rootfs",
+    },
     .init = &init,
     .exit = &exit,
-    .control = &rootfs_control,
+    .control = &devfs_control,
 };
 
-pub var rootfs_control: ModControlFlags_T = .{
+pub var devfs_control: ModControlFlags_T = .{
     .init = 1,
     .exit = 0,
     .remove = 0,
@@ -90,12 +85,27 @@ pub var rootfs_control: ModControlFlags_T = .{
 };
 
 fn init() anyerror!void {
-    try fs.register_fs(&rfs.rootfs);
-    errdefer fs.unregister_fs(&rfs.rootfs) catch {};
-    try vfs.mount("/", null, rfs.rootfs.name);
-    rfs.rootfs.flags.control = .{
+    try fs.register_fs(&dfs.devfs);
+
+    vfs.touch("/dev", null) catch |err| switch(err) {
+        vfs.VfsErr_T.NoNFound => {
+            try vfs.mkdir("/", "dev", null, 0, 0, .{
+                .owner = vfs.R | vfs.W,
+                .group = vfs.R,
+                .other = vfs.R,
+            });
+
+        },
+
+        else => return err,
+    };
+
+    errdefer fs.unregister_fs(&dfs.devfs) catch {};
+    try vfs.mount("/dev", null, "devfs");
+
+    dfs.devfs.flags.control = .{
         .anon = 1,
-        .nomount = 1,
+        .nomount = 0,
         .noumount = 1,
         .readonly = 0,
     };

@@ -6,7 +6,6 @@
 const types: type = @import("types.zig");
 const allocator: type = @import("allocator.zig");
 const vfs: type = @import("root").interfaces.vfs;
-const mem: type = @import("root").kernel.utils.mem;
 const rootfs: type = @import("rootfs.zig");
 // required
 const inode_utils: type = rootfs.__SaturnModuleDescription__.request_lib("inode-utils").?;
@@ -41,8 +40,8 @@ pub inline fn alloc_inode(uid: vfs.uid_T, gid: vfs.gid_T, mode: vfs.mode_T) type
 }
 
 pub inline fn alloc_name(name: []const u8) types.RootfsErr_T![]const u8 {
-    const new_buffer: []u8 = (allocator.sba.allocator.alloc(u8, name.len)
-        catch return types.RootfsErr_T.AllocatorFailed)[0..name.len];
+    const new_buffer: []u8 = allocator.sba.allocator.alloc(u8, name.len)
+        catch return types.RootfsErr_T.AllocatorFailed;
     @memcpy(new_buffer, name);
     return new_buffer;
 }

@@ -1,5 +1,5 @@
 // ┌────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: codes.zig  │
+// │  (c) 2026 Linuxperoxo  •  FILE: codes.zig  │
 // │            Author: Linuxperoxo             │
 // └────────────────────────────────────────────┘
 

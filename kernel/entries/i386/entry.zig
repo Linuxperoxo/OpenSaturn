@@ -5,8 +5,8 @@
 
 const arch: type = @import("root").code.arch;
 const config: type = @import("root").config;
-const lib: type = @import("root").lib;
 const atlas: type = @import("atlas.zig");
+const fmt: type = @import("root").lib.utils.compile.fmt;
 
 const section_text_loader = arch.sections.section_text_loader;
 const section_data_loader = arch.sections.section_data_loader;
@@ -23,11 +23,6 @@ const section_data_persist = arch.sections.section_data_persist;
 // em qualquer arquivo, já que o símbolo está vísivel em todo o assembly.
 
 comptime {
-    const aux: type = opaque {
-        pub fn make_asm_set(comptime name: []const u8, comptime value: u32) []const u8 {
-            return ".set " ++ name ++ ", " ++ lib.utils.fmt.intFromArray(value) ++ "\n";
-        }
-    };
     // AtlasB Headers
     //
     // Esse Headers deve ser colocado no inicio do binario, em
@@ -41,9 +36,9 @@ comptime {
     // * AtlasFlags: Flags gerais para o Atlas, consulte a documentaçao no fonte do atlas
     //    NOTE: https://github.com/Linuxperoxo/AtlasB/blob/master/src/atlas.s
     asm(
-        aux.make_asm_set("AtlasLoadDest", atlas.atlas_load_dest) ++
-        aux.make_asm_set("AtlasVMode", atlas.atlas_vmode) ++
-        aux.make_asm_set("AtlasFlags", atlas.atlas_flags) ++
+        &fmt.format(".set AtlasLoadDest, {d}\n", .{ atlas.atlas_load_dest }) ++
+        &fmt.format(".set AtlasVMode, {d}\n", .{ atlas.atlas_vmode }) ++
+        &fmt.format(".set AtlasFlags, {d}\n", .{ atlas.atlas_flags }) ++
         \\  .set AtlasMagic, 0xAB00
         \\  .weak AtlasImgSize
         \\  .section .opensaturn.data.atlas.header,"a",@progbits

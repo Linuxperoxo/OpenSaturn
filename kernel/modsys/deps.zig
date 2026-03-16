@@ -37,7 +37,7 @@ fn vertex_recursive(
                 if(child.?.flags.done) continue;
 
                 if(child.? == root_vertex)
-                    @compileError("circular dependency \"" ++ current_vertex.module.?.name ++ "\" with \"" ++ root_vertex.module.?.name ++ "\"");
+                    @compileError("Modsys Error: circular dependency \"" ++ current_vertex.module.?.mod.name ++ "\" with \"" ++ root_vertex.module.?.mod.name ++ "\"");
 
                 if(child.?.flags.any)
                     vertex_recursive(child.?, init_order, init_order_index, root_vertex);
@@ -71,19 +71,19 @@ pub fn resolve_dependencies() [modules.saturn_modules.len]*const interfaces.modu
     // montando grafo
     for(&graph_vertex_pool, 0..) |*vertex, j| {
         var i: usize = 0;
-        if(vertex.module.?.deps == null or vertex.module.?.deps.?.len == 0) continue;
-        if(vertex.module.?.deps.?.len > max_childs)
-            @compileError(vertex.module.?.name ++ ".deps.len > 16");
+        if(vertex.module.?.mod.deps == null or vertex.module.?.mod.deps.?.len == 0) continue;
+        if(vertex.module.?.mod.deps.?.len > max_childs)
+            @compileError("Modsys Error: " ++ vertex.module.?.mod.name ++ "deps.len > 16");
 
         graph_vertex_pool[j].flags.any = true;
 
-        for(vertex.module.?.deps.?) |dep| {
+        for(vertex.module.?.mod.deps.?) |dep| {
             vertex.childs[i] = r: {
                 for(&graph_vertex_pool) |*current_dep_vertex| {
-                    if(mem.eql(current_dep_vertex.module.?.name, dep, .{ .case = true } ))
+                    if(mem.eql(current_dep_vertex.module.?.mod.name, dep, .{ .case = true } ))
                         break :r current_dep_vertex;
                 }
-                @compileError("\"" ++ dep ++ "\" dependency of \"" ++ vertex.module.?.name ++ "\" does not exist");
+                @compileError("Modsys Error: \"" ++ dep ++ "\" dependency of \"" ++ vertex.module.?.mod.name ++ "\" does not exist");
             };
             i += 1;
         }

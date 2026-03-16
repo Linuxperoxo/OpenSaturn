@@ -87,7 +87,7 @@ pub fn alloc_zone_page(
         const base, const offset = t: {
             for(0..comptime(self.table.len / 7)) |i| {
                 // verificando se existe alguma pagina livre
-                if((self.table[i * 7].reserved ^ @as(u7, 0b111_1111)) != 0) {
+                if((~self.table[i * 7].reserved) != 0) {
                     for(0..7) |j| {
                         if(((self.table[i * 7].reserved >> @intCast(j)) & 0x01) == 0) {
                             break :t .{

@@ -1,9 +1,11 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: memory.zig   │
+// │  (c) 2026 Linuxperoxo  •  FILE: libs.zig     │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const SOA: type = switch(@import("builtin").is_test) {
-    true => @import("test/SOA/SOA.zig"),
-    false => @import("root").memory.SOA,
+const ops: type = @import("ops.zig");
+
+pub const @"devfs-operations-1.0.0": type = opaque {
+    pub const create_device_node = ops.create_device_node;
+    pub const unlink_device_node = ops.unlink_device_node;
 };
