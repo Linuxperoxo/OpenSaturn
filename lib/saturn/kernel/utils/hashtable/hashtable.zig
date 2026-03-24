@@ -3,77 +3,147 @@
 // │            Author: Linuxperoxo                  │
 // └─────────────────────────────────────────────────┘
 
-pub fn buildHashtable(
-    comptime Key_T: type,
-    comptime Value_T: type,
-    comptime root_size: u8,
-    comptime hash_gen: ?*const fn(Key_T) u8
+pub fn buildHashTable(
+    comptime key_T: type,
+    comptime data_T: type,
+    comptime table_size: ?usize,
+    comptime hash_gen_fn: ?*const fn(data_T) key_T,
 ) type {
     return struct {
-        pub const Node_T: type = struct {
-            key: Key_T,
-            value: Value_T,
-            last: ?*Node_T,
+        comptime {
+            switch(@typeInfo(key_T)) {
+                .int, .float => {},
+
+                .pointer => |ptr| {
+                    if(ptr.size != .slice or ptr.child != u8)
+                        @compileError("");
+                },
+
+                .array => |arr| {
+                    if(arr.child != u8)
+                        @compileError("");
+                },
+
+                else => @compileError(
+                    ""
+                ),
+            }
+        }
+
+        const ListHead_T: type = struct {
+            first: *Node_T,
+            last: *Node_T,
+        };
+        
+        const Node_T: type = struct {
+            key: key_T,
+            data: data_T,
             next: ?*Node_T,
-            prev: ?*Node_T,
         };
 
         pub const Err_T: type = error {
             AllocatorFailed,
-            NoNInitialized,
+            KeyCollision,
+            KeyNotFound,
         };
 
-        const hash_gen_fn: *const fn(Key_T) u8 = if(hash_gen != null) hash_gen.? else
-            default_hash;
+        table: [table_size orelse 24]?ListHead_T = [_]?ListHead_T {
+            null
+        } ** (table_size orelse 24),
 
-        root: ?*[root_size]?*Node_T,
+        // internal fn
 
-        // ============ AUX
-        inline fn default_hash(key: Key_T) u8 {
-            
-        }
-        // ================
-
-        // ============ OPS
-        pub noinline fn init(self: *@This(), allocator: anytype) Err_T!void {
-            if(self.root != null) return;
-            self.root = &(allocator.alloc([root_size]?Node_T, 1)
-                catch return Err_T.AllocatorFailed)[0];
+        inline fn hash_gen(key: key_T) usize {
+            return if(hash_gen_fn != null) hash_gen_fn.?() else r: {
+                // NOTE: default hash_gen_fn
+                break :r key ^ (key >> 2);
+            };
         }
 
-        pub noinline fn deinit(self: *@This(), allocator: anytype) Err_T!void {
-            if(self.root == null)
-                return Err_T.NoNInitialized;
+        inline fn cmp_key(node: *const Node_T, key: key_T) bool {
+            return node.key == key;
+        }
 
-            for(self.root.?) |node| {
-                if(node == null)
-                    continue;
-
-                var current: ?*Node_T = node.?.last;
-                while(current != null) {
-                    // TODO:
-                }
-
-                allocator.free(node.?)
-                    catch return Err_T.NoNInitialized;
+        inline fn find_by_key(list_head: *const ListHead_T, key: key_T) ?*Node_T {
+            var current_node: ?*Node_T = list_head.first;
+            while(current_node != null) : (current_node = current_node.?.next) {
+                if(cmp_key(current_node.?, key)) return current_node;
             }
+            return null;
         }
 
-        pub noinline fn store(key: Key_T, value: Value_T, allocator: anytype) Err_T!void {
-            
+        // hashtable fn
+
+        pub fn add(self: *@This(), key: key_T, data: data_T, allocator: anytype) Err_T!void {
+            const table_index: usize = hash_gen(key) % self.table.len;
+            const list_head: *?ListHead_T = &self.table[table_index];
+
+            if(list_head.* == null) {
+                const first_node: *Node_T = @ptrCast((allocator.alloc(Node_T, 1)
+                    catch return Err_T.AllocatorFailed).ptr);
+
+                first_node.* = .{
+                    .key = key,
+                    .data = data,
+                    .next = null,
+                };
+
+                list_head.* = .{
+                    .first = first_node,
+                    .last = first_node,
+                };
+                return;
+            }
+
+            if(find_by_key(&list_head.*.?, key)) |_| {
+                return Err_T.KeyCollision;
+            }
+
+            const current_last: *Node_T = list_head.*.?.last;
+
+            current_last.next = @ptrCast((allocator.alloc(Node_T, 1) catch return Err_T.AllocatorFailed).ptr);
+            current_last.next.?.* = .{
+                .key = key,
+                .data = data,
+                .next = null,
+            };
+
+            list_head.*.?.last = current_last.next.?;
         }
 
-        pub noinline fn write(key: Key_T, value: Value_T) Err_T!void {
-            
+        pub fn del(self: *@This(), key: key_T, allocator: anytype) void {
+            _ = self;
+            _ = key;
+            _ = allocator;
         }
 
-        pub noinline fn read(key: Key_T) Err_T!Value_T {
-            
-        }
+        pub fn search(self: *const @This(), key: key_T) Err_T!data_T {
+            const table_index: usize = hash_gen(key) % self.table.len;
+            const list_head: *const ?ListHead_T = &self.table[table_index];
 
-        pub noinline fn rm(key: Key_T, allocator: anytype) Err_T!void {
-            
+            if(list_head.* == null)
+                return Err_T.KeyNotFound;
+
+            if(find_by_key(&(list_head.*.?), key)) |found| return found.data else
+                return Err_T.KeyNotFound;
         }
-        // ================
     };
+}
+
+test "Add" {
+    const std: type = @import("std");
+    const HashTable_T: type = buildHashTable(usize, []const u8, null, null);
+    var gpa = std.heap.GeneralPurposeAllocator(.{}) {};
+    var allocator = gpa.allocator();
+    var hashtable: HashTable_T = .{};
+
+    try hashtable.add(100, "Hello, World! 100", &allocator);
+    try hashtable.add(101, "Hello, World! 101", &allocator);
+    try hashtable.add(102, "Hello, World! 102", &allocator);
+
+    std.debug.print("{s}\n{s}\n{s}\n", .{
+        try hashtable.search(100),
+        try hashtable.search(101),
+        try hashtable.search(102),
+    });
 }
