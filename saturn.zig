@@ -16,6 +16,7 @@ pub const decls: type = @import("kernel/decls.zig");
 pub const ar: type = @import("kernel/ar/ar.zig");
 pub const asl: type = @import("kernel/asl/asl.zig");
 pub const csl: type = @import("kernel/csl/csl.zig");
+pub const kparam: type = @import("kernel/kparam/kparam.zig");
 pub const codes: type = @import("codes.zig");
 
 pub const core: type = struct {

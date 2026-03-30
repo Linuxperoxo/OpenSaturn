@@ -68,7 +68,7 @@ pub fn buildHashTable(
             KeyNotFound,
         };
 
-        table: [table_size orelse 24]ListHead_T = [_]ListHead_T {
+        table: [table_size orelse 16]ListHead_T = [_]ListHead_T {
             ListHead_T {
                 .first = null,
                 .last = null,
@@ -194,7 +194,7 @@ pub fn buildHashTable(
     };
 }
 
-test "Add" {
+test "String Test" {
     const std: type = @import("std");
     const HashTable_T: type = buildHashTable([]const u8, bool, null, null);
     var gpa = std.heap.GeneralPurposeAllocator(.{}) {};
@@ -204,13 +204,19 @@ test "Add" {
     try hashtable.add("tty_output_buffer", true, &allocator);
     try hashtable.add("tty_input_buffer", false, &allocator);
 
-    std.debug.print("{any}\n{any}\n", .{
-        try hashtable.search("tty_output_buffer"),
-        try hashtable.search("tty_input_buffer"),
-    });
+    var found: bool = undefined;
+
+    found = try hashtable.search("tty_output_buffer");
+    if(found != true)
+        return error.InvalidData;
+
+    found = try hashtable.search("tty_input_buffer");
+    if(found != false)
+        return error.InvalidData;
 
     try hashtable.del("tty_output_buffer", &allocator);
+    try hashtable.del("tty_input_buffer", &allocator);
 
-    //_ = try hashtable.search("tty_output_buffer");
-    _ = try hashtable.search("tty_input_buffer");
+    if(hashtable.search("tty_output_buffer")) |_| return error.FoundDel else |_| {}
+    if(hashtable.search("tty_input_buffer")) |_| return error.FoundDel else |_| {}
 }

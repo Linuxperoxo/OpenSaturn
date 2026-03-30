@@ -15,6 +15,7 @@ pub const config: type = saturn.config;
 pub const modules: type = saturn.modules;
 pub const decls: type = saturn.decls;
 pub const fusioners: type = saturn.fusioners;
+pub const kparam: type = saturn.kparam;
 pub const codes: type = saturn.codes;
 pub const modsys: type = struct {
     const core: type = saturn.modsys.core;
@@ -54,7 +55,7 @@ comptime {
     _ = csl; // carregado c sources
 }
 
-fn saturn_main() callconv(.c) noreturn {
+fn saturn_main(kparams: []const u8) callconv(.c) noreturn {
     // Aqui existe um pequeno detalhe, bem interessante por sinal.
     // Quando passamos um ponteiro para uma funcao conhecida em tempo
     // de compilacao para o @call, o compilador precisa considerar que
