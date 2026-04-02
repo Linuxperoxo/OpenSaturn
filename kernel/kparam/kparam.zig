@@ -9,10 +9,18 @@ const allocator: type = @import("allocator.zig");
 
 var sys_param: types.Params_T = .{};
 
-pub noinline fn params_loader(params: []const u8) void {
-    const parsed_params: []const types.Param_T = parser.params_parser(params);
+pub inline fn params_loader(params: []const u8) void {
+    const parsed_params: []const types.Param_T = parser.params_parser(params) catch |err| {
+        _ = err;
+        // KLOG()
+        return;
+    };
     for(0..parsed_params.len) |i| {
-        sys_param.add(parsed_params[i].param, parsed_params[i].value, &allocator.sba.allocator) catch |err| {
+        sys_param.add(
+            parsed_params[i].param,
+            parsed_params[i].value,
+            &allocator.sba.allocator
+        ) catch |err| {
             _ = err;
             // KLOG()
         };
@@ -20,8 +28,6 @@ pub noinline fn params_loader(params: []const u8) void {
 }
 
 pub noinline fn params_search(param: []const u8) types.KParamErr_T!types.Value_T {
-    return sys_param.search(param) catch |err| switch(err) {
-        types.Params_T.Err_T.AllocatorFailed => types.KParamErr_T.AllocatorInternalError,
-        else => types.KParamErr_T.SysParamNotFound,
-    };
+    return sys_param.search(param)
+        catch return types.KParamErr_T.SysParamNotFound;
 }

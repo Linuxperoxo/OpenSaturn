@@ -8,6 +8,10 @@ const hashtable: type = @import("root").lib.utils.hashtable;
 pub const KParamErr_T: type = error {
     SysParamNotFound,
     AllocatorInternalError,
+    ParserSyntaxError,
+    ParserInvalidValue,
+    ParserMissingParameter,
+    ParserMissingValue,
 };
 
 pub const Params_T: type = hashtable.buildHashTable(

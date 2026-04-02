@@ -15,12 +15,15 @@ pub const config: type = saturn.config;
 pub const modules: type = saturn.modules;
 pub const decls: type = saturn.decls;
 pub const fusioners: type = saturn.fusioners;
-pub const kparam: type = saturn.kparam;
 pub const codes: type = saturn.codes;
-pub const modsys: type = struct {
-    const core: type = saturn.modsys.core;
+pub const kparam: type = opaque {
+    pub const params_search = saturn.kparam.params_search;
+    const params_loader = saturn.kparam.params_loader;
+};
+pub const modsys: type = opaque {
     pub const modules: type = saturn.modsys.modules;
     pub const smll: type = saturn.modsys.smll;
+    const core: type = saturn.modsys.core;
 };
 
 const fusium: type = saturn.fusium;
@@ -56,6 +59,14 @@ comptime {
 }
 
 fn saturn_main(kparams: []const u8) callconv(.c) noreturn {
+    // carregamos e os parametros do kernel que foi passado pelo
+    // bootloader ou estaticamente na compilacao
+    if(comptime config.kernel.options.kparam_enable) {
+        @call(.always_inline, kparam.params_loader, .{
+            if(config.kernel.options.kparam_dynamic) kparams else
+                @embedFile(config.kernel.options.kparam_config_file)
+        });
+    }
     // Aqui existe um pequeno detalhe, bem interessante por sinal.
     // Quando passamos um ponteiro para uma funcao conhecida em tempo
     // de compilacao para o @call, o compilador precisa considerar que
@@ -75,14 +86,6 @@ fn saturn_main(kparams: []const u8) callconv(.c) noreturn {
     // Depois da arquitetura resolver todos os seus detalhes, podemos iniciar
     // os modulos linkados ao kernel
     @call(.always_inline, modsys.core.saturn_modules_loader, .{});
-    //@call(.always_inline, fusium.saturn_fusium_loader, .{ .after });
-
-    //modules.__SaturnAllMods__[1].create_device_node() catch {
-    //    asm volatile(
-    //        \\ jmp .
-    //        \\ jmp 0xAA000
-    //    );
-    //};
-
+    @call(.always_inline, fusium.saturn_fusium_loader, .{ .after });
     @call(.always_inline, opaque { pub fn trap() noreturn { while(true) {} } }.trap, .{}); // noreturn fn
 }
