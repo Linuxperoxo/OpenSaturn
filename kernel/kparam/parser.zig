@@ -12,18 +12,14 @@ pub inline fn params_parser(params: []const u8) types.KParamErr_T![]const types.
     var rvalue: bool = false;
     var local_index: usize = 0;
     var parsed_index: usize = 0;
-
-    const parsed_params: []types.Param_T = allocator.sba.allocator.alloc(
-        types.Param_T,
-        params_counter(params)
-    ) catch return types.KParamErr_T.AllocatorInternalError;
-    errdefer allocator.sba.allocator.free(parsed_params)
-        catch {};
-
     var i: usize = 0;
+
+    const parsed_params: []types.Param_T = allocator.sba.allocator.alloc(types.Param_T, params_counter(params))
+        catch return types.KParamErr_T.AllocatorInternalError;
+
     for(params) |char| {
         sw: switch(char) {
-            ';', '\n' => {
+            '\n' => {
                 defer {
                     local_index = i + 1;
                     parsed_index += 1;

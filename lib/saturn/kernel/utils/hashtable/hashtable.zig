@@ -82,8 +82,8 @@ pub fn buildHashTable(
                 // *% mult with overflow
                 .num => break :sw key *% @as(usize, ~0),
                 .string => {
-                    const fnv_prime: usize = 1099511628211;
-                    var hash: usize = 14695981039346656037;
+                    const fnv_prime: usize = @truncate(1099511628211);
+                    var hash: usize = @truncate(14695981039346656037);
                     for (key) |char| {
                         hash = hash ^ char;
                         hash = hash *% fnv_prime;

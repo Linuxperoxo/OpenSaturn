@@ -58,14 +58,17 @@ comptime {
     _ = csl; // carregado c sources
 }
 
-fn saturn_main(kparams: []const u8) callconv(.c) noreturn {
-    // carregamos e os parametros do kernel que foi passado pelo
-    // bootloader ou estaticamente na compilacao
-    if(comptime config.kernel.options.kparam_enable) {
-        @call(.always_inline, kparam.params_loader, .{
-            if(config.kernel.options.kparam_dynamic) kparams else
-                @embedFile(config.kernel.options.kparam_config_file)
-        });
+fn saturn_main(kparams: *const packed struct { ptr: [*]const u8, len: usize }) callconv(.c) noreturn {
+    // Carregamos os parametros do kernel que foi passado pelo bootloader
+    if(config.kernel.kparam.kparam_enable) {
+        @call(
+            .always_inline,
+            kparam.params_loader,
+            .{
+                if(config.kernel.kparam.kparam_dynamic_loader) kparams.ptr[0..kparams.len] else
+                    config.kernel.kparam.kernel_parameter,
+            }
+        );
     }
     // Aqui existe um pequeno detalhe, bem interessante por sinal.
     // Quando passamos um ponteiro para uma funcao conhecida em tempo

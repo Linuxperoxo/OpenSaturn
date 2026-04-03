@@ -10,18 +10,20 @@ const allocator: type = @import("allocator.zig");
 var sys_param: types.Params_T = .{};
 
 pub inline fn params_loader(params: []const u8) void {
-    const parsed_params: []const types.Param_T = parser.params_parser(params) catch |err| {
-        _ = err;
+    if(params.len == 0)
+        return;
+
+    const parsed_params: []const types.Param_T = parser.params_parser(params) catch {
         // KLOG()
         return;
     };
+
     for(0..parsed_params.len) |i| {
         sys_param.add(
             parsed_params[i].param,
             parsed_params[i].value,
             &allocator.sba.allocator
-        ) catch |err| {
-            _ = err;
+        ) catch {
             // KLOG()
         };
     }

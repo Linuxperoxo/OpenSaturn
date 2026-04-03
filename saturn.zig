@@ -58,5 +58,6 @@ pub const config: type = struct {
     pub const kernel: type = struct {
         pub const options: type = @import("config/kernel/options.zig");
         pub const mem: type = @import("config/kernel/segments.zig");
+        pub const kparam: type = @import("config/kernel/kparam.zig");
     };
 };
