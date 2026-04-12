@@ -24,6 +24,12 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .mod = &devfs,
     .panic = true,
     .load = .linkable,
+    .insf = .{
+        .anon = 0,
+        .init = 0,
+        .exit = 0,
+        .remove = 0,
+    },
     .arch = &[_]ModuleDescriptionTarget_T {
         .i386,
         .amd64,
@@ -74,14 +80,6 @@ pub const devfs: Mod_T = .{
     },
     .init = &init,
     .exit = &exit,
-    .control = &devfs_control,
-};
-
-pub var devfs_control: ModControlFlags_T = .{
-    .init = 1,
-    .exit = 0,
-    .remove = 0,
-    .anon = 0,
 };
 
 fn init() anyerror!void {
@@ -96,7 +94,6 @@ fn init() anyerror!void {
             });
 
         },
-
         else => return err,
     };
 

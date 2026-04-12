@@ -22,6 +22,12 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .mod = &rootfs,
     .load = .linkable,
     .panic = true,
+    .insf = .{
+        .anon = 1,
+        .init = 0,
+        .exit = 0,
+        .remove = 0,
+    },
     .arch = &[_]ModuleDescriptionTarget_T {
         .i386,
         .amd64,
@@ -79,14 +85,6 @@ pub const rootfs: Mod_T = .{
     .type = .filesystem,
     .init = &init,
     .exit = &exit,
-    .control = &rootfs_control,
-};
-
-pub var rootfs_control: ModControlFlags_T = .{
-    .init = 1,
-    .exit = 0,
-    .remove = 0,
-    .anon = 0,
 };
 
 fn init() anyerror!void {

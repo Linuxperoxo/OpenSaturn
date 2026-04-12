@@ -12,6 +12,6 @@ pub const ModuleDescription_T: type = @import("types.zig").ModuleDescription_T;
 pub const ModuleDescriptionLibMine_T: type = @import("types.zig").ModuleDescriptionLibMine_T;
 pub const ModuleDescriptionLibOut_T: type = @import("types.zig").ModuleDescriptionLibOut_T;
 
-pub const srchmod = @import("main.zig").srchmod;
-pub const inmod = @import("main.zig").inmod;
-pub const rmmod = @import("main.zig").rmmod;
+pub const initmod = @import("extern.zig").initmod;
+pub const killmod = @import("extern.zig").killmod;
+pub const schmod = @import("extern.zig").schmod;
