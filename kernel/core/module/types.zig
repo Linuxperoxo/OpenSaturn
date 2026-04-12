@@ -9,8 +9,11 @@ const arch: type = @import("root").interfaces.arch;
 const fs: type = @import("root").interfaces.fs;
 const devices: type = @import("root").interfaces.devices;
 const modsys: type = @import("root").modsys;
+const hashtable: type = @import("root").lib.utils.hashtable;
+const internal: type = @import("internal.zig");
 
 pub const ModuleDescriptionTarget_T: type = arch.Target_T;
+pub const Mods_T: type = hashtable.buildHashTable([]const u8, *ModInfo_T, null, null);
 
 pub const ModuleDescriptionLoad_T: type = enum {
     linkable,
@@ -28,7 +31,10 @@ pub const Mod_T: type = struct {
     type: ModType_T,
     init: *const fn() anyerror!void,
     exit: *const fn() anyerror!void,
-    control: *const ModControlFlags_T,
+
+    pub const insmod = internal.insmod;
+    pub const rmmod = internal.rmmod;
+    pub const updmod = internal.updmod;
 };
 
 pub const ModControlFlags_T: type = packed struct {
@@ -38,9 +44,16 @@ pub const ModControlFlags_T: type = packed struct {
     remove: u1,
 };
 
+pub const ModInfo_T: type = struct {
+    module: *const Mod_T,
+    running: bool,
+    flags: ModControlFlags_T,
+};
+
 pub const ModuleDescription_T: type = struct {
     mod: *const Mod_T,
     load: ModuleDescriptionLoad_T,
+    insf: ModControlFlags_T,
     arch: []const ModuleDescriptionTarget_T, // arch suportadas
     c_sources: ?[]const[]const u8 = null,
     panic: bool = false,
@@ -125,22 +138,13 @@ pub const ModLicense_T: type = enum(u8) {
     PROPRIETARY,
 };
 
-pub const ModRoot_T: type = struct {
-    list: list.BuildList(*const Mod_T),
-    type: ModType_T,
-    init: u1,
-};
-
 pub const ModErr_T: type = error {
-    SectionHandlerError,
     NoNFound,
-    IteratorFailed,
-    ListInitFailed,
+    ObsoleteDependency,
     AllocatorError,
-    ListOperationError,
-    RemovedButWithHandlerError,
     ModuleCollision,
     OperationDenied,
     InitFailed,
     ExitFailed,
+    OperationFailed,
 };

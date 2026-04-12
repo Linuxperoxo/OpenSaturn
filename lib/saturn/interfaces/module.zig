@@ -14,6 +14,6 @@ pub const ModuleDescription_T: type = module.ModuleDescription_T;
 pub const ModuleDescriptionLibMine_T: type = module.ModuleDescriptionLibMine_T;
 pub const ModuleDescriptionLibOut_T: type = module.ModuleDescriptionLibOut_T;
 
-pub const srchmod = module.srchmod;
-pub const inmod = module.inmod;
-pub const rmmod = module.rmmod;
+pub const initmod = module.initmod;
+pub const killmod = module.killmod;
+pub const schmod = module.schmod;

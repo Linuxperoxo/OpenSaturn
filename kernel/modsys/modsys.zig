@@ -12,21 +12,17 @@ pub fn saturn_modules_loader() void {
             switch(comptime module.load) {
                 .dynamic, .unlinkable => break :skip {},
                 .linkable => {
-                    @call(.never_inline, interfaces.module.inmod, .{ module.mod }) catch |err| {
+                    module.mod.insmod(module.insf) catch |err| {
                         switch(err) {
                             interfaces.module.ModErr_T.InitFailed => {
                                 // klog()
-                                interfaces.module.rmmod(module.mod) catch {
+                                module.mod.rmmod() catch {
                                     // klog()
                                 };
                             },
 
-                            interfaces.module.ModErr_T.ModuleCollision => {
-                                // klog()
-                            },
-
-                            interfaces.module.ModErr_T.ListInitFailed,
-                            interfaces.module.ModErr_T.ListOperationError => {
+                            interfaces.module.ModErr_T.ObsoleteDependency,
+                            interfaces.module.ModErr_T.OperationFailed => {
                                 // klog()
                             },
 

@@ -13,6 +13,12 @@ const devfs: type = __SaturnModuleDescription__.request_lib("devfs-operations").
 pub const __SaturnModuleDescription__: module.ModuleDescription_T = .{
     .mod = &vga_fb,
     .load = .linkable,
+    .insf = .{
+        .anon = 1,
+        .init = 1,
+        .exit = 1,
+        .remove = 0,
+    },
     .arch = &[_]module.ModuleDescriptionTarget_T {
         .i386,
     },
@@ -37,21 +43,13 @@ const vga_fb: module.Mod_T = .{
     .desc = "Core Kernel VGA Framebuffer",
     .author = "Linuxperoxo",
     .version = "0.1.0",
-    .license = .GPL2_only,
-    .type = .driver,
     .deps = &[_][]const u8 {
         "ke_m_devfs"
     },
+    .license = .GPL2_only,
+    .type = .driver,
     .init = &init,
     .exit = &exit,
-    .control = &vga_control,
-};
-
-var vga_control: module.ModControlFlags_T = .{
-    .init = 1,
-    .exit = 1,
-    .remove = 1,
-    .anon = 1,
 };
 
 var major: devices.Major_T = undefined;
@@ -75,7 +73,7 @@ fn exit() anyerror!void {
     errdefer {
         // klog()
     }
-    try module.rmmod(&vga_fb);
     try devices.dev_rm(major, &device.fb_device);
     ops.unset_video_physio();
+    try vga_fb.rmmod();
 }

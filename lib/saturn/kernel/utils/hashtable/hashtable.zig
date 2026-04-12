@@ -73,7 +73,7 @@ pub fn buildHashTable(
                 .first = null,
                 .last = null,
             },
-        } ** (table_size orelse 24),
+        } ** (table_size orelse 16),
 
         // internal fn
 
@@ -177,7 +177,7 @@ pub fn buildHashTable(
                 } else {
                     node.prev.?.next = node.next;
                 }
-                allocator.free(node[0..1]);
+                allocator.free(node[0..1]) catch return Err_T.AllocatorFailed;
             }
         }
 
