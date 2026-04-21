@@ -1,0 +1,8 @@
+// ┌────────────────────────────────────────────────┐
+// │  (c) 2026 Linuxperoxo  •  FILE: kernel_fs.zig  │
+// │            Author: Linuxperoxo                 │
+// └────────────────────────────────────────────────┘
+
+const types: type = @import("types.zig");
+
+pub const kernel_fs: types.FsKernelRegister_T = undefined;
