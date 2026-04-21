@@ -5,4 +5,4 @@
 
 const types: type = @import("types.zig");
 
-pub const kernel_fs: types.FsKernelRegister_T = undefined;
+pub var kernel_fs: types.FsKernelRegister_T = undefined;

@@ -28,7 +28,7 @@ const FsErr_T: type = kfs.FsErr_T;
 
 var devices_list: types.DevfsList_T = .{};
 
-pub fn devfs_mount() anyerror!*const Superblock_T {
+pub fn devfs_mount(_: []const u8) anyerror!*const Superblock_T {
     dfs.devfs_superblock.private_data = &devices_list;
     return &dfs.devfs_superblock;
 }

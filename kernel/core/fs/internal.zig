@@ -15,15 +15,27 @@ const FsKernelRegister_T: type = types.FsKernelRegister_T;
 const kernel_fs: *FsKernelRegister_T = &@import("kernel_fs.zig").kernel_fs;
 
 pub noinline fn regfs(fs: *const Fs_T, flags: FsControlFlags_T) FsErr_T!void {
-    if(kernel_fs.test_collision(fs.name)) return FsErr_T.FsCollision;
-    kernel_fs.add(fs.name, try FsInfo_T.alloc(fs, flags), &allocator.sba.allocator) catch return FsErr_T.FsRegisterFailed;
+    if(kernel_fs.test_collision(fs.name))
+        return FsErr_T.FsCollision;
+
+    kernel_fs.add(
+        fs.name,
+        try FsInfo_T.create(fs, flags),
+        &allocator.sba.allocator
+    ) catch return FsErr_T.FsRegisterFailed;
 }
 
 pub noinline fn unregfs(fs: *const Fs_T) FsErr_T!void {
-    if(!kernel_fs.test_collision(fs.name)) return FsErr_T.NoNFound;
-    kernel_fs.del(fs.name, &allocator.sba.allocator) catch return FsErr_T.FsUnregisterFailed;
+    const fs_info: *FsInfo_T = kernel_fs.search(fs.name)
+        catch return FsErr_T.NoNFound;
+
+    kernel_fs.del(fs.name, &allocator.sba.allocator)
+        catch return FsErr_T.FsUnregisterFailed;
+
+    try fs_info.destroy();
 }
 
 pub noinline fn updfs(fs: *const Fs_T, flags: FsControlFlags_T) FsErr_T!void {
-    (kernel_fs.search(fs.name) catch return FsErr_T.NoNFound).flags = flags;
+    (kernel_fs.search(fs.name)
+        catch return FsErr_T.NoNFound).flags = flags;
 }

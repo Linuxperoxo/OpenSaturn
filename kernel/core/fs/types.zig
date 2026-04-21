@@ -10,7 +10,7 @@ const allocator: type = @import("allocator.zig");
 
 pub const Fs_T: type = struct {
     name: []const u8,
-    mount: *const fn() anyerror!*const vfs.Superblock_T,
+    mount: *const fn(src: []const u8) anyerror!*const vfs.Superblock_T,
     umount: *const fn() anyerror!void,
 
     pub const regfs = internal.regfs;
@@ -29,10 +29,15 @@ pub const FsInfo_T: type = struct {
         };
     }
 
-    pub inline fn alloc(fs: *const Fs_T, flags: FsControlFlags_T) FsErr_T!*@This() {
+    pub inline fn create(fs: *const Fs_T, flags: FsControlFlags_T) FsErr_T!*@This() {
         const ptr: *@This() = @ptrCast(allocator.sba.allocator.alloc(@This(), 1) catch return FsErr_T.FsAllocatorFailed);
         ptr.* = @This().builder(fs, flags);
         return ptr;
+    }
+
+    pub inline fn destroy(self: *@This()) FsErr_T!void {
+        allocator.sba.allocator.free(self)
+            catch return FsErr_T.FsAllocatorFailed;
     }
 };
 

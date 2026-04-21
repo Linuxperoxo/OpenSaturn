@@ -83,11 +83,16 @@ pub const devfs: Mod_T = .{
 };
 
 fn init() anyerror!void {
-    try fs.register_fs(&dfs.devfs);
+    try dfs.devfs.regfs(.{
+        .anon = 0,
+        .nomount = 0,
+        .noumount = 1,
+        .readonly = 0,
+    });
 
-    vfs.touch("/dev", null) catch |err| switch(err) {
+    vfs.touch("/dev") catch |err| switch(err) {
         vfs.VfsErr_T.NoNFound => {
-            try vfs.mkdir("/", "dev", null, 0, 0, .{
+            try vfs.mkdir("/", "dev", 0, 0, .{
                 .owner = vfs.R | vfs.W,
                 .group = vfs.R,
                 .other = vfs.R,
@@ -97,15 +102,16 @@ fn init() anyerror!void {
         else => return err,
     };
 
-    errdefer fs.unregister_fs(&dfs.devfs) catch {};
-    try vfs.mount("/dev", null, "devfs");
+    errdefer dfs.devfs.unregfs() catch {};
 
-    dfs.devfs.flags.control = .{
+    try vfs.mount("devfs", "/dev", "devfs");
+
+    try dfs.devfs.updfs(.{
         .anon = 1,
         .nomount = 0,
         .noumount = 1,
         .readonly = 0,
-    };
+    });
 }
 
 fn exit() anyerror!void {

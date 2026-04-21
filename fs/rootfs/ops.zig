@@ -62,7 +62,7 @@ var superblock: Superblock_T = .{
     .inode_op = &dir_inode_ops,
 };
 
-pub fn rootfs_mount() anyerror!*const Superblock_T {
+pub fn rootfs_mount(_: []const u8) anyerror!*const Superblock_T {
     return &superblock;
 }
 

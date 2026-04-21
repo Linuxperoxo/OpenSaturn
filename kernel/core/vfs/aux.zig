@@ -31,7 +31,7 @@ const Op_T: type = enum {
     chown,
 };
 
-pub fn resolve_path(path: []const u8, current: ?*Dentry_T, root: *Dentry_T) VfsErr_T!*Dentry_T {
+pub noinline fn resolve_path(path: []const u8, root: *Dentry_T) VfsErr_T!*Dentry_T {
     const dentries = fmt.broken_str(path, '/', &allocator.sba.allocator)
     catch |err| switch(err) {
         error.WithoutSub => return root,
@@ -52,7 +52,7 @@ pub fn resolve_path(path: []const u8, current: ?*Dentry_T, root: *Dentry_T) VfsE
         root.child.?.older_brother = null;
         root.child.?.child = null;
     }
-    var current_dentry: *Dentry_T = if(current != null) current.? else root.child.?;
+    var current_dentry: *Dentry_T = root.child.?;
     for(dentries, 0..) |dentry, i| {
         sw: switch((enum { step0, step1 }).step0) {
             .step0 => {
