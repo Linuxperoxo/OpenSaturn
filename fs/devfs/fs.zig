@@ -12,15 +12,6 @@ pub var devfs: fs.Fs_T = .{
     .name = "devfs",
     .mount = ops.devfs_mount,
     .umount = ops.devfs_umount,
-    .flags = .{
-        .control = .{
-            .nomount = 0,
-            .noumount = 0,
-            .readonly = 0,
-            .anon = 0,
-        },
-        .internal = .{},
-    },
 };
 
 pub var devfs_superblock: vfs.Superblock_T = .{

@@ -89,8 +89,11 @@ pub const rootfs: Mod_T = .{
 
 fn init() anyerror!void {
     try fs.register_fs(&rfs.rootfs);
+
     errdefer fs.unregister_fs(&rfs.rootfs) catch {};
-    try vfs.mount("/", null, rfs.rootfs.name);
+
+    try vfs.mount("rootfs", "/", rfs.rootfs.name);
+
     rfs.rootfs.flags.control = .{
         .anon = 1,
         .nomount = 1,
