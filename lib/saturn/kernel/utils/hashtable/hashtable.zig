@@ -191,6 +191,11 @@ pub fn buildHashTable(
             if(find_by_key(list_head, key)) |found| return found.data else
                 return Err_T.KeyNotFound;
         }
+
+        pub fn test_collision(self: *const @This(), key: key_T) bool {
+            _ = self.search(key) catch return true;
+            return false;
+        }
     };
 }
 
