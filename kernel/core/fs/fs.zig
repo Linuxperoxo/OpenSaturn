@@ -3,7 +3,6 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const main: type = @import("main.zig");
 const types: type = @import("types.zig");
 
 pub const Fs_T: type = types.Fs_T;
