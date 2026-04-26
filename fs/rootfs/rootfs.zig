@@ -24,7 +24,7 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .panic = true,
     .insf = .{
         .anon = 1,
-        .init = 0,
+        .init = 1,
         .exit = 0,
         .remove = 0,
     },
@@ -88,18 +88,23 @@ pub const rootfs: Mod_T = .{
 };
 
 fn init() anyerror!void {
-    try fs.register_fs(&rfs.rootfs);
+    try rfs.rootfs.regfs(.{
+        .anon = 0,
+        .nomount = 1,
+        .noumount = 1,
+        .readonly = 0,
+    });
 
-    errdefer fs.unregister_fs(&rfs.rootfs) catch {};
+    errdefer rfs.rootfs.unregfs() catch {};
 
     try vfs.mount("rootfs", "/", rfs.rootfs.name);
 
-    rfs.rootfs.flags.control = .{
+    try rfs.rootfs.updfs(.{
         .anon = 1,
         .nomount = 1,
         .noumount = 1,
         .readonly = 0,
-    };
+    });
 }
 
 fn exit() anyerror!void {

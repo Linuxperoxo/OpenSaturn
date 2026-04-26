@@ -14,7 +14,7 @@ pub const __SaturnModuleDescription__: module.ModuleDescription_T = .{
     .mod = &vga_fb,
     .load = .linkable,
     .insf = .{
-        .anon = 1,
+        .anon = 0,
         .init = 1,
         .exit = 1,
         .remove = 0,
@@ -55,8 +55,7 @@ const vga_fb: module.Mod_T = .{
 var major: devices.Major_T = undefined;
 
 fn init() anyerror!void {
-    major =
-    try devices.next_major();
+    major = try devices.next_major();
     try devices.dev_add(major, &device.fb_device);
 
     errdefer devices.dev_rm(major, &device.fb_device) catch unreachable;
