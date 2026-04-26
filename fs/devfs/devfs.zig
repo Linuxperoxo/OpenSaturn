@@ -26,7 +26,7 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     .load = .linkable,
     .insf = .{
         .anon = 0,
-        .init = 0,
+        .init = 1,
         .exit = 0,
         .remove = 0,
     },
@@ -97,7 +97,6 @@ fn init() anyerror!void {
                 .group = vfs.R,
                 .other = vfs.R,
             });
-
         },
         else => return err,
     };

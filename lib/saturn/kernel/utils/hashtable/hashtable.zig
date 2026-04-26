@@ -193,8 +193,8 @@ pub fn buildHashTable(
         }
 
         pub fn test_collision(self: *const @This(), key: key_T) bool {
-            _ = self.search(key) catch return true;
-            return false;
+            _ = self.search(key) catch return false;
+            return true;
         }
     };
 }

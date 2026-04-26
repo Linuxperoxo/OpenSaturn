@@ -13,6 +13,14 @@ pub fn saturn_modules_loader() void {
                 .dynamic, .unlinkable => break :skip {},
                 .linkable => {
                     module.mod.insmod(module.insf) catch |err| {
+                        const some: []const u8 = @errorName(err);
+                        asm volatile(
+                            \\ jmp .
+                            \\ xorl %edx, %edx
+                            :
+                            :[_] "{eax}" (some.ptr),
+                             [_] "{ecx}" (module.mod.name.ptr)
+                        );
                         switch(err) {
                             interfaces.module.ModErr_T.InitFailed => {
                                 // klog()

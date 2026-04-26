@@ -4,13 +4,13 @@
 // └──────────────────────────────────────────────┘
 
 const builtin: type = @import("builtin");
-const list: type = @import("test/list.zig");
 const arch: type = @import("root").interfaces.arch;
 const fs: type = @import("root").interfaces.fs;
 const devices: type = @import("root").interfaces.devices;
-const modsys: type = @import("root").modsys;
 const hashtable: type = @import("root").lib.utils.hashtable;
+const modsys: type = @import("root").modsys;
 const internal: type = @import("internal.zig");
+const allocator: type = @import("allocator.zig");
 
 pub const ModuleDescriptionTarget_T: type = arch.Target_T;
 pub const Mods_T: type = hashtable.buildHashTable([]const u8, *ModInfo_T, null, null);
@@ -35,6 +35,7 @@ pub const Mod_T: type = struct {
     pub const insmod = internal.insmod;
     pub const rmmod = internal.rmmod;
     pub const updmod = internal.updmod;
+    pub const depmod = internal.depmod;
 };
 
 pub const ModControlFlags_T: type = packed struct {
@@ -48,6 +49,25 @@ pub const ModInfo_T: type = struct {
     module: *const Mod_T,
     running: bool,
     flags: ModControlFlags_T,
+
+    pub inline fn builder(module: *const Mod_T, running: bool, flags: ModControlFlags_T) @This() {
+        return @This() {
+            .module = module,
+            .running = running,
+            .flags = flags,
+        };
+    }
+
+    pub inline fn create(module: *const Mod_T, running: bool, flags: ModControlFlags_T) ModErr_T!*@This() {
+        const ptr: *@This() = @ptrCast(allocator.sba.allocator.alloc(@This(), 1) catch return ModErr_T.ModuleAllocatorError);
+        ptr.* = @This().builder(module, running, flags);
+        return ptr;
+    }
+
+    pub inline fn destroy(self: *@This()) ModErr_T!void {
+        return allocator.sba.allocator.free(self)
+            catch ModErr_T.ModuleAllocatorError;
+    }
 };
 
 pub const ModuleDescription_T: type = struct {
@@ -141,7 +161,7 @@ pub const ModLicense_T: type = enum(u8) {
 pub const ModErr_T: type = error {
     NoNFound,
     ObsoleteDependency,
-    AllocatorError,
+    ModuleAllocatorError,
     ModuleCollision,
     OperationDenied,
     InitFailed,

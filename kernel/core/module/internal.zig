@@ -26,25 +26,17 @@ pub noinline fn insmod(module: *const Mod_T, flags: ModControlFlags_T) ModErr_T!
         }
     }
 
-    if(module.deps != null) {
-        for(module.deps.?) |dep| {
-            const dep_info: *ModInfo_T = kernel_modules.search(dep) catch return ModErr_T.ObsoleteDependency;
-            if(!dep_info.running)
-                return ModErr_T.ObsoleteDependency;
-        }
-    }
-
-    const module_info: *ModInfo_T = &(allocator.sba.allocator.alloc(ModInfo_T, 1)
-        catch return ModErr_T.OperationFailed)[0];
-
-    module_info.* = .{
-        .module = module,
-        .flags = flags,
-        .running = r: {
-            module.init() catch break :r false;
-            break :r true;
+    const module_info: *ModInfo_T = try ModInfo_T.create(
+        module,
+        r: {
+            if(flags.init == 1 and module.depmod()) {
+                module.init() catch break :r false;
+                break :r true;
+            }
+            break :r false;
         },
-    };
+    flags
+    );
 
     kernel_modules.add(module_info.module.name, module_info, &allocator.sba.allocator)
         catch return ModErr_T.OperationFailed;
@@ -61,10 +53,24 @@ pub noinline fn rmmod(module: *const Mod_T) ModErr_T!void {
 
     kernel_modules.del(module_info.module.name, &allocator.sba.allocator)
         catch return ModErr_T.OperationFailed;
+
+    try module_info.destroy();
 }
 
 /// * update flags of current module instance
 pub noinline fn updmod(module: *const Mod_T, flags: ModControlFlags_T) ModErr_T!void {
     const module_info: *ModInfo_T = kernel_modules.search(module.name) catch return ModErr_T.NoNFound;
     module_info.flags = flags;
+}
+
+/// * check module deps
+pub noinline fn depmod(module: *const Mod_T) bool {
+    if(module.deps != null) {
+        for(module.deps.?) |dep| {
+            const dep_info: *ModInfo_T = kernel_modules.search(dep) catch return false;
+            if(!dep_info.running)
+                return false;
+        }
+    }
+    return true;
 }

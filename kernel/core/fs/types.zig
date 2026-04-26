@@ -36,8 +36,8 @@ pub const FsInfo_T: type = struct {
     }
 
     pub inline fn destroy(self: *@This()) FsErr_T!void {
-        allocator.sba.allocator.free(self)
-            catch return FsErr_T.FsAllocatorFailed;
+        return allocator.sba.allocator.free(self)
+            catch FsErr_T.FsAllocatorFailed;
     }
 };
 

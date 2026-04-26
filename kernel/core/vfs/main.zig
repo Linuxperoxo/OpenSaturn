@@ -40,7 +40,7 @@ pub var root: Dentry_T = .{
 // TODO: armazenar informacoes de todas as montagens
 
 pub fn mount(src: []const u8, path: []const u8, fs_name: []const u8) VfsErr_T!void {
-    const dentry_mount: *Dentry_T = aux.resolve_path(path, &root);
+    const dentry_mount: *Dentry_T = try aux.resolve_path(path, &root);
 
     if(dentry_mount.d_sblock != null)
         return VfsErr_T.AlreadyMounted;
