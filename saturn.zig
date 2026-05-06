@@ -41,6 +41,7 @@ pub const interfaces: type = struct {
     pub const arch: type = @import("lib/saturn/interfaces/arch.zig");
     pub const vfs: type = @import("lib/saturn/interfaces/vfs.zig");
     pub const events: type = @import("lib/saturn/interfaces/events.zig");
+    pub const allocator: type = @import("lib/saturn/interfaces/allocator.zig");
 };
 
 pub const lib: type = struct {

@@ -3,17 +3,15 @@
 // │            Author: Linuxperoxo                  │
 // └─────────────────────────────────────────────────┘
 
+pub const VTable_T: type = struct {
+    alloc: *const fn(*anyopaque, usize) anyerror![]u8,
+    free: *const fn(*anyopaque, []u8) void,
+    resize: *const fn(*anyopaque, []u8, usize) anyerror![]u8,
+};
+
 pub const Allocator_T: type = struct {
     private: *anyopaque,
-    vtable: *const Vtable_T,
-
-    pub const Vtable_T: type = struct {
-        alloc: *const fn(*anyopaque, N: usize) anyerror![]u8,
-        free: *const fn(*anyopaque, []u8) void,
-        create: *const fn(*anyopaque, []u8) anyerror![]u8,
-        destroy: *const fn(*anyopaque, []u8) void,
-        resize: *const fn(*anyopaque, []u8, usize) anyerror![]u8,
-    };
+    vtable: *const VTable_T,
 
     fn is_slice(T: type) bool {
         return switch(@typeInfo(T)) {
@@ -53,7 +51,7 @@ pub const Allocator_T: type = struct {
     /// * alloc a single element pointer
     pub noinline fn create(self: *const Allocator_T, comptime T: type) anyerror!*T {
         return @alignCast(@ptrCast(
-            try @call(.never_inline, self.vtable.create, .{ self.private, T }))
+            try @call(.never_inline, self.vtable.alloc, .{ self.private, @sizeOf(T) }))
         );
     }
 
@@ -61,7 +59,7 @@ pub const Allocator_T: type = struct {
     pub noinline fn destroy(self: *const Allocator_T, ptr: anytype) void {
         if(!comptime is_one(@TypeOf(ptr)))
             @compileError("\"fn destroy()\" expect a one element pointer!");
-        @call(.never_inline, self.vtable.destroy, .{ self.private, ptr });
+        @call(.never_inline, self.vtable.free, .{ self.private, @as([]u8, @ptrCast(ptr)) });
     }
 
     /// * readjusts the size of a slice
