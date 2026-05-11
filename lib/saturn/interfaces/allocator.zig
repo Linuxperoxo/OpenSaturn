@@ -3,10 +3,20 @@
 // │            Author: Linuxperoxo                  │
 // └─────────────────────────────────────────────────┘
 
+pub const Err_T: type = error {
+    WithoutMemory,
+    InternalError,
+    ResizeImpossible,
+    NoInitilized,
+    InitFailed,
+};
+
 pub const VTable_T: type = struct {
-    alloc: *const fn(*anyopaque, usize) anyerror![]u8,
+    init: *const fn(*anyopaque) Err_T!void,
+    deinit: *const fn(*anyopaque) Err_T!void,
+    alloc: *const fn(*anyopaque, usize) Err_T![]u8,
     free: *const fn(*anyopaque, []u8) void,
-    resize: *const fn(*anyopaque, []u8, usize) anyerror![]u8,
+    resize: *const fn(*anyopaque, []u8, usize) Err_T![]u8,
 };
 
 pub const Allocator_T: type = struct {
@@ -34,10 +44,20 @@ pub const Allocator_T: type = struct {
             T;
     }
 
+    /// * init allocator
+    pub noinline fn init(self: *const Allocator_T) Err_T!void {
+        return self.vtable.init(self.private);
+    }
+
+    /// * deinit allocator
+    pub noinline fn deinit(self: *const Allocator_T) Err_T!void {
+        return self.vtable.deinit(self.private);
+    }
+
     /// * alloc a slice of type []T containing "n" elements
-    pub noinline fn alloc(self: *const Allocator_T, comptime T: type, n: usize) anyerror![]T {
+    pub noinline fn alloc(self: *const Allocator_T, comptime T: type, n: usize) Err_T![]T {
         return @alignCast(@ptrCast(
-            try @call(.never_inline, self.vtable.alloc, .{ self.private, n }))
+            try @call(.always_inline, self.vtable.alloc, .{ self.private, n }))
         );
     }
 
@@ -45,13 +65,13 @@ pub const Allocator_T: type = struct {
     pub noinline fn free(self: *const Allocator_T, ptr: anytype) void {
         if(!comptime is_slice(@TypeOf(ptr)))
             @compileError("\"fn free()\" expect a slice!");
-        @call(.never_inline, self.vtable.free, .{ self.private, @as([]u8, @alignCast(@ptrCast(ptr))) });
+        @call(.always_inline, self.vtable.free, .{ self.private, @as([]u8, @alignCast(@ptrCast(ptr))) });
     }
 
     /// * alloc a single element pointer
-    pub noinline fn create(self: *const Allocator_T, comptime T: type) anyerror!*T {
+    pub noinline fn create(self: *const Allocator_T, comptime T: type) Err_T!*T {
         return @alignCast(@ptrCast(
-            try @call(.never_inline, self.vtable.alloc, .{ self.private, @sizeOf(T) }))
+            try @call(.always_inline, self.vtable.alloc, .{ self.private, @sizeOf(T) }))
         );
     }
 
@@ -59,16 +79,16 @@ pub const Allocator_T: type = struct {
     pub noinline fn destroy(self: *const Allocator_T, ptr: anytype) void {
         if(!comptime is_one(@TypeOf(ptr)))
             @compileError("\"fn destroy()\" expect a one element pointer!");
-        @call(.never_inline, self.vtable.free, .{ self.private, @as([]u8, @ptrCast(ptr)) });
+        @call(.always_inline, self.vtable.free, .{ self.private, @as([]u8, @ptrCast(ptr)) });
     }
 
     /// * readjusts the size of a slice
     /// * depending on the implementation, you can allocate a new slice and copy the old data, or just expand the old slice
-    pub noinline fn resize(self: *const Allocator_T, ptr: anytype, new_size: usize) anyerror![]extract_child(@TypeOf(ptr)) {
+    pub noinline fn resize(self: *const Allocator_T, ptr: anytype, new_size: usize) Err_T![]extract_child(@TypeOf(ptr)) {
         if(!comptime is_slice(@TypeOf(ptr)))
             @compileError("\"fn resize()\" expect a slice!");
         return @alignCast(@ptrCast(
-            @call(.never_inline, self.vtable.resize, .{ self.private, ptr, new_size })
+            @call(.always_inline, self.vtable.resize, .{ self.private, ptr, new_size })
         ));
     }
 };
