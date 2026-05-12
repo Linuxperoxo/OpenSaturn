@@ -102,11 +102,12 @@ pub fn buildByteAllocator(
             }
 
             inline fn reserve_child(self: *PoolInfo_T) void {
-                const child_blocks: comptime_int = comptime ((@sizeOf(@This()) + pool_block_size - 1) / pool_block_size);
-
-                inline for(0..child_blocks) |i| {
-                    self.bitmap[i] = 1;
-                }
+                self.bitmap = @as(BitMapInt_T, self.bitmap) | (~@Type(.{
+                    .int = .{
+                        .bits = ((@sizeOf(@This()) + pool_block_size - 1) / pool_block_size),
+                        .signedness = .unsigned,
+                    },
+                }));
             }
 
             inline fn reset(self: *PoolInfo_T) void {
@@ -119,7 +120,18 @@ pub fn buildByteAllocator(
             }
 
             pub inline fn valid_allocation(self: *const PoolInfo_T, ptr: []u8) bool {
-                
+                if(self.pool == null)
+                    return false;
+
+                const supposed_addrs: usize = @intFromPtr(ptr.ptr);
+                const target_addrs: usize = @intFromPtr(self.pool.?);
+
+                const validation = [_]bool {
+                    (supposed_addrs >= target_addrs),
+                    ((supposed_addrs + ptr.len) <= (target_addrs + self.pool.?.len)),
+                };
+
+                return @reduce(.And, @as(@Vector(3, bool), @bitCast(validation)));
             }
 
             pub inline fn is_initialized(self: *const PoolInfo_T) bool {
