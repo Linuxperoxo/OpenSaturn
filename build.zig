@@ -90,9 +90,6 @@ pub fn build(b: *std.Build) void {
 
     saturn_step.makeFn = &struct {
         pub fn make(_: *std.Build.Step, _: std.Build.Step.MakeOptions) anyerror!void {
-            if(compile.options.CodeMode == .Debug) {
-                std.debug.print("\x1b[33mWARNING:\x1b[0m Debug Mode Enable\n", .{});
-            }
             std.debug.print("Done!\n", .{});
             return {};
         }
