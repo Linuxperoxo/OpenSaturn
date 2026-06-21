@@ -33,14 +33,29 @@ pub fn buildByteAllocator(
             next: ?*PoolInfo_T = null,
             prev: ?*PoolInfo_T = null,
             private: ?*anyopaque = null,
+            child: ?*PoolInfo_T = null,
 
+            // 1 -> busy block
+            // 0 -> free block
             bitmap: @Vector(pool_bitmap_len, u1) = @splat(0),
 
-            fn bitmap_sequence_mask(blocks_sequence: usize) BitMapInt_T {
-                const mask: BitMapInt_T = ~0;
-                const right_shift: usize = pool_bitmap_len - blocks_sequence;
+            fn init(self: *PoolInfo_T) void {
 
-                return (mask >> (right_shift)) << blocks_sequence;
+            }
+
+            fn create_child(self: *PoolInfo_T) *PoolInfo_T {
+                self.child = if(self.child == null) @alignCast(@ptrCast(&self.pool.?[0]))
+                    else self.child;
+
+                return self.child.?;
+            }
+
+            /// Generates a mask with blocks_sequence consecutive bits set to 1
+            fn bitmap_sequence_mask(blocks_sequence: usize) BitMapInt_T {
+                const mask: BitMapInt_T = 0;
+                const shift: usize = pool_bitmap_len - blocks_sequence;
+
+                return (~mask) >> shift;
             }
 
             fn is_full(self: *const PoolInfo_T) bool {
@@ -49,11 +64,40 @@ pub fn buildByteAllocator(
                 return (~bitmap) == 0;
             }
 
+            /// Returns the number of blocks needed to hold bytes rounded up
             fn bytes_to_block(bytes: usize) usize {
                 return (pool_block_size + bytes - 1) / pool_block_size;
             }
 
             pub fn alloc(self: *PoolInfo_T, bytes: usize) InternalErr_T![]u8 {
+                if(self.is_full())
+                    return InternalErr_T.PoolIsFull;
+
+                const sequence_mask: BitMapInt_T = bitmap_sequence_mask(bytes_to_block(bytes));
+
+                var bitmap: BitMapInt_T = ~@as(BitMapInt_T, @bitCast(self.bitmap));
+                var ctz: usize = @ctz(bitmap);
+                var initial_block: usize = ctz;
+
+                bitmap >>= ctz;
+
+                r: {
+                    while(bitmap != 0) {
+                        if((bitmap & sequence_mask) == sequence_mask)
+                            break :r {};
+
+                        ctz = @ctz(~bitmap);
+
+                        bitmap >>= ctz;
+                        initial_block += ctz;
+
+                        ctz = @ctz(bitmap);
+
+                        bitmap >>= ctz;
+                        initial_block += ctz;
+                    }
+                }
+
 
             }
 
@@ -76,33 +120,12 @@ pub fn buildByteAllocator(
         pub noinline fn deinit(self: *@This()) Err_T!void {}
 
         pub noinline fn alloc(self: *@This(), N: usize) Err_T![]u8 {
-            var current_pool: ?*PoolInfo_T = &self.root_pool;
-
-            while (current_pool) |pool| {
-                const allocation: []u8 = pool.alloc_blocks(N) catch |err| {
-                    @branchHint(.unlikely);
-                    sw: switch (err) {
-                        InternalErr_T.PoolNotInitialized => {
-                            @branchHint(.unlikely);
-                            current_pool.?.init_pool() catch return Err_T.InternalError;
-                            continue;
-                        },
-
-                        InternalErr_T.PoolIsFull => {
-                            @branchHint(.likely);
-                            current_pool = pool.create_child();
-                            continue :sw InternalErr_T.PoolNotInitialized;
-                        },
-
-                        else => unreachable,
-                    }
-                };
-                return allocation;
-            }
-            unreachable;
+        
         }
 
-        pub noinline fn free(self: *@This(), ptr: []u8) void {}
+        pub noinline fn free(self: *@This(), ptr: []u8) void {
+
+        }
 
         pub noinline fn resize(self: *@This(), ptr: []u8, N: usize) Err_T![]u8 {}
 
