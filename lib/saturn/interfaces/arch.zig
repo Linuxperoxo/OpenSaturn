@@ -38,7 +38,23 @@ pub const ArchDescription_T: type = struct {
     symbols: Symbols_T,
     extra: ?[]const Extra_T,
     data: ?[]const Data_T,
+    allocators: ?Allocators_T,
     overrider: Overrider_T,
+
+    pub const Allocation_T: type = struct {
+        private: *anyopaque,
+        ptr: []u8,
+    };
+
+    pub const Allocator_T: type = struct {
+        page: usize,
+        alloc_fn: *const fn() anyerror!Allocation_T,
+        free_fn: *const fn(*anyopaque) anyerror!void,
+    };
+
+    pub const Allocators_T: type = struct {
+        spea: ?Allocator_T,
+    };
 
     pub const Extra_T: type = struct {
         maintainer: []const u8,

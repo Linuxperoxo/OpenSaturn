@@ -3,9 +3,9 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
+const arch: type = @import("root").interfaces.arch;
 const allocator: type = @import("root").interfaces.allocator;
 const ar: type = @import("root").ar;
-const mm: type = @import("root").ar.target_code.mm;
 
 const Allocator_T: type = allocator.Allocator_T;
 const VTable_T: type = allocator.VTable_T;
@@ -14,43 +14,17 @@ const InternalErr_T: type = error{ PoolIsFull, PoolInitFailed, PoolNotInitialize
 
 // === Saturn Pool Expandable Allocator ===
 
-pub inline fn arch_pool_len() usize {
-    return switch (comptime ar.target_code.target) {
-        .i386 => 4096,
-        else => @compileError(""),
-    };
-}
-
-pub inline fn arch_pool_init() struct { *anyopaque, []u8 }!anyerror {
-    switch (comptime ar.target_code.target) {
-        .i386 => {
-            const page: mm.AllocPage_T = try mm.alloc_page();
-            return .{
-                page,
-                page.virtual,
-            };
-        },
-
-        else => @compileError(""),
-    }
-}
-
-pub inline fn arch_pool_deinit(private: ?*anyopaque) anyerror!void {
-    switch (comptime ar.target_code.target) {
-        .i386 => {
-            return mm.free_page(private orelse return);
-        },
-
-        else => @compileError(""),
-    }
-}
-
 pub fn buildByteAllocator(
     comptime block: ?comptime_int,
 ) type {
+    comptime if(ar.target_code.arch.allocators == null or ar.target_code.arch.allocators.spea == null)
+        @compileError("target \"" ++ @tagName(ar.target_code.target) ++ "\" does not support the spea allocator");
+
+    const target_code_spea: arch.ArchDescription_T.Allocator_T = ar.target_code.arch.allocators.spea;
+
     return struct {
         const pool_block_size: usize = block orelse 32;
-        const pool_bitmap_len: usize = arch_pool_len();
+        const pool_bitmap_len: usize = target_code_spea.page;
 
         const BitMapInt_T: type = @Type(.{ .int = .{ .bits = pool_bitmap_len, .signedness = .unsigned } });
 
@@ -61,6 +35,31 @@ pub fn buildByteAllocator(
             private: ?*anyopaque = null,
 
             bitmap: @Vector(pool_bitmap_len, u1) = @splat(0),
+
+            fn bitmap_sequence_mask(blocks_sequence: usize) BitMapInt_T {
+                const mask: BitMapInt_T = ~0;
+                const right_shift: usize = pool_bitmap_len - blocks_sequence;
+
+                return (mask >> (right_shift)) << blocks_sequence;
+            }
+
+            fn is_full(self: *const PoolInfo_T) bool {
+                const bitmap: BitMapInt_T = @bitCast(self.bitmap);
+
+                return (~bitmap) == 0;
+            }
+
+            fn bytes_to_block(bytes: usize) usize {
+                return (pool_block_size + bytes - 1) / pool_block_size;
+            }
+
+            pub fn alloc(self: *PoolInfo_T, bytes: usize) InternalErr_T![]u8 {
+
+            }
+
+            pub fn free(self: *PoolInfo_T, allocation: []u8) InternalErr_T!void {
+
+            }
         };
 
         root_pool: PoolInfo_T,
