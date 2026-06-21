@@ -16,6 +16,8 @@ pub const modules: type = saturn.modules;
 pub const decls: type = saturn.decls;
 pub const fusioners: type = saturn.fusioners;
 pub const codes: type = saturn.codes;
+pub const rtests: type = saturn.rtests;
+pub const srtr: type = saturn.srtr;
 pub const kparam: type = opaque {
     pub const params_search = saturn.kparam.params_search;
     const params_loader = saturn.kparam.params_loader;
@@ -60,7 +62,7 @@ comptime {
 
 fn saturn_main(kparams: *const packed struct { ptr: [*]const u8, len: usize }) callconv(.c) noreturn {
     // Carregamos os parametros do kernel que foi passado pelo bootloader
-    if(config.kernel.kparam.kparam_enable) {
+    if(comptime config.kernel.kparam.kparam_enable) {
         @call(
             .always_inline,
             kparam.params_loader,
@@ -90,5 +92,10 @@ fn saturn_main(kparams: *const packed struct { ptr: [*]const u8, len: usize }) c
     // os modulos linkados ao kernel
     @call(.always_inline, modsys.core.saturn_modules_loader, .{});
     @call(.always_inline, fusium.saturn_fusium_loader, .{ .after });
+
+    // Executa testes na inicializacao do kernel
+    if(comptime config.kernel.test_suite.test_suite_enable)
+        @call(.always_inline, srtr.saturn_test_runner, .{});
+
     @call(.always_inline, opaque { pub fn trap() noreturn { while(true) {} } }.trap, .{}); // noreturn fn
 }
