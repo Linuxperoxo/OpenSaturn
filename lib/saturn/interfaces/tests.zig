@@ -1,12 +1,13 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: options.zig  │
+// │  (c) 2026 Linuxperoxo  •  FILE: tests.zig    │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const types: type = @import("types.zig");
-
-const CodeMode_T: type = types.CodeMode_T;
-const OptimizeMode_T: type = types.OptimizeMode_T;
-
-pub const OptimizeMode: OptimizeMode_T = .Small;
-pub const CSupport: bool = true;
+pub const TestSuite_T: type = struct {
+    name: []const u8,
+    tests: []struct {
+        name: []const u8,
+        func: *const fn() anyerror!void,
+    },
+    keep_going: u1 = 0,
+};

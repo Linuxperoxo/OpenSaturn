@@ -1,12 +1,11 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: options.zig  │
+// │  (c) 2026 Linuxperoxo  •  FILE: rtests.zig   │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const types: type = @import("types.zig");
+const tests: type = @import("root").interfaces.tests;
 
-const CodeMode_T: type = types.CodeMode_T;
-const OptimizeMode_T: type = types.OptimizeMode_T;
-
-pub const OptimizeMode: OptimizeMode_T = .Small;
-pub const CSupport: bool = true;
+/// --- SATURN RUNTIME TESTS ---
+pub const __SaturnRTests__ = [_]tests.TestSuite_T {
+    // Tests Location!
+};
