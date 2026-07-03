@@ -11,6 +11,7 @@ pub const TargetCode_T: type = struct {
     entry: type,
     init: ?type = null,
     interrupts: ?type = null,
+    allocators: ?arch.ArchDescription_T.Allocators_T = null,
     config: ?type = null,
     physio: ?type = null,
     mm: ?type = null,

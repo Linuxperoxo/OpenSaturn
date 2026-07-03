@@ -15,6 +15,7 @@ const interfaces: type = root.interfaces;
 
 pub const linker: type = @import("linker.zig");
 pub const sections: type = @import("sections.zig");
+pub const allocators: type = @import("allocators.zig");
 
 pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
     .usable = true,
@@ -46,6 +47,9 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
     },
     .symbols = .{
         .segments = 1,
+    },
+    .allocators = .{
+        .spea = allocator
     },
     .extra = &[_]interfaces.arch.ArchDescription_T.Extra_T {
         .{

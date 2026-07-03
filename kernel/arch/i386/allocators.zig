@@ -24,7 +24,7 @@ const spea_fns: type = opaque {
     }
 };
 
-const spea: arch.ArchDescription_T.Allocator_T = .{
+pub const spea: arch.ArchDescription_T.Allocator_T = .{
     .page = 4096,
     .alloc_fn = &spea_fns.alloc,
     .free_fn = &spea_fns.free,

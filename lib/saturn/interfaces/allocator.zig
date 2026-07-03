@@ -9,6 +9,7 @@ pub const Err_T: type = error {
     ResizeImpossible,
     NoInitilized,
     InitFailed,
+    InvalidOperation,
 };
 
 pub const VTable_T: type = struct {
@@ -16,7 +17,7 @@ pub const VTable_T: type = struct {
     deinit: *const fn(*anyopaque) Err_T!void,
     alloc: *const fn(*anyopaque, usize) Err_T![]u8,
     free: *const fn(*anyopaque, []u8) void,
-    resize: *const fn(*anyopaque, []u8, usize) Err_T![]u8,
+    resize: ?*const fn(*anyopaque, []u8, usize) Err_T![]u8 = null,
 };
 
 pub const Allocator_T: type = struct {
@@ -65,6 +66,7 @@ pub const Allocator_T: type = struct {
     pub noinline fn free(self: *const Allocator_T, ptr: anytype) void {
         if(!comptime is_slice(@TypeOf(ptr)))
             @compileError("\"fn free()\" expect a slice!");
+
         @call(.always_inline, self.vtable.free, .{ self.private, @as([]u8, @alignCast(@ptrCast(ptr))) });
     }
 
@@ -79,6 +81,7 @@ pub const Allocator_T: type = struct {
     pub noinline fn destroy(self: *const Allocator_T, ptr: anytype) void {
         if(!comptime is_one(@TypeOf(ptr)))
             @compileError("\"fn destroy()\" expect a one element pointer!");
+
         @call(.always_inline, self.vtable.free, .{ self.private, @as([]u8, @ptrCast(ptr)) });
     }
 
@@ -87,8 +90,9 @@ pub const Allocator_T: type = struct {
     pub noinline fn resize(self: *const Allocator_T, ptr: anytype, new_size: usize) Err_T![]extract_child(@TypeOf(ptr)) {
         if(!comptime is_slice(@TypeOf(ptr)))
             @compileError("\"fn resize()\" expect a slice!");
-        return @alignCast(@ptrCast(
-            @call(.always_inline, self.vtable.resize, .{ self.private, ptr, new_size })
+
+        return if(self.vtable.resize == null) Err_T.InvalidOperation else @alignCast(@ptrCast(
+            @call(.always_inline, self.vtable.resize.?, .{ self.private, ptr, new_size })
         ));
     }
 };
