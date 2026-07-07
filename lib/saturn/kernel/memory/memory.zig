@@ -10,8 +10,3 @@
 
 pub const soa: type = @import("soa/soa.zig");
 pub const sba: type = @import("sba/sba.zig");
-
-pub fn kmalloc(comptime T: type, _: u32) anyerror![]T {
-    var slice: []T = undefined;
-    return slice[0..1];
-}
