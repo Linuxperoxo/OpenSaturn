@@ -88,13 +88,6 @@ pub fn build(b: *std.Build) void {
     saturn.setLinkerScript(b.path(path));
     saturn.root_module.addIncludePath(b.path("include"));
 
-    saturn_step.makeFn = &struct {
-        pub fn make(_: *std.Build.Step, _: std.Build.Step.MakeOptions) anyerror!void {
-            std.debug.print("Done!\n", .{});
-            return {};
-        }
-    }.make;
-
     saturn_step.dependOn(&saturn.step); // Compiler
     saturn_step.dependOn(&saturn_install.step); // Install binary
 }
