@@ -7,7 +7,12 @@ const std: type = @import("std");
 
 const arch: type = @import("config/arch/config.zig");
 const compile: type = @import("config/compile/config.zig");
-const SaturnLinkers = @import("linkers/linkers.zig") {};
+const linkers = @import("linkers.zig") {};
+
+comptime {
+    if(!@hasField(@TypeOf(linkers), @tagName(arch.options.Target)))
+        @compileError("");
+}
 
 pub const target: std.Target.Cpu.Arch = switch(arch.options.Target) {
     .i386 => .x86,
@@ -78,7 +83,7 @@ pub fn build(b: *std.Build) void {
             " linker error"
         );
     };
-    _ = file.write(@field(SaturnLinkers, @tagName(arch.options.Target))) catch {
+    _ = file.write(@field(linkers, @tagName(arch.options.Target))) catch {
         @panic(
             @tagName(arch.options.Target) ++
             " linker error"

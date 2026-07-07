@@ -7,6 +7,7 @@ const modules: type = @import("root").config.modules;
 const fusium: type = @import("root").config.fusium;
 
 pub const Target_T: type = @TypeOf(@import("root").config.arch.options.Target);
+
 pub const ArchDescription_T: type = struct {
     usable: bool,
     entry: struct {
