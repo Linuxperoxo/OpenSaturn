@@ -49,7 +49,7 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
         .segments = 1,
     },
     .allocators = .{
-        .spea = allocator
+        .spea = allocators.spea,
     },
     .extra = &[_]interfaces.arch.ArchDescription_T.Extra_T {
         .{
