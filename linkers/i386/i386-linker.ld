@@ -6,9 +6,9 @@ SECTIONS {
    * opensaturn_phys_address: difined in kernel/loader.zig
    * opensaturn_virtual_address: difined in kernel/loader.zig
   */
-  phys_init = kernel_phys_address;
+  phys_init = kernel_mem_phys_base;
 
-  opensaturn_text_virtual = kernel_text_virtual;
+  opensaturn_text_virtual = kernel_mem_virtual;
   opensaturn_data_virtual = kernel_data_virtual;
 
   phys_init_atlas_header = phys_init;
@@ -19,28 +19,24 @@ SECTIONS {
       KEEP(*(.opensaturn.data.atlas.header))
   }
 
-  PROVIDE(
-    phys_i386_start = .
-  );
+  PROVIDE(linker_mem_phys_opensaturn_arch_start = .);
 
   .opensaturn.arch : {
+      PROVIDE(linker_mem_phys_opensaturn_arch_section_text_start = .);
       /* .text expurgated after jmp to kernel */
       KEEP(*(.i386.text)) /* free page for kernel after arch init */
+      PROVIDE(linker_mem_phys_opensaturn_arch_section_text_end = .);
+  
       . = ALIGN(4096);
-      PROVIDE(
-        phys_i386_data_start = .
-      );
-      KEEP(*(.i386.data)) /* TMP DATA */
-      PROVIDE(
-        phys_i386_data_end = .
-      );
+
+      PROVIDE(linker_mem_phys_opensaturn_arch_section_data_start = .);
+      KEEP(*(.i386.data))
+      PROVIDE(linker_mem_phys_opensaturn_arch_section_data_end = .);
   }
 
   . = ALIGN(4096);
 
-  PROVIDE(
-    phys_i386_end = .
-  );
+  PROVIDE(linker_mem_phys_opensaturn_arch_end = .);
 
   PROVIDE(
     phys_address_opensaturn_start = phys_i386_end

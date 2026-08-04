@@ -16,6 +16,9 @@ const config: type = @import("root").config;
 const fmt: type = @import("root").lib.utils.compile.fmt;
 const aux: type = @import("aux.zig");
 
+const phys: type = config.kernel.mem.phys;
+const virtual: type = config.kernel.mem.virtual;
+
 comptime {
     if(!@hasDecl(code.arch, decls.what_is_decl(.arch))) @compileError(
         "expected a declaration " ++ decls.what_is_decl(.arch) ++ " for architecture " ++
@@ -37,21 +40,38 @@ comptime {
     // la na proprio config, ja que pode acontecer de alguma nao ser usada diretamente no codigo, mas ser
     // usada dentro de um linker ou assembly, isso iria dar um erro de simbolo nao encontrado, ja que como
     // nao foi usada dentro do proprio codigo zig, o compilador so iria ignorar e nem colocar o export nela
-    if(@field(code.arch, decls.what_is_decl(.arch)).symbols.segments == 1 ) asm(
-        &fmt.format(".set {s}, {d}\n", .{ "kernel_phys_address", config.kernel.mem.phys.kernel_phys }) ++
-        &fmt.format(".global {s}\n", .{ "kernel_phys_address" }) ++
-        &fmt.format(".set {s}, {d}\n", .{ "kernel_virtual_address", config.kernel.mem.virtual.kernel_text }) ++
-        &fmt.format(".global {s}\n", .{ "kernel_virtual_address" }) ++
-        &fmt.format(".set {s}, {d}\n", .{ "kernel_text_virtual", config.kernel.mem.virtual.kernel_text }) ++
-        &fmt.format(".global {s}\n", .{ "kernel_text_virtual" }) ++
-        &fmt.format(".set {s}, {d}\n", .{ "kernel_stack_base_virtual", config.kernel.mem.virtual.kernel_stack_base }) ++
-        &fmt.format(".global {s}\n", .{ "kernel_stack_base_virtual" }) ++
-        &fmt.format(".set {s}, {d}\n", .{ "kernel_data_virtual", config.kernel.mem.virtual.kernel_data }) ++
-        &fmt.format(".global {s}\n", .{ "kernel_data_virtual" }) ++
-        &fmt.format(".set {s}, {d}\n", .{ "kernel_paged_memory_virtual", config.kernel.mem.virtual.kernel_paged_memory }) ++
-        &fmt.format(".global {s}\n", .{ "kernel_paged_memory_virtual" }) ++
-        &fmt.format(".set {s}, {d}\n", .{ "kernel_mmio_virtual", config.kernel.mem.virtual.kernel_mmio }) ++
-        &fmt.format(".global {s}\n", .{ "kernel_mmio_virtual" })
+    asm(
+        // phys addrs
+        &fmt.format(".set {s}, {d}\n", .{ "kernel_mem_phys_base", phys.kernel_base }) ++
+        &fmt.format(".global {s}\n", .{ "kernel_mem_phys_address" }) ++
+
+        &fmt.format(".set {s}, {d}\n", .{ "kernel_mem_phys_stack", phys.kernel_stack }) ++
+        &fmt.format(".global {s}\n", .{ "kernel_mem_phys_stack" }) ++
+
+        &fmt.format(".set {s}, {d}\n", .{ "kernel_mem_phys_paged_memory", phys.kernel_paged_memory }) ++
+        &fmt.format(".global {s}\n", .{ "kernel_mem_phys_paged_memory" }) ++
+
+        &fmt.format(".set {s}, {d}\n", .{ "kernel_mem_phys_mmio", phys.kernel_mmio }) ++
+        &fmt.format(".global {s}\n", .{ "kernel_mem_phys_paged_mmio" }) ++
+
+        // virtual addrs
+        &fmt.format(".set {s}, {d}\n", .{ "kernel_mem_virtual_base", virtual.kernel_text }) ++
+        &fmt.format(".global {s}\n", .{ "kernel_mem_virtual_base" }) ++
+
+        &fmt.format(".set {s}, {d}\n", .{ "kernel_mem_virtual_text", virtual.kernel_text }) ++
+        &fmt.format(".global {s}\n", .{ "kernel_mem_virtual_text" }) ++
+
+        &fmt.format(".set {s}, {d}\n", .{ "kernel_mem_virtual_stack", virtual.kernel_stack_base }) ++
+        &fmt.format(".global {s}\n", .{ "kernel_mem_virtual_stack" }) ++
+
+        &fmt.format(".set {s}, {d}\n", .{ "kernel_mem_virtual_data", virtual.kernel_data }) ++
+        &fmt.format(".global {s}\n", .{ "kernel_mem_virtual_data" }) ++
+
+        &fmt.format(".set {s}, {d}\n", .{ "kernel_mem_virtual_paged_memory", virtual.kernel_paged_memory }) ++
+        &fmt.format(".global {s}\n", .{ "kernel_mem_virtual_paged_memory" }) ++
+
+        &fmt.format(".set {s}, {d}\n", .{ "kernel_mem_virtual_mmio", virtual.kernel_mmio }) ++
+        &fmt.format(".global {s}\n", .{ "kernel_mem_virtual_mmio" })
     );
 
     const arch_decl_type: type = decls.what_is_decl_type(.arch);

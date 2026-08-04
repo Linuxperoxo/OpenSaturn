@@ -1,7 +1,7 @@
-// ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: linker.zig   │
-// │            Author: Linuxperoxo               │
-// └──────────────────────────────────────────────┘
+// ┌───────────────────────────────────────────────┐
+// │  (c) 2025 Linuxperoxo  •  FILE: symbols.zig   │
+// │            Author: Linuxperoxo                │
+// └───────────────────────────────────────────────┘
 
 // arch section
 pub const phys_i386_start = @extern(*anyopaque, .{

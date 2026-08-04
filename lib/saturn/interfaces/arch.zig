@@ -7,6 +7,7 @@ const modules: type = @import("root").config.modules;
 const fusium: type = @import("root").config.fusium;
 
 pub const Target_T: type = @TypeOf(@import("root").config.arch.options.Target);
+
 pub const ArchDescription_T: type = struct {
     usable: bool,
     entry: struct {
@@ -35,7 +36,7 @@ pub const ArchDescription_T: type = struct {
         entry: *const fn() callconv(.c) void,
         sync: *const fn() void,
     },
-    symbols: Symbols_T,
+    symbols: ?[]const[]const u8,
     extra: ?[]const Extra_T,
     data: ?[]const Data_T,
     allocators: ?Allocators_T,
@@ -72,10 +73,6 @@ pub const ArchDescription_T: type = struct {
                 };
             }
         },
-    };
-
-    pub const Symbols_T: type = struct {
-        segments: u1,
     };
 
     pub const Data_T: type = struct {
