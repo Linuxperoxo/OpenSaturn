@@ -73,11 +73,7 @@ pub const Allocator_T: type = struct {
     /// * alloc a single element pointer
     pub noinline fn create(self: *const Allocator_T, comptime T: type) Err_T!*T {
         return @alignCast(@ptrCast(
-<<<<<<< HEAD
             try @call(.always_inline, self.vtable.alloc, .{ self.private, @sizeOf(T) }))
-=======
-            try @call(.never_inline, self.vtable.alloc, .{ self.private, @sizeOf(T) }))
->>>>>>> 065db47 (feat: new sba)
         );
     }
 
@@ -85,12 +81,7 @@ pub const Allocator_T: type = struct {
     pub noinline fn destroy(self: *const Allocator_T, ptr: anytype) void {
         if(!comptime is_one(@TypeOf(ptr)))
             @compileError("\"fn destroy()\" expect a one element pointer!");
-<<<<<<< HEAD
-
         @call(.always_inline, self.vtable.free, .{ self.private, @as([]u8, @ptrCast(ptr)) });
-=======
-        @call(.never_inline, self.vtable.free, .{ self.private, @as([]u8, @ptrCast(ptr)) });
->>>>>>> 065db47 (feat: new sba)
     }
 
     /// * readjusts the size of a slice

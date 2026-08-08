@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo                     │
 // └────────────────────────────────────────────────────┘
 
-const arch: type = @import("root").code.arch;
+const arch: type = @import("root").__SaturnArchImpl__.arch;
 const events: type = @import("root").core.events;
 
 pub const handler: type = @import("handler.zig");
