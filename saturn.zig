@@ -42,13 +42,14 @@ pub const interfaces: type = struct {
     pub const events: type = @import("lib/saturn/interfaces/events.zig");
     pub const allocator: type = @import("lib/saturn/interfaces/allocator.zig");
     pub const tests: type = @import("lib/saturn/interfaces/tests.zig");
-    pub const allocator: type = @import("lib/saturn/interfaces/allocator.zig");
+    pub const lock: type = @import("lib/saturn/interfaces/lock.zig");
 };
 
 pub const lib: type = struct {
     pub const saturn: type = struct {
         pub const memory: type = @import("lib/saturn/kernel/memory/memory.zig");
         pub const utils: type = @import("lib/saturn/kernel/utils/utils.zig");
+        pub const sync: type = @import("lib/saturn/kernel/sync/sync.zig");
     };
 };
 
