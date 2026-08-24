@@ -14,12 +14,23 @@ pub const ArchCoreCodeImpl_T: type = struct {
     entry: *const fn() callconv(.c) void,
 };
 
+pub const ArchManifest_T: type = struct {
+    pub const ContainerExposed_T: type = struct {
+        name: []const u8,
+        container: type
+    };
+
+    target: Target_T,
+    arch: type,
+    exposed: ?[]const ContainerExposed_T = null,
+};
+
 pub const ArchDescription_T: type = struct {
     // core code implement
     init: ?ArchCoreCodeImpl_T = null,
     interrupts: ?ArchCoreCodeImpl_T = null,
     mm: ?ArchCoreCodeImpl_T = null,
-    physio: ArchCoreCodeImpl_T = null, // NOTE: converted to module (will be removed)
+    physio: ?ArchCoreCodeImpl_T = null, // NOTE: converted to module (will be removed)
 
     allocators: ?Allocators_T = null,
 

@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const arch: type = @import("root").code.arch;
+const arch: type = @import("root").__SaturnArchImpl__.arch;
 const config: type = @import("root").config;
 const types: type = @import("types.zig");
 const zone: type = @import("zone.zig");
@@ -127,7 +127,7 @@ pub fn alloc_page() types.AllocPageErr_T!types.AllocPage_T {
 }
 
 pub fn alloc_pages(_: usize) []types.AllocPage_T {
-    
+
 }
 
 pub fn alloc_zeroed_page() []types.AllocPage_T {

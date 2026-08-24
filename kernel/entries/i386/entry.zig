@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const arch: type = @import("root").code.arch;
+const arch: type = @import("root").__SaturnArchImpl__.arch;
 const config: type = @import("root").config;
 const atlas: type = @import("atlas.zig");
 const fmt: type = @import("root").lib.utils.compile.fmt;
@@ -73,4 +73,3 @@ pub fn entry() linksection(section_text_loader) callconv(.naked) noreturn {
         )
     );
 }
-
