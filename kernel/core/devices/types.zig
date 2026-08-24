@@ -38,7 +38,7 @@ pub const DevType_T: type = enum {
 
 pub const DevOps_T: type = struct {
     ioctl: ?*const fn(Minor_T, usize, ?*anyopaque) anyerror!usize = null,
-    mount: if(!builtin.is_test) ?*const fn(Minor_T) anyerror!*const vfs.Superblock_T else void =  if(!builtin.is_test) null else {},
+    mount: if(!builtin.is_test) ?*const fn(Minor_T) anyerror!*const vfs.Superblock else void =  if(!builtin.is_test) null else {},
     umount: ?*const fn(Minor_T) anyerror!void = null,
     open: ?*const fn(Minor_T) anyerror!void = null,
     close: ?*const fn(Minor_T) anyerror!void = null,

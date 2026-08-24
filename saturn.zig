@@ -9,10 +9,6 @@
 pub const modules: type = @import("modules.zig");
 pub const fusioners: type = @import("fusioners.zig");
 pub const fusium: type = @import("kernel/fusium/core.zig");
-<<<<<<< HEAD
-pub const supervisor: type = if (enable_obsolete) @import("kernel/supervisor/supervisor.zig") else @compileError("supervisor is obsolete"); // NOTE: Tmp Obsolete
-=======
->>>>>>> 0.4.-
 pub const decls: type = @import("kernel/decls.zig");
 pub const ar: type = @import("kernel/ar/ar.zig");
 pub const asl: type = @import("kernel/asl/asl.zig");
@@ -44,9 +40,7 @@ pub const interfaces: type = struct {
     pub const arch: type = @import("lib/interfaces/arch.zig");
     pub const vfs: type = @import("lib/interfaces/vfs.zig");
     pub const events: type = @import("lib/interfaces/events.zig");
-    pub const allocator: type = @import("lib/saturn/interfaces/allocator.zig");
-    pub const tests: type = @import("lib/saturn/interfaces/tests.zig");
-    pub const lock: type = @import("lib/saturn/interfaces/lock.zig");
+    pub const tests: type = @import("lib/interfaces/tests.zig");
 };
 
 pub const lib: type = struct {
@@ -60,7 +54,7 @@ pub const lib: type = struct {
         pub const binary_tree: type = @import("lib/kernel/binary_tree.zig");
         pub const hash_table: type = @import("lib/kernel/hash_table.zig");
         pub const writer: type = @import("lib/kernel/writer.zig");
-        pub const sync: type = @import("lib//kernel/sync/sync.zig");
+        pub const sync: type = @import("lib//kernel/sync.zig");
     };
 };
 

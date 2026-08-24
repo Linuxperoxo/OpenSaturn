@@ -5,7 +5,7 @@
 
 const types: type = @import("types.zig");
 
-const Mod_T: type = types.Mod_T;
+const Mod_T: type = types.Mod;
 const ModErr_T: type = types.ModErr_T;
 const Mods_T: type = types.Mods_T;
 const ModInfo_T: type = types.ModInfo_T;

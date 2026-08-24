@@ -22,7 +22,7 @@ pub inline fn dentry_device_info(dentry: *vfs.Dentry_T) types.DevfsErr_T!*const 
 }
 
 var inode_count: usize = 0;
-pub inline fn new_dentry_device(major: devices.Major_T, minor: devices.Minor_T, uid: vfs.uid_T, gid: vfs.gid_T, mode: vfs.mode_T) anyerror!*vfs.Dentry_T {
+pub inline fn new_dentry_device(major: devices.Major_T, minor: devices.Minor_T, uid: vfs.uid, gid: vfs.gid_T, mode: vfs.mode_T) anyerror!*vfs.Dentry_T {
     const new_dentry: *vfs.Dentry_T = &(try allocator.sba.allocator.alloc(vfs.Dentry_T, 1))[0];
     errdefer allocator.sba.allocator.free(new_dentry) catch unreachable;
 

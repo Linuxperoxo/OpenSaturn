@@ -6,11 +6,11 @@
 const types: type = @import("types.zig");
 const allocator: type = @import("allocator.zig");
 
-const Mod_T: type = types.Mod_T;
+const Mod_T: type = types.Mod;
 const Mods_T: type = types.Mods_T;
-const ModType_T: type = types.ModType_T;
-const ModErr_T: type = types.ModErr_T;
-const ModInfo_T: type = types.ModInfo_T;
+const ModType_T: type = types.ModType;
+const ModErr_T: type = types.ModErr;
+const ModInfo_T: type = types.ModInfo;
 const ModControlFlags_T: type = types.ModControlFlags_T;
 
 const kernel_modules: *Mods_T = &@import("kernel_modules.zig").kernel_modules;

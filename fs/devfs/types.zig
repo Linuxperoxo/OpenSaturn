@@ -7,7 +7,7 @@ const devices: type = @import("root").interfaces.devices;
 const list: type = @import("root").lib.kernel.linked_list;
 const vfs: type = @import("root").interfaces.vfs;
 
-pub const DevfsList_T: type = list.BuildList(*vfs.Dentry_T);
+pub const DevfsList_T: type = list.BuildList(*vfs.Dentry);
 pub const DevfsListErr_T: type = DevfsList_T.ListErr_T;
 
 pub const DevfsPrivate_T: type = struct {

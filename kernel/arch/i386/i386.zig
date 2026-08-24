@@ -17,7 +17,7 @@ pub const linker: type = @import("linker.zig");
 pub const sections: type = @import("sections.zig");
 pub const allocators: type = @import("allocators.zig");
 
-pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
+pub const __SaturnArchDescription__: interfaces.arch.ArchDescription = .{
     .usable = true,
 
     .entry = .{
@@ -54,11 +54,7 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
         .segments = 1,
     },
 
-    .allocators = .{
-        .spea = allocators.spea
-    },
-
-    .extra = &[_]interfaces.arch.ArchDescription_T.Extra_T {
+    .extra = &[_]interfaces.arch.ArchDescription.Extra_T {
         .{
             .maintainer = "Linuxperoxo",
             .label = ".i386.gdt",
@@ -90,7 +86,7 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
         },
     },
 
-    .data = &[_]interfaces.arch.ArchDescription_T.Data_T {
+    .data = &[_]interfaces.arch.ArchDescription.Data_T {
         .{
             .label = "gdt_struct",
             .section = sections.section_data_persist,
@@ -116,8 +112,8 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
         },
     },
 
-    .overrider = interfaces.arch.ArchDescription_T.Overrider_T {
-        .modules = &[_]interfaces.arch.ArchDescription_T.ModuleOverrider_T {
+    .overrider = interfaces.arch.ArchDescription.Overrider_T {
+        .modules = &[_]interfaces.arch.ArchDescription.ModuleOverrider_T {
             .{
                 .module = "ke_m_rootfs",
                 .value = .yes,

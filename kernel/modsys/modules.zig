@@ -11,7 +11,7 @@ const aux: type = @import("aux.zig");
 
 pub const saturn_modules = r: {
     var modules_check_index: usize = 0;
-    var modules_check: [(modules.__SaturnAllMods__.len - aux.check_module_collision())]interfaces.module.ModuleDescription_T = undefined;
+    var modules_check: [(modules.__SaturnAllMods__.len - aux.check_module_collision())]interfaces.module.ModuleDescription = undefined;
     for(modules.__SaturnAllMods__, 0..) |mod, i| {
         t: {
             for(0..i) |j| {
@@ -49,6 +49,6 @@ pub const saturn_modules = r: {
         }
     }
     break :r @as(
-        *const [modules_check_index]interfaces.module.ModuleDescription_T, @ptrCast(&modules_check)
+        *const [modules_check_index]interfaces.module.ModuleDescription, @ptrCast(&modules_check)
     ).*;
 };

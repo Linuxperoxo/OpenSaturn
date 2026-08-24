@@ -13,7 +13,7 @@ const gmodules: type = @import("root").modules; // global modules
 
 // =============== for smll.zig
 
-pub fn find_module_by_name(mod_name: []const u8) anyerror!*const module.ModuleDescription_T {
+pub fn find_module_by_name(mod_name: []const u8) anyerror!*const module.ModuleDescription {
     for(&lmodules.saturn_modules) |*mod_desc| {
         if(mem.eql(mod_desc.mod.name, mod_name, .{ .case = true}))
             return mod_desc;
@@ -21,7 +21,7 @@ pub fn find_module_by_name(mod_name: []const u8) anyerror!*const module.ModuleDe
     return error.NoNFound;
 }
 
-pub fn find_module_lib_by_name(mod: *const module.ModuleDescription_T, lib_name: []const u8) anyerror!module.ModuleDescriptionLibMine_T {
+pub fn find_module_lib_by_name(mod: *const module.ModuleDescription, lib_name: []const u8) anyerror!module.ModuleDescriptionLibMine_T {
     if(mod.libs.mines == null) return error.NoNFound;
     for(mod.libs.mines.?) |mine_lib| {
         if(mem.eql(lib_name, mine_lib.name, .{ .case = true }))
@@ -55,7 +55,7 @@ pub fn find_lib_version(mod_out: module.ModuleDescriptionLibOut_T, mod_mine: mod
     return version;
 }
 
-pub fn valid_type_for_lib(mod: *const module.ModuleDescription_T, mod_mine: module.ModuleDescriptionLibMine_T) bool {
+pub fn valid_type_for_lib(mod: *const module.ModuleDescription, mod_mine: module.ModuleDescriptionLibMine_T) bool {
     if(mod_mine.m_types == null or mod_mine.m_types.?.len == 0) return true;
     for(mod_mine.m_types.?) |m_type| {
         if(m_type == mod.mod.type) return true;
@@ -65,7 +65,7 @@ pub fn valid_type_for_lib(mod: *const module.ModuleDescription_T, mod_mine: modu
 
 // ============= for modules.zig
 
-pub fn check_blacklist(mod: *const interfaces.module.ModuleDescription_T) void {
+pub fn check_blacklist(mod: *const interfaces.module.ModuleDescription) void {
     if(mod.blacklist == null or mod.blacklist.?.len == 0) return;
     for(mod.blacklist.?) |blacklist_mod| {
         if(!@hasField(config.modules.menuconfig.Menuconfig_T, blacklist_mod))
@@ -82,7 +82,7 @@ pub fn check_blacklist(mod: *const interfaces.module.ModuleDescription_T) void {
     }
 }
 
-pub fn check_module_arch(mod: *const interfaces.module.ModuleDescription_T) anyerror!void {
+pub fn check_module_arch(mod: *const interfaces.module.ModuleDescription) anyerror!void {
     for(mod.arch) |mod_arch| {
         if(config.arch.options.Target == mod_arch) return;
     }
@@ -96,17 +96,17 @@ pub fn check_module_arch(mod: *const interfaces.module.ModuleDescription_T) anye
     return error.IgnoreThis;
 }
 
-pub fn check_module_in_menuconfig(mod: *const interfaces.module.ModuleDescription_T) void {
+pub fn check_module_in_menuconfig(mod: *const interfaces.module.ModuleDescription) void {
     if(!@hasField(config.modules.menuconfig.Menuconfig_T, mod.mod.name)) @compileError(
         "Modsys Error: module \"" ++ mod.mod.name ++ "\" needs to be added in Menuconfig_T"
     );
 }
 
-pub fn check_module_load(mod: *const interfaces.module.ModuleDescription_T) anyerror!void {
+pub fn check_module_load(mod: *const interfaces.module.ModuleDescription) anyerror!void {
     return if(mod.load == .unlinkable) return error.IgnoreThis else {};
 }
 
-pub fn check_module_menuconfig_enable(mod: *const interfaces.module.ModuleDescription_T) anyerror!void {
+pub fn check_module_menuconfig_enable(mod: *const interfaces.module.ModuleDescription) anyerror!void {
     if(config.modules.options.UseMenuconfigAsRef) {
         switch(@field(menuconfig.ModulesSelection, mod.mod.name)) {
             .yes => {},

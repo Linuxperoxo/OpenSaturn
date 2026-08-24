@@ -6,7 +6,7 @@
 const arch: type = @import("root").interfaces.arch;
 
 pub const FusiumDescription_T: type = struct {
-    pub const Target_T: type = arch.Target_T;
+    pub const Target_T: type = arch.Target;
 
     pub const Order_T: type = enum {
         // before: chama init antes dos modulos

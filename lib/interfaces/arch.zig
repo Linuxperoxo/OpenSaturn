@@ -6,36 +6,34 @@
 const modules: type = @import("root").config.modules;
 const fusium: type = @import("root").config.fusium;
 
-pub const Target_T: type = @TypeOf(@import("root").config.arch.options.Target);
+pub const Target: type = @TypeOf(@import("root").config.arch.options.Target);
 
-pub const ArchCoreCodeImpl_T: type = struct {
+pub const ArchCoreCodeImpl: type = struct {
     maintainer: []const u8,
     label: []const u8,
     entry: *const fn() callconv(.c) void,
 };
 
-pub const ArchManifest_T: type = struct {
-    pub const ContainerExposed_T: type = struct {
+pub const ArchManifest: type = struct {
+    pub const ContainerExposed: type = struct {
         name: []const u8,
         container: type
     };
 
-    target: Target_T,
+    target: Target,
     arch: type,
-    exposed: ?[]const ContainerExposed_T = null,
+    exposed: ?[]const ContainerExposed = null,
 };
 
-pub const ArchDescription_T: type = struct {
+pub const ArchDescription: type = struct {
     // core code implement
-    init: ?ArchCoreCodeImpl_T = null,
-    interrupts: ?ArchCoreCodeImpl_T = null,
-    mm: ?ArchCoreCodeImpl_T = null,
-    physio: ?ArchCoreCodeImpl_T = null, // NOTE: converted to module (will be removed)
+    init: ?ArchCoreCodeImpl = null,
+    interrupts: ?ArchCoreCodeImpl = null,
+    mm: ?ArchCoreCodeImpl = null,
+    physio: ?ArchCoreCodeImpl = null, // NOTE: converted to module (will be removed)
 
-    allocators: ?Allocators_T = null,
-
-    extra: ?[]const Extra_T = null,
-    data: ?[]const Data_T = null,
+    extra: ?[]const Extra = null,
+    data: ?[]const Data = null,
 
     usable: bool,
     entry: struct {
@@ -43,25 +41,10 @@ pub const ArchDescription_T: type = struct {
         label: []const u8,
         entry: *const fn() callconv(.naked) noreturn,
     },
-    symbols: Symbols_T,
-    overrider: Overrider_T,
+    symbols: Symbols,
+    overrider: Overrider,
 
-    pub const Allocation_T: type = struct {
-        private: *anyopaque,
-        ptr: []u8,
-    };
-
-    pub const Allocator_T: type = struct {
-        page: usize,
-        alloc_fn: *const fn() anyerror!Allocation_T,
-        free_fn: *const fn(*anyopaque) anyerror!void,
-    };
-
-    pub const Allocators_T: type = struct {
-        spea: ?Allocator_T,
-    };
-
-    pub const Extra_T: type = struct {
+    pub const Extra: type = struct {
         maintainer: []const u8,
         label: []const u8,
         entry: union(enum(u1)) {
@@ -79,33 +62,33 @@ pub const ArchDescription_T: type = struct {
         },
     };
 
-    pub const Symbols_T: type = struct {
+    pub const Symbols: type = struct {
         segments: u1,
     };
 
-    pub const Data_T: type = struct {
+    pub const Data: type = struct {
         label: []const u8,
         section: ?[]const u8,
         ptr: *const anyopaque,
     };
 
-    pub const ModuleOverrider_T: type = struct {
+    pub const ModuleOverrider: type = struct {
         module: []const u8,
         value: modules.menuconfig.Load_T,
     };
 
-    pub const Fusium_T: type = struct {
+    pub const Fusium: type = struct {
         default: ?fusium.menuconfig.Load_T,
-        overriders: []const FusiumOverrider_T,
+        overriders: []const FusiumOverrider,
     };
 
-    pub const FusiumOverrider_T: type = struct {
+    pub const FusiumOverrider: type = struct {
         fusioner: []const u8,
         value: fusium.menuconfig.Load_T,
     };
 
-    pub const Overrider_T: type = struct {
-        modules: ?[]const ModuleOverrider_T,
-        fusioners: ?Fusium_T,
+    pub const Overrider: type = struct {
+        modules: ?[]const ModuleOverrider,
+        fusioners: ?Fusium,
     };
 };

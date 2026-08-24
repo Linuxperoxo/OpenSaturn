@@ -5,15 +5,15 @@
 
 const vfs: type = @import("root").core.vfs;
 
-pub const uid_T: type = vfs.uid_T;
-pub const gid_T: type = vfs.gid_T;
-pub const mode_T: type = vfs.mode_T;
-pub const FileType_T: type = vfs.FileType_T;
-pub const Inode_T: type = vfs.Inode_T;
-pub const InodeOp_T: type = vfs.InodeOp_T;
-pub const Dentry_T: type = vfs.Dentry_T;
-pub const Superblock_T: type = vfs.Superblock_T;
-pub const VfsErr_T: type = vfs.VfsErr_T;
+pub const uid: type = vfs.uid_T;
+pub const gid: type = vfs.gid_T;
+pub const mode: type = vfs.mode_T;
+pub const FileType: type = vfs.FileType_T;
+pub const Inode: type = vfs.Inode_T;
+pub const InodeOp: type = vfs.InodeOp_T;
+pub const Dentry: type = vfs.Dentry_T;
+pub const Superblock: type = vfs.Superblock_T;
+pub const VfsErr: type = vfs.VfsErr_T;
 
 pub const R: u3 = vfs.R;
 pub const W: u3 = vfs.W;

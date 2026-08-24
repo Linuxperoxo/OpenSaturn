@@ -8,7 +8,7 @@ const list: type = @import("root").lib.kernel.linked_list;
 
 const Dentry_T: type = interfaces.vfs.Dentry_T;
 const Superblock_T: type = interfaces.vfs.Superblock_T;
-const Inode_T: type = interfaces.vfs.Inode_T;
+const Inode_T: type = interfaces.vfs.Inode;
 
 pub const list_T: type = list.BuildList(*RootfsDentry_T);
 pub const listErr_T: type = list_T.ListErr_T;

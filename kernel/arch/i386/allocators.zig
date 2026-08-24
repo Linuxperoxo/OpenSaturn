@@ -10,10 +10,10 @@ const mm: type = @import("root").__SaturnArchImpl__.mm;
 // === i386 spea allocator support
 
 const spea_fns: type = opaque {
-    pub fn alloc() anyerror!arch.ArchDescription_T.Allocation_T {
+    pub fn alloc() anyerror!arch.ArchDescription.Allocation_T {
         var virtual_page: mm.AllocPage_T = try mm.alloc_page();
 
-        return arch.ArchDescription_T.Allocation_T {
+        return arch.ArchDescription.Allocation_T {
             .private = &virtual_page,
             .ptr = virtual_page.virtual,
         };
@@ -24,7 +24,7 @@ const spea_fns: type = opaque {
     }
 };
 
-pub const spea: arch.ArchDescription_T.Allocator_T = .{
+pub const spea: arch.ArchDescription.Allocator_T = .{
     .page = 4096,
     .alloc_fn = &spea_fns.alloc,
     .free_fn = &spea_fns.free,

@@ -6,7 +6,7 @@
 const fs: type = @import("root").interfaces.fs;
 const ops: type = @import("ops.zig");
 
-pub var rootfs: fs.Fs_T = .{
+pub var rootfs: fs.Fs = .{
     .name = "rootfs",
     .mount = ops.rootfs_mount,
     .umount = ops.rootfs_umount,

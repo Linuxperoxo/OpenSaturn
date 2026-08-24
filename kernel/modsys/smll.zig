@@ -10,7 +10,7 @@ const config: type = @import("root").config;
 const mem: type = @import("root").lib.kernel.mem;
 const aux: type = @import("aux.zig");
 
-pub fn search_all(comptime mod: *const module.ModuleDescription_T) struct { [
+pub fn search_all(comptime mod: *const module.ModuleDescription) struct { [
     if(mod.libs.outside == null) 0 else
         mod.libs.outside.?.len
 ]?type, bool } {
@@ -25,7 +25,7 @@ pub fn search_all(comptime mod: *const module.ModuleDescription_T) struct { [
     });
 }
 
-pub fn search_libs(mod: *const module.ModuleDescription_T, libs: []const[]const u8) struct { [libs.len]?type, bool } {
+pub fn search_libs(mod: *const module.ModuleDescription, libs: []const[]const u8) struct { [libs.len]?type, bool } {
     var fault: bool = false;
     var loaded_libs = [_]?type {
         null
@@ -40,7 +40,7 @@ pub fn search_libs(mod: *const module.ModuleDescription_T, libs: []const[]const 
     };
 }
 
-pub fn search_lib(mod: *const module.ModuleDescription_T, lib: []const u8) ?type {
+pub fn search_lib(mod: *const module.ModuleDescription, lib: []const u8) ?type {
     if(mod.libs.outside == null or mod.libs.outside.?.len == 0) @compileError(
         "Modsys Error: \"" ++  mod.mod.name ++ "\" request libs without outside lib"
     );

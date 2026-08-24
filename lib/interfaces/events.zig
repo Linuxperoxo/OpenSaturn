@@ -5,15 +5,15 @@
 
 const events: type = @import("root").core.events;
 
-pub const Event_T: type = events.Event_T;
-pub const EventErr_T: type = events.EventErr_T;
-pub const EventOut_T: type = events.EventOut_T;
-pub const EventInput_T: type = events.EventInput_T;
-pub const EventDefault_T: type = events.EventDefault_T;
-pub const EventListener_T: type = events.EventListener_T;
+pub const Event: type = events.Event_T;
+pub const EventErr: type = events.EventErr_T;
+pub const EventOut: type = events.EventOut_T;
+pub const EventInput: type = events.EventInput_T;
+pub const EventDefault: type = events.EventDefault_T;
+pub const EventListener: type = events.EventListener_T;
 
-pub const install_event = events.install_event;
-pub const remove_event = events.remove_event;
-pub const install_listener_event = events.install_listener_event;
-pub const remove_listener_event = events.remove_listener_event;
-pub const send_event = events.send_event;
+pub const installEvent = events.install_event;
+pub const removeEvent = events.remove_event;
+pub const installListener = events.install_listener_event;
+pub const removeListener = events.remove_listener_event;
+pub const sendEvent = events.send_event;

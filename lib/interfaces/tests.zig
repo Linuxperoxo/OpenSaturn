@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const TestSuite_T: type = struct {
+pub const TestSuite: type = struct {
     name: []const u8,
     tests: []struct {
         name: []const u8,
