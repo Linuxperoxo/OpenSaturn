@@ -10,19 +10,20 @@
 // os detalhes específicos da arquitetura no kernel. É nesse ponto
 // que o código da arquitetura é validado e integrado ao kernel.
 
-const code: type = @import("root").code;
+const arch_impl = @import("root").__SaturnArchImpl__;
+
 const decls: type = @import("root").decls;
 const config: type = @import("root").config;
 const fmt: type = @import("root").lib.kernel.meta.fmt;
 const aux: type = @import("aux.zig");
 
 comptime {
-    if(!@hasDecl(code.arch, decls.what_is_decl(.arch))) @compileError(
+    if(!@hasDecl(arch_impl.arch, decls.what_is_decl(.arch))) @compileError(
         "expected a declaration " ++ decls.what_is_decl(.arch) ++ " for architecture " ++
         @tagName(config.arch.options.Target)
     );
 
-    if(@TypeOf(decls.decl_access(code.arch, .arch)) != decls.what_is_decl_type(.arch)) @compileError(
+    if(@TypeOf(decls.decl_access(arch_impl.arch, .arch)) != decls.what_is_decl_type(.arch)) @compileError(
         "declaration \"" ++ decls.what_is_decl(.arch) ++ "\" for architecture \"" ++ @tagName(config.arch.options.Target) ++ "\" must be type \"" ++
         @typeName(decls.what_is_decl_type(.arch)) ++ "\""
     );
@@ -37,7 +38,7 @@ comptime {
     // la na proprio config, ja que pode acontecer de alguma nao ser usada diretamente no codigo, mas ser
     // usada dentro de um linker ou assembly, isso iria dar um erro de simbolo nao encontrado, ja que como
     // nao foi usada dentro do proprio codigo zig, o compilador so iria ignorar e nem colocar o export nela
-    if(@field(code.arch, decls.what_is_decl(.arch)).symbols.segments == 1 ) asm(
+    if(@field(arch_impl.arch, decls.what_is_decl(.arch)).symbols.segments == 1 ) asm(
         &fmt.format(".set {s}, {d}\n", .{ "kernel_phys_address", config.kernel.mem.phys.kernel_phys }) ++
         &fmt.format(".global {s}\n", .{ "kernel_phys_address" }) ++
         &fmt.format(".set {s}, {d}\n", .{ "kernel_virtual_address", config.kernel.mem.virtual.kernel_text }) ++
@@ -55,7 +56,7 @@ comptime {
     );
 
     const arch_decl_type: type = decls.what_is_decl_type(.arch);
-    const arch_decl = decls.decl_access(code.arch, .arch);
+    const arch_decl = decls.decl_access(arch_impl.arch, .arch);
 
     for(@typeInfo(arch_decl_type).@"struct".fields) |field| {
         const current_field = @field(arch_decl, field.name);

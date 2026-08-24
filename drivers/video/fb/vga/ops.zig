@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo              │
 // └─────────────────────────────────────────────┘
 
-const phys: type = @import("root").ar.target_code.physio;
+const phys: type = @import("root").__SaturnArchImpl__.physio;
 const config: type = @import("config.zig");
 const types: type = @import("types.zig");
 const devices: type = @import("root").interfaces.devices;

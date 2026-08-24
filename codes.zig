@@ -3,56 +3,70 @@
 // │            Author: Linuxperoxo             │
 // └────────────────────────────────────────────┘
 
-const ar: type = @import("kernel/ar/ar.zig");
+const ArchManifest_T: type = @import("root").interfaces.arch.ArchManifest_T;
 
-pub const __SaturnTargets__ = [_]ar.types.TargetCode_T {
+pub const __SaturnArchManifests__ = [_]ArchManifest_T {
     .{
         .target = .i386,
         .arch = @import("kernel/arch/i386/i386.zig"),
-        .entry = @import("kernel/entry/i386/entry.zig"),
-        .init = @import("kernel/init/i386/init.zig"),
-        .interrupts = @import("kernel/interrupts/i386/interrupts.zig"),
-        .physio = @import("kernel/physio/i386/physio.zig"),
-        .mm = @import("mm/i386/mm.zig"),
-        .lib = .{
-            .kernel = @import("lib/kernel/arch/i386/lib.zig"),
-            .userspace = @import("lib/userspace/i386/lib.zig"),
+        .exposed = &[_]ArchManifest_T.ContainerExposed_T {
+            ArchManifest_T.ContainerExposed_T {
+                .name = "entry",
+                .container = @import("kernel/entries/i386/entry.zig"),
+            },
+
+            ArchManifest_T.ContainerExposed_T {
+                .name = "init",
+                .container = @import("kernel/init/i386/init.zig"),
+            },
+
+            ArchManifest_T.ContainerExposed_T {
+                .name = "interrupts",
+                .container = @import("kernel/interrupts/i386/interrupts.zig"),
+            },
+
+            ArchManifest_T.ContainerExposed_T {
+                .name = "physio",
+                .container = @import("kernel/physio/i386/physio.zig"),
+            },
+
+            ArchManifest_T.ContainerExposed_T {
+                .name = "mm",
+                .container = @import("mm/i386/mm.zig"),
+            },
+
+            ArchManifest_T.ContainerExposed_T {
+                .name = "lib",
+                .container = struct {
+                    pub const kernel: type = @import("lib/saturn/kernel/arch/i386/lib.zig");
+                    pub const userspace: type = @import("lib/saturn/userspace/i386/lib.zig");
+                },
+            },
         },
     },
 
     .{
         .target = .amd64,
         .arch = @import("kernel/arch/amd64/amd64.zig"),
-        .entry = @import("kernel/entry/amd64/entry.zig"),
-        .interrupts = @import("kernel/interrupts/amd64/interrupts.zig"),
-        .mm = @import("mm/amd64/mm.zig"),
-        .lib = .{
-            .kernel = @import("lib/kernel/arch/amd64/lib.zig"),
-            .userspace = @import("lib/userspace/amd64/lib.zig"),
-        },
     },
 
     .{
         .target = .arm,
         .arch = @import("kernel/arch/arm/arm.zig"),
-        .entry = @import("kernel/entry/arm/entry.zig"),
     },
 
     .{
         .target = .riscv64,
         .arch = @import("kernel/arch/riscv64/riscv64.zig"),
-        .entry = @import("kernel/entry/arm/entry.zig"),
     },
 
     .{
         .target = .avr,
         .arch = @import("kernel/arch/avr/avr.zig"),
-        .entry = @import("kernel/entry/avr/entry.zig"),
     },
 
     .{
         .target = .xtensa,
         .arch = @import("kernel/arch/xtensa/xtensa.zig"),
-        .entry = @import("kernel/entry/xtensa/entry.zig"),
     },
 };

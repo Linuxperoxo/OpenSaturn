@@ -5,7 +5,8 @@
 
 const saturn: type = @import("saturn");
 
-pub const code: type = ar.target_code;
+pub const __SaturnArchImpl__ = ar.arch_impl;
+
 pub const core: type = saturn.core;
 pub const ar: type = saturn.ar;
 pub const interfaces: type = saturn.interfaces;

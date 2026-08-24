@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const mm: type = @import("root").code.mm;
+const mm: type = @import("root").__SaturnArchImpl__.mm;
 const config: type = @import("root").config;
 const types: type = @import("sba/types.zig");
 

@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo                  │
 // └─────────────────────────────────────────────────┘
 
-const arch: type = @import("root").code.arch;
+const arch: type = @import("root").__SaturnArchImpl__.arch;
 const config: type = @import("root").config;
 
 pub const ModulesSelection: config.modules.menuconfig.Menuconfig_T = r: {
