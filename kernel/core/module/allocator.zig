@@ -5,7 +5,7 @@
 
 const builtin: type = @import("builtin");
 
-const buildByteAllocator = if(!builtin.is_test) @import("root").lib.memory.sba.buildByteAllocator;
+const buildByteAllocator = if(!builtin.is_test) @import("root").lib.kernel.alloc.sba.buildByteAllocator;
 
 pub const sba: type = struct {
     pub var allocator = buildByteAllocator(null, .{}) {};

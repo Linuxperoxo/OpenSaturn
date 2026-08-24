@@ -6,7 +6,7 @@
 const interfaces: type = @import("root").interfaces;
 const modules: type = @import("modules.zig");
 const types: type = @import("types.zig");
-const mem: type = @import("root").lib.utils.mem;
+const mem: type = @import("root").lib.kernel.mem;
 
 fn add_vertex_init(
     comptime vertex: *types.Vertex_T,

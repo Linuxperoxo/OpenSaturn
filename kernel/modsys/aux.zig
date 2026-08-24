@@ -7,7 +7,7 @@ const interfaces: type = @import("root").interfaces;
 const menuconfig: type = @import("menuconfig.zig");
 const config: type = @import("root").config;
 const module: type = @import("root").interfaces.module;
-const mem: type = @import("root").lib.utils.mem;
+const mem: type = @import("root").lib.kernel.mem;
 const lmodules: type = @import("modules.zig"); // local modules
 const gmodules: type = @import("root").modules; // global modules
 

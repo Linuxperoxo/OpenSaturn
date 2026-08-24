@@ -13,7 +13,7 @@
 const code: type = @import("root").code;
 const decls: type = @import("root").decls;
 const config: type = @import("root").config;
-const fmt: type = @import("root").lib.utils.compile.fmt;
+const fmt: type = @import("root").lib.kernel.meta.fmt;
 const aux: type = @import("aux.zig");
 
 comptime {

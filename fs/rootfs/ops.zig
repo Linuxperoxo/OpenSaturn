@@ -5,8 +5,8 @@
 
 const interfaces: type = @import("root").interfaces;
 const types: type = @import("types.zig");
-const mem: type = @import("root").lib.utils.mem;
-const c: type = @import("root").lib.utils.c;
+const mem: type = @import("root").lib.kernel.mem;
+const c: type = @import("root").lib.kernel.c;
 const allocator: type = @import("allocator.zig");
 const aux: type = @import("aux.zig");
 const rfs: type = @import("fs.zig");

@@ -1,12 +1,10 @@
 // ┌────────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: allocator.zig  │
+// │  (c) 2025 Linuxperoxo  •  FILE: meta.zig       │
 // │            Author: Linuxperoxo                 │
 // └────────────────────────────────────────────────┘
 
-const buildByteAllocator = @import("root").lib.kernel.alloc.sba.buildByteAllocator;
+pub const fmt: type = @import("meta/comptime_fmt.zig");
+pub const slice: type = @import("meta/slice.zig");
 
-pub const sba: type = struct {
-    pub var allocator = buildByteAllocator(null, .{
-        .resize = true
-    }) {};
-};
+// Compatibility alias while callers migrate to meta.slice.
+pub const utils: type = slice;

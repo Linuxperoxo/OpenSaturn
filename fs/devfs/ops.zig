@@ -5,8 +5,8 @@
 
 const vfs: type = @import("root").interfaces.vfs;
 const kfs: type = @import("root").interfaces.fs;
-const mem: type = @import("root").lib.utils.mem;
-const fmt: type = @import("root").lib.utils.fmt;
+const mem: type = @import("root").lib.kernel.mem;
+const fmt: type = @import("root").lib.kernel.fmt;
 const dfs: type = @import("fs.zig");
 const aux: type = @import("aux.zig");
 const types: type = @import("types.zig");

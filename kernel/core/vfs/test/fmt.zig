@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub fn broken_str(str: []const u8, broken: u8, allocator: anytype) anyerror![][]const u8 {
+pub fn splitAlloc(str: []const u8, broken: u8, allocator: anytype) anyerror![][]const u8 {
     const aux: type = opaque {
         inline fn BrokenInfo(strr: []const u8, brokenn: u8) anyerror!struct { usize, usize, usize } {
             if(strr.len == 0) return error.Empty;

@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo              │
 // └─────────────────────────────────────────────┘
 
-const hashtable: type = @import("root").lib.utils.hashtable;
+const hashtable: type = @import("root").lib.kernel.hash_table;
 
 pub const KParamErr_T: type = error {
     SysParamNotFound,
@@ -14,7 +14,7 @@ pub const KParamErr_T: type = error {
     ParserMissingValue,
 };
 
-pub const Params_T: type = hashtable.buildHashTable(
+pub const Params_T: type = hashtable.HashMap(
     []const u8,
     Value_T,
     8,

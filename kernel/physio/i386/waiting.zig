@@ -7,10 +7,10 @@ const builtin: type = @import("builtin");
 const types: type = @import("types.zig");
 const allocator: type = @import("allocator.zig");
 const pci: type = if(!builtin.is_test) @import("root").code.lib.kernel.io.pci else @import("test/types.zig");
-const tree: type = if(!builtin.is_test) @import("root").lib.utils.tree else @import("test/tree.zig");
+const tree: type = if(!builtin.is_test) @import("root").lib.kernel.binary_tree else @import("test/tree.zig");
 const fn_T: type = fn(*types.PhysIo_T) if(!builtin.is_test) void else usize;
 
-pub var waiting_tree: tree.TreeBuild(*const fn_T) = .{};
+pub var waiting_tree: tree.BinaryTree(*const fn_T) = .{};
 
 inline fn make_id(class: u8, vendor: u16) usize {
     return (vendor << 8) | class;

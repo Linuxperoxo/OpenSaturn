@@ -10,9 +10,9 @@ const main: type = @import("main.zig");
 
 const allocator: type = if(!builtin.is_test) @import("allocator.zig") else
     @import("test/allocator.zig");
-const mem: type = if(!builtin.is_test) lib.utils.mem else
+const mem: type = if(!builtin.is_test) lib.kernel.mem else
     @import("test/mem.zig");
-const fmt: type = if(!builtin.is_test) lib.utils.fmt else
+const fmt: type = if(!builtin.is_test) lib.kernel.fmt else
     @import("test/fmt.zig");
 
 const Inode_T: type = types.Inode_T;
@@ -32,7 +32,7 @@ const Op_T: type = enum {
 };
 
 pub noinline fn resolve_path(path: []const u8, root: *Dentry_T) VfsErr_T!*Dentry_T {
-    const dentries = fmt.broken_str(path, '/', &allocator.sba.allocator)
+    const dentries = fmt.splitAlloc(path, '/', &allocator.sba.allocator)
     catch |err| switch(err) {
         error.WithoutSub => return root,
         else => return VfsErr_T.PathResolveError,

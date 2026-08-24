@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo                  │
 // └─────────────────────────────────────────────────┘
 
-const fmt: type = @import("root").lib.utils.compile.fmt;
+const fmt: type = @import("root").lib.kernel.meta.fmt;
 const events: type = @import("root").core.events;
 const csi: type = @import("csi.zig");
 

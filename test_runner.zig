@@ -14,9 +14,9 @@ pub const arch: type = saturn.cpu.arch;
 pub const core: type = saturn.core;
 pub const interfaces: type = saturn.interfaces;
 pub const supervisor: type = saturn.supervisor;
-pub const lib: type = saturn.lib;
-pub const kernel: type = saturn.lib.kernel;
-pub const userspace: type = saturn.lib.userspace;
+pub const lib: type = saturn.lib.saturn;
+pub const kernel: type = saturn.lib.saturn.kernel;
+pub const userspace: type = saturn.lib.saturn.userspace;
 pub const config: type = saturn.config;
 
 pub fn main() void {

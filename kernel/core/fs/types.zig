@@ -4,7 +4,7 @@
 // └───────────────────────────────────────────────┘
 
 const vfs: type = @import("root").core.vfs;
-const hashtable: type = @import("root").lib.utils.hashtable;
+const hashtable: type = @import("root").lib.kernel.hash_table;
 const internal: type = @import("internal.zig");
 const allocator: type = @import("allocator.zig");
 
@@ -48,7 +48,7 @@ pub const FsControlFlags_T: type = packed struct {
     anon: u1, // search_fs nunca vai retornar
 };
 
-pub const FsKernelRegister_T: type = hashtable.buildHashTable([]const u8, *FsInfo_T, null, null);
+pub const FsKernelRegister_T: type = hashtable.HashMap([]const u8, *FsInfo_T, null, null);
 
 pub const FsErr_T: type = error {
     MountFailed,

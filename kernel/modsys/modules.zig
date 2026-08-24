@@ -5,7 +5,7 @@
 
 const decls: type = @import("root").decls;
 const modules: type = @import("root").modules;
-const mem: type = @import("root").lib.utils.mem;
+const mem: type = @import("root").lib.kernel.mem;
 const interfaces: type = @import("root").interfaces;
 const aux: type = @import("aux.zig");
 

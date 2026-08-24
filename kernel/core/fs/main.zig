@@ -5,7 +5,7 @@
 
 const aux: type = @import("aux.zig");
 const types: type = @import("types.zig");
-const c: type = @import("root").lib.utils.c;
+const c: type = @import("root").lib.kernel.c;
 const allocator: type = @import("allocator.zig");
 const module: type = @import("root").interfaces.module;
 
@@ -48,4 +48,3 @@ pub fn search_fs(fs: []const u8) types.FsErr_T!*const types.Fs_T {
     }
     return types.FsErr_T.NoNFound;
 }
-

@@ -7,7 +7,7 @@
 
 const module: type = @import("root").interfaces.module;
 const config: type = @import("root").config;
-const mem: type = @import("root").lib.utils.mem;
+const mem: type = @import("root").lib.kernel.mem;
 const aux: type = @import("aux.zig");
 
 pub fn search_all(comptime mod: *const module.ModuleDescription_T) struct { [

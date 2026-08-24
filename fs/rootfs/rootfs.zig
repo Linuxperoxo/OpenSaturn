@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const c: type = @import("root").lib.utils.c;
+const c: type = @import("root").lib.kernel.c;
 const module: type = @import("root").interfaces.module;
 const fs: type = @import("root").interfaces.fs;
 const vfs: type = @import("root").interfaces.vfs;

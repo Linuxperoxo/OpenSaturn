@@ -5,8 +5,8 @@
 
 const main: type = @import("main.zig");
 const types: type = @import("types.zig");
-const c: type = @import("root").lib.utils.c;
-const mem: type = @import("root").lib.utils.mem;
+const c: type = @import("root").lib.kernel.c;
+const mem: type = @import("root").lib.kernel.mem;
 const allocator: type = @import("allocator.zig");
 
 pub fn check_init() types.FsErr_T!void {

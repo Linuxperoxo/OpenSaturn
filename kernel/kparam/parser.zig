@@ -6,7 +6,7 @@
 const builtin: type = @import("builtin");
 const types: type = @import("types.zig");
 const allocator: type = @import("allocator.zig");
-const mem: type = @import("root").lib.utils.mem;
+const mem: type = @import("root").lib.kernel.mem;
 
 pub inline fn params_parser(params: []const u8) types.KParamErr_T![]const types.Param_T {
     var rvalue: bool = false;

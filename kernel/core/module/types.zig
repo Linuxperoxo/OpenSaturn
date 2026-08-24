@@ -7,13 +7,13 @@ const builtin: type = @import("builtin");
 const arch: type = @import("root").interfaces.arch;
 const fs: type = @import("root").interfaces.fs;
 const devices: type = @import("root").interfaces.devices;
-const hashtable: type = @import("root").lib.utils.hashtable;
+const hashtable: type = @import("root").lib.kernel.hash_table;
 const modsys: type = @import("root").modsys;
 const internal: type = @import("internal.zig");
 const allocator: type = @import("allocator.zig");
 
 pub const ModuleDescriptionTarget_T: type = arch.Target_T;
-pub const Mods_T: type = hashtable.buildHashTable([]const u8, *ModInfo_T, null, null);
+pub const Mods_T: type = hashtable.HashMap([]const u8, *ModInfo_T, null, null);
 
 pub const ModuleDescriptionLoad_T: type = enum {
     linkable,

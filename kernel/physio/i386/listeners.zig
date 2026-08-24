@@ -7,11 +7,11 @@ const builtin: type = @import("builtin");
 const types: type = @import("types.zig");
 const allocator: type = @import("allocator.zig");
 const pci: type = if(!builtin.is_test) @import("root").code.lib.kernel.io.pci else @import("test/types.zig");
-const tree: type = if(!builtin.is_test) @import("root").lib.utils.tree else @import("test/tree.zig");
+const tree: type = if(!builtin.is_test) @import("root").lib.kernel.binary_tree else @import("test/tree.zig");
 
 const PCIPhysIo_T: type = pci.PCIPhysIo_T;
 
-pub var listeners_tree: tree.TreeBuild(*types.PhysIo_T) = .{};
+pub var listeners_tree: tree.BinaryTree(*types.PhysIo_T) = .{};
 
 inline fn physio_tree_id(bus: u8, device: u5, function: u3) usize {
     return

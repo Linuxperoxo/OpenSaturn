@@ -4,7 +4,7 @@
 // └──────────────────────────────────────────────┘
 
 const interfaces: type = @import("root").interfaces;
-const list: type = @import("root").lib.utils.list;
+const list: type = @import("root").lib.kernel.linked_list;
 
 const Dentry_T: type = interfaces.vfs.Dentry_T;
 const Superblock_T: type = interfaces.vfs.Superblock_T;
@@ -32,4 +32,3 @@ pub const RootfsPrivate_T: type = struct {
     parent: ?*RootfsDentry_T,
     self: *RootfsDentry_T,
 };
-

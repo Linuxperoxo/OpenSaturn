@@ -5,7 +5,7 @@
 
 const std: type = @import("std");
 
-pub fn TreeBuild(
+pub fn BinaryTree(
     comptime T: type
 ) type {
     return struct {

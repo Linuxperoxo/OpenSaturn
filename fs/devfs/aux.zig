@@ -8,7 +8,7 @@ const types: type = @import("types.zig");
 const allocator: type = @import("allocator.zig");
 const dfs: type = @import("fs.zig");
 const devices: type = @import("root").interfaces.devices;
-const fmt: type = @import("root").lib.utils.fmt;
+const fmt: type = @import("root").lib.kernel.fmt;
 
 pub inline fn check_init(dev_list: *types.DevfsList_T) types.DevfsListErr_T!void {
     if(!dev_list.is_initialized())

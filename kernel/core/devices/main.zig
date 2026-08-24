@@ -5,7 +5,7 @@
 
 const types: type = @import("types.zig");
 const aux: type = @import("aux.zig");
-const mem: type =  @import("root").lib.utils.mem;
+const mem: type =  @import("root").lib.kernel.mem;
 const builtin: type = @import("builtin");
 
 pub var majors: [@bitSizeOf(usize)]types.DevBranch_T = undefined;
