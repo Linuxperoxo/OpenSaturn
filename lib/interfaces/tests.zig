@@ -1,10 +1,13 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: alloc.zig    │
+// │  (c) 2026 Linuxperoxo  •  FILE: tests.zig    │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-// Alocadores de alto nivel construidos sobre o
-// gerenciador de paginas fornecido pela arquitetura.
-
-pub const soa: type = @import("alloc/soa.zig");
-pub const sba: type = @import("alloc/sba.zig");
+pub const TestSuite_T: type = struct {
+    name: []const u8,
+    tests: []struct {
+        name: []const u8,
+        func: *const fn() anyerror!void,
+    },
+    keep_going: u1 = 0,
+};

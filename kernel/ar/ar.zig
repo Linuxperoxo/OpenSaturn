@@ -24,6 +24,7 @@ pub const target_code: type = r: {
         pub const entry: type = code.entry;
         pub const init: type = code.init orelse aux.target_null_field("init");
         pub const interrupts: type = code.interrupts orelse aux.target_null_field("interrupts");
+        pub const allocators: OutSide_T.arch.ArchDescription_T.Allocators_T = code.allocators orelse aux.target_null_field("allocators");
         pub const physio: type = code.physio orelse aux.target_null_field("physio");
         pub const mm: type = code.mm orelse aux.target_null_field("mm");
         pub const config: type = code.config orelse aux.target_null_field("config");

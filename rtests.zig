@@ -1,10 +1,11 @@
 // ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: alloc.zig    │
+// │  (c) 2026 Linuxperoxo  •  FILE: rtests.zig   │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-// Alocadores de alto nivel construidos sobre o
-// gerenciador de paginas fornecido pela arquitetura.
+const tests: type = @import("root").interfaces.tests;
 
-pub const soa: type = @import("alloc/soa.zig");
-pub const sba: type = @import("alloc/sba.zig");
+/// --- SATURN RUNTIME TESTS ---
+pub const __SaturnRTests__ = [_]tests.TestSuite_T {
+    // Tests Location!
+};

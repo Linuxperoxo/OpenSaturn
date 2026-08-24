@@ -88,16 +88,6 @@ pub fn build(b: *std.Build) void {
     saturn.setLinkerScript(b.path(path));
     saturn.root_module.addIncludePath(b.path("include"));
 
-    saturn_step.makeFn = &struct {
-        pub fn make(_: *std.Build.Step, _: std.Build.Step.MakeOptions) anyerror!void {
-            if(compile.options.CodeMode == .Debug) {
-                std.debug.print("\x1b[33mWARNING:\x1b[0m Debug Mode Enable\n", .{});
-            }
-            std.debug.print("Done!\n", .{});
-            return {};
-        }
-    }.make;
-
     saturn_step.dependOn(&saturn.step); // Compiler
     saturn_step.dependOn(&saturn_install.step); // Install binary
 }

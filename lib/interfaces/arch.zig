@@ -7,38 +7,48 @@ const modules: type = @import("root").config.modules;
 const fusium: type = @import("root").config.fusium;
 
 pub const Target_T: type = @TypeOf(@import("root").config.arch.options.Target);
+
+pub const ArchCoreCodeImpl_T: type = struct {
+    maintainer: []const u8,
+    label: []const u8,
+    entry: *const fn() callconv(.c) void,
+};
+
 pub const ArchDescription_T: type = struct {
+    // core code implement
+    init: ?ArchCoreCodeImpl_T = null,
+    interrupts: ?ArchCoreCodeImpl_T = null,
+    mm: ?ArchCoreCodeImpl_T = null,
+    physio: ArchCoreCodeImpl_T = null, // NOTE: converted to module (will be removed)
+
+    allocators: ?Allocators_T = null,
+
+    extra: ?[]const Extra_T = null,
+    data: ?[]const Data_T = null,
+
     usable: bool,
     entry: struct {
         maintainer: []const u8,
         label: []const u8,
         entry: *const fn() callconv(.naked) noreturn,
     },
-    init: ?struct {
-        maintainer: []const u8,
-        label: []const u8,
-        entry: *const fn() callconv(.c) void,
-    },
-    interrupts: ?struct {
-        maintainer: []const u8,
-        label: []const u8,
-        entry: *const fn() callconv(.c) void,
-    },
-    mm: ?struct {
-        maintainer: []const u8,
-        label: []const u8,
-        entry: *const fn() callconv(.c) void,
-    },
-    physio: ?struct {
-        maintainer: []const u8,
-        label: []const u8,
-        entry: *const fn() callconv(.c) void,
-        sync: *const fn() void,
-    },
     symbols: Symbols_T,
-    extra: ?[]const Extra_T,
-    data: ?[]const Data_T,
     overrider: Overrider_T,
+
+    pub const Allocation_T: type = struct {
+        private: *anyopaque,
+        ptr: []u8,
+    };
+
+    pub const Allocator_T: type = struct {
+        page: usize,
+        alloc_fn: *const fn() anyerror!Allocation_T,
+        free_fn: *const fn(*anyopaque) anyerror!void,
+    };
+
+    pub const Allocators_T: type = struct {
+        spea: ?Allocator_T,
+    };
 
     pub const Extra_T: type = struct {
         maintainer: []const u8,
