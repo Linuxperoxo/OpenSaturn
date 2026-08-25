@@ -13,27 +13,27 @@
 const fusium: type = @import("root").interfaces.fusium;
 const allocator: type = @import("allocator.zig");
 const ktask: type = r: {
-    const fusioner: type = fusium.fetch_fusioner("ktask") orelse
+    const fusioner: type = fusium.fetchFusioner("ktask") orelse
         @compileError("need ktask");
     break :r fusioner.?;
 };
 
-var current_task: ?*ktask.KTask_T = null;
+var current_task: ?*ktask.KTask = null;
 
-fn irq_handler() anyerror!void {
+fn irqHandler() anyerror!void {
     // nao e muito correto irq chamar allocator, mas para exemplo
     // vai funcionar bem
-    const new_task = &(try allocator.sba.allocator.alloc(ktask.KTask_T, 1))[0];
+    const new_task = &(try allocator.sba.allocator.alloc(ktask.KTask, 1))[0];
     errdefer allocator.sba.allocator.free(new_task) catch {};
 
-    const childs: []ktask.KTaskChild_T = try allocator.sba.allocator.alloc(ktask.KTaskChild_T, 1);
+    const childs: []ktask.KTaskChild = try allocator.sba.allocator.alloc(ktask.KTaskChild, 1);
     errdefer allocator.sba.allocator.free(childs) catch {};
 
     new_task.?.* = .{
-        .param = null, // parâmetro repassado para task_fn()
-        .result = null, // retorno de task_fn()
-        .task = &task_fn, // task
-        .exit = &task_exit_fn, // chamado após task ser finalizada
+        .param = null, // parâmetro repassado para taskFn()
+        .result = null, // retorno de taskFn()
+        .task = &taskFn, // task
+        .exit = &taskExitFn, // chamado após task ser finalizada
         .childs = childs, // filhos da task, são chamados depois da task
         .flags = .{
             .control = .{
@@ -60,7 +60,7 @@ fn irq_handler() anyerror!void {
         },
     };
     childs[0] = .{
-        .task = &child_task_fn,
+        .task = &childTaskFn,
         .exit = null,
         .flags= .{
             .control = .{
@@ -73,18 +73,18 @@ fn irq_handler() anyerror!void {
             },
         },
     };
-    try ktask.sched_task(
+    try ktask.schedTask(
         new_task,
-        ktask.KTaskPriority_T.highly // caso null, usa prioridade .normal
+        ktask.KTaskPriority.highly // caso null, usa prioridade .normal
     );
     current_task = new_task;
 }
 
-fn task_fn(_: *anyopaque) anyerror!void {}
+fn taskFn(_: *anyopaque) anyerror!void {}
 
-fn child_task_fn(_: ?*anyopaque) anyerror!void {}
+fn childTaskFn(_: ?*anyopaque) anyerror!void {}
 
-fn task_exit_fn() void {
+fn taskExitFn() void {
     allocator.sba.allocator.free(
         current_task.?.childs.?
     ) catch {};

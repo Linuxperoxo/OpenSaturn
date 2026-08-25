@@ -7,21 +7,21 @@ const types: type = @import("types.zig");
 const main: type = @import("main.zig");
 const ops: type = @import("ops.zig");
 
-pub const Major_T: type = types.Major_T;
-pub const Minor_T: type = types.Minor_T;
-pub const Dev_T: type = types.Dev_T;
-pub const DevErr_T: type = types.DevErr_T;
-pub const DevOps_T: type = types.DevOps_T;
-pub const DevType_T: type = types.DevType_T;
+pub const Major: type = types.Major;
+pub const Minor: type = types.Minor;
+pub const Dev: type = types.Dev;
+pub const DevErr: type = types.DevErr;
+pub const DevOps: type = types.DevOps;
+pub const DevType: type = types.DevType;
 
-pub const dev_minor_add = main.dev_minor_add;
-pub const dev_minor_rm = main.dev_minor_rm;
-pub const next_major = main.next_major;
-pub const valid_major = main.valid_major;
-pub const valid_minor = main.valid_minor;
-pub const dev_add = main.dev_add;
-pub const dev_rm = main.dev_rm;
-pub const dev_info = main.dev_info;
+pub const devMinorAdd = main.devMinorAdd;
+pub const devMinorRm = main.devMinorRm;
+pub const nextMajor = main.nextMajor;
+pub const validMajor = main.validMajor;
+pub const validMinor = main.validMinor;
+pub const devAdd = main.devAdd;
+pub const devRm = main.devRm;
+pub const devInfo = main.devInfo;
 
 pub const write = ops.write;
 pub const read = ops.read;

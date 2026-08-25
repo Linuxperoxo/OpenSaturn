@@ -7,13 +7,13 @@ const types: type = @import("types.zig");
 const parser: type = @import("parser.zig");
 const allocator: type = @import("allocator.zig");
 
-var sys_param: types.Params_T = .{};
+var sys_param: types.Params = .{};
 
-pub inline fn params_loader(params: []const u8) void {
+pub inline fn paramsLoader(params: []const u8) void {
     if(params.len == 0)
         return;
 
-    const parsed_params: []const types.Param_T = parser.params_parser(params) catch {
+    const parsed_params: []const types.Param = parser.paramsParser(params) catch {
         // KLOG()
         return;
     };
@@ -29,7 +29,7 @@ pub inline fn params_loader(params: []const u8) void {
     }
 }
 
-pub noinline fn params_search(param: []const u8) types.KParamErr_T!types.Value_T {
+pub noinline fn paramsSearch(param: []const u8) types.KParamErr!types.Value {
     return sys_param.search(param)
-        catch return types.KParamErr_T.SysParamNotFound;
+        catch return types.KParamErr.SysParamNotFound;
 }

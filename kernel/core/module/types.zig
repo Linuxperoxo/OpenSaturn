@@ -7,28 +7,28 @@ const builtin: type = @import("builtin");
 const arch: type = @import("root").interfaces.arch;
 const fs: type = @import("root").interfaces.fs;
 const devices: type = @import("root").interfaces.devices;
-const hashtable: type = @import("root").lib.utils.hashtable;
+const hashtable: type = @import("root").lib.kernel.hash_table;
 const modsys: type = @import("root").modsys;
 const internal: type = @import("internal.zig");
 const allocator: type = @import("allocator.zig");
 
-pub const ModuleDescriptionTarget_T: type = arch.Target_T;
-pub const Mods_T: type = hashtable.buildHashTable([]const u8, *ModInfo_T, null, null);
+pub const ModuleDescriptionTarget: type = arch.Target;
+pub const Mods: type = hashtable.hashMap([]const u8, *ModInfo, null, null);
 
-pub const ModuleDescriptionLoad_T: type = enum {
+pub const ModuleDescriptionLoad: type = enum {
     linkable,
     dynamic,
     unlinkable
 };
 
-pub const Mod_T: type = struct {
+pub const Mod: type = struct {
     name: []const u8,
     desc: []const u8,
     version: []const u8,
     author: []const u8,
     deps: ?[]const []const u8 = null,
-    license: ModLicense_T,
-    type: ModType_T,
+    license: ModLicense,
+    type: ModType,
     init: *const fn() anyerror!void,
     exit: *const fn() anyerror!void,
 
@@ -38,19 +38,19 @@ pub const Mod_T: type = struct {
     pub const depmod = internal.depmod;
 };
 
-pub const ModControlFlags_T: type = packed struct {
+pub const ModControlFlags: type = packed struct {
     anon: u1,
     init: u1,
     exit: u1,
     remove: u1,
 };
 
-pub const ModInfo_T: type = struct {
-    module: *const Mod_T,
+pub const ModInfo: type = struct {
+    module: *const Mod,
     running: bool,
-    flags: ModControlFlags_T,
+    flags: ModControlFlags,
 
-    pub inline fn builder(module: *const Mod_T, running: bool, flags: ModControlFlags_T) @This() {
+    pub inline fn builder(module: *const Mod, running: bool, flags: ModControlFlags) @This() {
         return @This() {
             .module = module,
             .running = running,
@@ -58,53 +58,53 @@ pub const ModInfo_T: type = struct {
         };
     }
 
-    pub inline fn create(module: *const Mod_T, running: bool, flags: ModControlFlags_T) ModErr_T!*@This() {
-        const ptr: *@This() = @ptrCast(allocator.sba.allocator.alloc(@This(), 1) catch return ModErr_T.ModuleAllocatorError);
+    pub inline fn create(module: *const Mod, running: bool, flags: ModControlFlags) ModErr!*@This() {
+        const ptr: *@This() = @ptrCast(allocator.sba.allocator.alloc(@This(), 1) catch return ModErr.ModuleAllocatorError);
         ptr.* = @This().builder(module, running, flags);
         return ptr;
     }
 
-    pub inline fn destroy(self: *@This()) ModErr_T!void {
+    pub inline fn destroy(self: *@This()) ModErr!void {
         return allocator.sba.allocator.free(self)
-            catch ModErr_T.ModuleAllocatorError;
+            catch ModErr.ModuleAllocatorError;
     }
 };
 
-pub const ModuleDescription_T: type = struct {
-    mod: *const Mod_T,
-    load: ModuleDescriptionLoad_T,
-    insf: ModControlFlags_T,
-    arch: []const ModuleDescriptionTarget_T, // arch suportadas
+pub const ModuleDescription: type = struct {
+    mod: *const Mod,
+    load: ModuleDescriptionLoad,
+    insf: ModControlFlags,
+    arch: []const ModuleDescriptionTarget, // arch suportadas
     c_sources: ?[]const[]const u8 = null,
     panic: bool = false,
     blacklist: ?[]const[]const u8 = null,
     libs: struct {
-        mines: ?[]const ModuleDescriptionLibMine_T = null,
-        outside: ?[]const ModuleDescriptionLibOut_T = null,
+        mines: ?[]const ModuleDescriptionLibMine = null,
+        outside: ?[]const ModuleDescriptionLibOut = null,
     } = .{},
 
-    pub fn request_all(comptime self: *const @This()) struct { [
+    pub fn requestAll(comptime self: *const @This()) struct { [
         if(self.libs.outside == null) 0 else
             self.libs.outside.?.len
     ]?type, bool } {
-        return comptime modsys.smll.search_all(self);
+        return comptime modsys.smll.searchAll(self);
     }
 
-    pub fn request_libs(comptime self: *const @This(), comptime libs: []const[]const u8) struct { [libs.len]?type, bool } {
-        return comptime modsys.smll.search_libs(self, libs);
+    pub fn requestLibs(comptime self: *const @This(), comptime libs: []const[]const u8) struct { [libs.len]?type, bool } {
+        return comptime modsys.smll.searchLibs(self, libs);
     }
 
-    pub fn request_lib(self: *const @This(), lib: []const u8) ?type {
-        return comptime modsys.smll.search_lib(self, lib);
+    pub fn requestLib(self: *const @This(), lib: []const u8) ?type {
+        return comptime modsys.smll.searchLib(self, lib);
     }
 
-    pub fn abort_compile(self: *const @This(), comptime msg: []const u8) noreturn {
+    pub fn abortCompile(self: *const @This(), comptime msg: []const u8) noreturn {
         @compileError(self.name ++ ": " ++ msg);
     }
 };
 
-pub const ModuleDescriptionLibMine_T: type = struct {
-    pub const Version_T: type = struct {
+pub const ModuleDescriptionLibMine: type = struct {
+    pub const Version: type = struct {
         tag: []const u8,
         lib: type,
         flags: packed struct {
@@ -114,17 +114,17 @@ pub const ModuleDescriptionLibMine_T: type = struct {
 
     name: []const u8,
     whitelist: ?[]const []const u8,
-    m_types: ?[]const ModType_T,
+    m_types: ?[]const ModType,
     current: comptime_int,
     stable: comptime_int,
-    versions: []const Version_T,
+    versions: []const Version,
     flags: packed struct {
         whitelist: u1, // usa whitelist
         enable: u1, // pode ser usada
     },
 };
 
-pub const ModuleDescriptionLibOut_T: type = struct {
+pub const ModuleDescriptionLibOut: type = struct {
     lib: []const u8,
     mod: []const u8,
     version: union(enum) {
@@ -139,26 +139,26 @@ pub const ModuleDescriptionLibOut_T: type = struct {
     },
 };
 
-pub const ModType_T: type = enum(u8) {
+pub const ModType: type = enum(u8) {
     driver,
     syscall,
     irq,
     filesystem,
 };
 
-pub const ModLicense_T: type = enum(u8) {
-    GPL2_only,
-    GPL2_or_later,
-    GPL3_only,
-    GPL3_or_later,
-    BSD_2_Clause,
-    BSD_3_Clause,
-    MIT,
-    APACHE_2_0,
-    PROPRIETARY,
+pub const ModLicense: type = enum(u8) {
+    gpl2_only,
+    gpl2_or_later,
+    gpl3_only,
+    gpl3_or_later,
+    bsd_2_clause,
+    bsd_3_clause,
+    mit,
+    apache_2_0,
+    proprietary,
 };
 
-pub const ModErr_T: type = error {
+pub const ModErr: type = error {
     NoNFound,
     ObsoleteDependency,
     ModuleAllocatorError,

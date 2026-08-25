@@ -17,7 +17,7 @@ pub const linker: type = @import("linker.zig");
 pub const sections: type = @import("sections.zig");
 pub const allocators: type = @import("allocators.zig");
 
-pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
+pub const __SaturnArchDescription__: interfaces.arch.ArchDescription = .{
     .usable = true,
 
     .entry = .{
@@ -35,35 +35,31 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
     .interrupts = .{
         .maintainer = "Linuxperoxo",
         .label = ".i386.interrupts",
-        .entry = &interrupts.idt_init,
+        .entry = &interrupts.idtInit,
     },
 
     .mm = .{
         .maintainer = "Linuxperoxo",
         .label = ".i386.mm",
-        .entry = &mm.mmu_init,
+        .entry = &mm.mmuInit,
     },
 
     .physio = .{
         .maintainer = "Linuxperoxo",
         .label = ".i386.physio",
-        .entry = &physio.physio_init,
+        .entry = &physio.physioInit,
     },
 
     .symbols = .{
         .segments = 1,
     },
 
-    .allocators = .{
-        .spea = allocators.spea
-    },
-
-    .extra = &[_]interfaces.arch.ArchDescription_T.Extra_T {
+    .extra = &[_]interfaces.arch.ArchDescription.Extra {
         .{
             .maintainer = "Linuxperoxo",
             .label = ".i386.gdt",
             .entry = .{
-                .naked = &init.gdt.gdt_config,
+                .naked = &init.gdt.gdtConfig,
             },
         },
 
@@ -71,7 +67,7 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
             .maintainer = "Linuxperoxo",
             .label = ".i386.idt.csi",
             .entry = .{
-                .c = &interrupts.csi.csi_event_install,
+                .c = &interrupts.csi.csiEventInstall,
             },
         },
 
@@ -85,12 +81,12 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
                 // fn(u32) ou fn(), o unico problema seria se a funcao for
                 // chamada por esse ponteiro, nesse caso, poderiamos ter problema
                 // por causa da ABI
-                .c = @ptrCast(&interrupts.handler.csi_handler),
+                .c = @ptrCast(&interrupts.handler.csiHandler),
             },
         },
     },
 
-    .data = &[_]interfaces.arch.ArchDescription_T.Data_T {
+    .data = &[_]interfaces.arch.ArchDescription.Data {
         .{
             .label = "gdt_struct",
             .section = sections.section_data_persist,
@@ -116,8 +112,8 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
         },
     },
 
-    .overrider = interfaces.arch.ArchDescription_T.Overrider_T {
-        .modules = &[_]interfaces.arch.ArchDescription_T.ModuleOverrider_T {
+    .overrider = interfaces.arch.ArchDescription.Overrider {
+        .modules = &[_]interfaces.arch.ArchDescription.ModuleOverrider {
             .{
                 .module = "ke_m_rootfs",
                 .value = .yes,

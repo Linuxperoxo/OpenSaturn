@@ -6,8 +6,8 @@
 const interfaces: type = @import("root").interfaces;
 const deps: type = @import("deps.zig");
 
-pub fn saturn_modules_loader() void {
-    inline for(comptime deps.resolve_dependencies()) |module| {
+pub fn saturnModulesLoader() void {
+    inline for(comptime deps.resolveDependencies()) |module| {
         skip: {
             switch(comptime module.load) {
                 .dynamic, .unlinkable => break :skip {},
@@ -22,15 +22,15 @@ pub fn saturn_modules_loader() void {
                              [_] "{ecx}" (module.mod.name.ptr)
                         );
                         switch(err) {
-                            interfaces.module.ModErr_T.InitFailed => {
+                            interfaces.module.ModErr.InitFailed => {
                                 // klog()
                                 module.mod.rmmod() catch {
                                     // klog()
                                 };
                             },
 
-                            interfaces.module.ModErr_T.ObsoleteDependency,
-                            interfaces.module.ModErr_T.OperationFailed => {
+                            interfaces.module.ModErr.ObsoleteDependency,
+                            interfaces.module.ModErr.OperationFailed => {
                                 // klog()
                             },
 

@@ -3,14 +3,13 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const builtin: type = @import("builtin");
-const list: type = if(!builtin.is_test) @import("root").lib.utils.list else @import("test/list.zig");
+const list: type = @import("root").lib.kernel.linked_list;
 
-pub const Event_T: type = struct {
+pub const Event: type = struct {
     bus: u2,
     line: u3,
     who: u8,
-    listener_out: ?*const fn(EventInput_T) void,
+    listener_out: ?*const fn(EventInput) void,
     flags: packed struct {
         control: packed struct {
             active: u1,
@@ -19,7 +18,7 @@ pub const Event_T: type = struct {
     },
 };
 
-pub const EventOut_T: type = struct {
+pub const EventOut: type = struct {
     data: usize,
     event: u8,
     flags: packed struct {
@@ -28,20 +27,20 @@ pub const EventOut_T: type = struct {
     },
 };
 
-pub const EventInput_T: type = struct {
+pub const EventInput: type = struct {
     sender: u8,
     data: usize,
     flags: u16,
 };
 
-pub const EventDefault_T: type = enum {
+pub const EventDefault: type = enum {
     keyboard,
     mouse,
     csi, // cpu software interrupts
     timer,
 };
 
-pub const EventErr_T: type = error {
+pub const EventErr: type = error {
     EventCollision,
     NoNEvent,
     InactiveEvent,
@@ -56,8 +55,8 @@ pub const EventErr_T: type = error {
     DisableEvent,
 };
 
-pub const EventListener_T: type = struct {
-    handler: *const fn(EventOut_T) ?EventInput_T,
+pub const EventListener: type = struct {
+    handler: *const fn(EventOut) ?EventInput,
     listening: u8,
     event: u8,
     flags: packed struct(u8) {
@@ -74,11 +73,11 @@ pub const EventListener_T: type = struct {
     },
 };
 
-pub const EventInfo_T: type = struct {
-    event: *Event_T,
-    listeners: list.BuildList(*EventListener_T),
+pub const EventInfo: type = struct {
+    event: *Event,
+    listeners: list.buildList(*EventListener),
 };
 
-pub const EventBus_T: type = struct {
-    line: [8]?*EventInfo_T,
+pub const EventBus: type = struct {
+    line: [8]?*EventInfo,
 };

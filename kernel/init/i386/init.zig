@@ -58,5 +58,5 @@ pub fn init() linksection(section_text_loader) callconv(.c) void {
     // a ideia e que todas as funcoes de entry da arch devem ser 4 funcoes e cada uma
     // com um assembly gigante, assim evitando problemas de endereco virtual e endereco
     // fisico
-    @call(.always_inline, apic.apic_config, .{});
+    @call(.always_inline, apic.apicConfig, .{});
 }

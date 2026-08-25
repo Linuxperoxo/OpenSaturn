@@ -3,12 +3,12 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const Load_T: type = enum {
+pub const Load: type = enum {
     no,
     yes,
 };
 
-pub const Menuconfig_T: type = struct {
-    ktask: Load_T,
+pub const Menuconfig: type = struct {
+    ktask: Load,
 };
 

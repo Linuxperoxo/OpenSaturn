@@ -3,9 +3,9 @@
 // │            Author: Linuxperoxo                 │
 // └────────────────────────────────────────────────┘
 
-pub const Menuconfig_T: type = @import("types.zig").Menuconfig_T;
-pub const Load_T: type = @import("types.zig").Load_T;
+pub const Menuconfig: type = @import("types.zig").Menuconfig;
+pub const Load: type = @import("types.zig").Load;
 
-pub const FusiumSelection: Menuconfig_T = .{
+pub const fusium_selection: Menuconfig = .{
     .ktask = .yes,
 };

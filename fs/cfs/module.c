@@ -1,5 +1,5 @@
 #include <saturn/interfaces/module.h>
 
-void c_init() {
+void cInit() {
   inmod(NULL);
 }

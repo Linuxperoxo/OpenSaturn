@@ -7,27 +7,27 @@ const root: type = @import("root");
 const types: type = @import("types.zig");
 const tree: type = @import("tree.zig");
 
-const PhysIo_T: type = types.PhysIo_T;
-const PCIPhysIo_T: type = root.__SaturnArchImpl__.lib.kernel.io.pci.PCIPhysIo_T;
-const PCIAddress_T: type = root.__SaturnArchImpl__.lib.kernel.io.pci.PCIAddress_T;
-const PCIRegsOffset_T: type = root.__SaturnArchImpl__.lib.kernel.io.pci.PCIRegsOffset_T;
+const PhysIo: type = types.PhysIo;
+const PCIPhysIo: type = root.__SaturnArchImpl__.lib.kernel.io.pci.PCIPhysIo;
+const PCIAddress: type = root.__SaturnArchImpl__.lib.kernel.io.pci.PCIAddress;
+const PCIRegsOffset: type = root.__SaturnArchImpl__.lib.kernel.io.pci.PCIRegsOffset;
 
-const pci_config_read = root.__SaturnArchImpl__.lib.kernel.io.pci.pci_config_read;
-const physio_register = tree.physio_register;
+const pciConfigRead = root.__SaturnArchImpl__.lib.kernel.io.pci.pciConfigRead;
+const physioRegister = tree.physioRegister;
 
-const PCI_UNDEFINED_RETURN = root.__SaturnArchImpl__.lib.kernel.io.pci.PCI_UNDEFINED_RETURN;
+const pci_undefined_return = root.__SaturnArchImpl__.lib.kernel.io.pci.pci_undefined_return;
 
-pub fn physio_scan() void {
+pub fn physioScan() void {
     // TODO: O log deve ser [PCI] {domain}:{bus}:{device}.{function} {class}: {vendor} {device} (rev {revision})
     // TODO: Documentar
     // OPTIMIZE: Fazer bitwise para distribuir os regs para as classes,
-    // podemos pegar vendorID deviceID em uma unica leitura, mesma coisa
+    // podemos pegar vendor_id device_id em uma unica leitura, mesma coisa
     // para revision prog subclass e class, cada um desses registradores
     // tem 1 byte de tamanho, ou seja, podemos pegar os 4 de uma vez, isso
     // iria acelerar o tempo de busca
-    const regsToScan = [_]PCIRegsOffset_T {
-        .vendorID,
-        .deviceID,
+    const regs_to_scan = [_]PCIRegsOffset {
+        .vendor_id,
+        .device_id,
         .command,
         .status,
         .prog,
@@ -39,8 +39,8 @@ pub fn physio_scan() void {
     };
     for(0..256) |bus| {
         for(0..32) |dev| {
-            const deviceExists = @call(.always_inline, &pci_config_read, .{
-                PCIAddress_T {
+            const device_exists = @call(.always_inline, &pciConfigRead, .{
+                PCIAddress {
                     .register = .revision,
                     .function = @as(u3, 0),
                     .device = @as(u5, @intCast(dev)),
@@ -48,10 +48,10 @@ pub fn physio_scan() void {
                     .enable = 1,
                 },
             });
-            if(deviceExists == PCI_UNDEFINED_RETURN) continue;
-            const multiFunction: bool = ((@call(.always_inline, &pci_config_read, .{
-                PCIAddress_T {
-                    .register = .headerType,
+            if(device_exists == pci_undefined_return) continue;
+            const multi_function: bool = ((@call(.always_inline, &pciConfigRead, .{
+                PCIAddress {
+                    .register = .header_type,
                     .function = @as(u3, 0),
                     .device = @as(u5, @intCast(dev)),
                     .bus = @as(u8, @intCast(bus)),
@@ -59,12 +59,12 @@ pub fn physio_scan() void {
                 },
             }) >> 7) & 0x01) == 1;
             for(0..8) |fun| {
-                var physConfigSpace: PCIPhysIo_T = .{
+                var phys_config_space: PCIPhysIo = .{
                     .bus = @as(u8, @intCast(bus)),
                     .device = @as(u5, @intCast(dev)),
                     .function = @as(u3, @intCast(fun)),
-                    .vendorID = 0,
-                    .deviceID = 0,
+                    .vendor_id = 0,
+                    .device_id = 0,
                     .class = 0,
                     .subclass = 0,
                     .command = 0,
@@ -77,9 +77,9 @@ pub fn physio_scan() void {
                         null
                     } ** 6,
                 };
-                inline for(regsToScan) |reg| {
-                    const pciReturn = @call(.always_inline, &pci_config_read, .{
-                        PCIAddress_T {
+                inline for(regs_to_scan) |reg| {
+                    const pci_return = @call(.always_inline, &pciConfigRead, .{
+                        PCIAddress {
                             .register = reg,
                             .function = @as(u3, @intCast(fun)),
                             .device = @as(u5, @intCast(dev)),
@@ -87,33 +87,32 @@ pub fn physio_scan() void {
                             .enable = 1,
                         },
                     });
-                    if(pciReturn != PCI_UNDEFINED_RETURN) @field(physConfigSpace, @tagName(reg)) = @intCast(pciReturn);
+                    if(pci_return != pci_undefined_return) @field(phys_config_space, @tagName(reg)) = @intCast(pci_return);
                 }
                 for(0..6) |i| {
-                    const barOffset = @intFromEnum(PCIRegsOffset_T.bar0) + (4 * i);
-                    const barResult = @call(.always_inline, &pci_config_read, .{
-                        PCIAddress_T {
-                            .register = @as(PCIRegsOffset_T, @enumFromInt(barOffset)),
+                    const bar_offset = @intFromEnum(PCIRegsOffset.bar0) + (4 * i);
+                    const bar_result = @call(.always_inline, &pciConfigRead, .{
+                        PCIAddress {
+                            .register = @as(PCIRegsOffset, @enumFromInt(bar_offset)),
                             .function = @as(u3, @intCast(fun)),
                             .device = @as(u5, @intCast(dev)),
                             .bus = @as(u8, @intCast(bus)),
                             .enable = 1,
                         },
                     });
-                    physConfigSpace.bars[i] = r: {
-                        if(barResult == 0 or barResult == ~@as(u32, 0)) break :r null;
+                    phys_config_space.bars[i] = r: {
+                        if(bar_result == 0 or bar_result == ~@as(u32, 0)) break :r null;
                         break :r .{
-                            .type = @enumFromInt(barResult & 0x01),
-                            .addrs = (barResult & ~@as(u32, if((barResult & 0x01) == 1) 0x01 else 0x0F)),
+                            .type = @enumFromInt(bar_result & 0x01),
+                            .addrs = (bar_result & ~@as(u32, if((bar_result & 0x01) == 1) 0x01 else 0x0F)),
                         };
                     };
                 }
-                @call(.always_inline, physio_register, .{
-                    physConfigSpace, null
+                @call(.always_inline, physioRegister, .{
+                    phys_config_space, null
                 }) catch {};
-                if(!multiFunction) break;
+                if(!multi_function) break;
             }
         }
     }
 }
-

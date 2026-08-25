@@ -6,7 +6,7 @@
 const devices: type = @import("root").interfaces.devices;
 const ops: type = @import("ops.zig");
 
-pub var fb_device: devices.Dev_T = .{
+pub var fb_device: devices.Dev = .{
     .name = "fb",
     .type = .char,
     .ops = &fb_device_ops,
@@ -18,7 +18,7 @@ pub var fb_device: devices.Dev_T = .{
     },
 };
 
-pub const fb_device_ops: devices.DevOps_T = .{
+pub const fb_device_ops: devices.DevOps = .{
     .write = &ops.write,
     .read = &ops.read,
     .ioctl = &ops.ioctl,

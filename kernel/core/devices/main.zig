@@ -5,19 +5,19 @@
 
 const types: type = @import("types.zig");
 const aux: type = @import("aux.zig");
-const mem: type =  @import("root").lib.utils.mem;
+const mem: type =  @import("root").lib.kernel.mem;
 const builtin: type = @import("builtin");
 
-pub var majors: [@bitSizeOf(usize)]types.DevBranch_T = undefined;
+pub var majors: [@bitSizeOf(usize)]types.DevBranch = undefined;
 pub var bitmap: usize = 0;
 
-pub inline fn dev_info(major: types.Major_T, comptime field: enum { name, type }) types.DevErr_T!@FieldType(types.Dev_T, @tagName(field)) {
-    if(!aux.is_valid_major(major)) return types.DevErr_T.MajorNoNFound;
+pub inline fn devInfo(major: types.Major, comptime field: enum { name, type }) types.DevErr!@FieldType(types.Dev, @tagName(field)) {
+    if(!aux.isValidMajor(major)) return types.DevErr.MajorNoNFound;
     return @field(majors[major].dev, @tagName(field));
 }
 
-pub noinline fn dev_add(major: types.Major_T, dev: *const types.Dev_T) types.DevErr_T!void {
-    if(aux.is_valid_major(major)) return types.DevErr_T.MajorCollision;
+pub noinline fn devAdd(major: types.Major, dev: *const types.Dev) types.DevErr!void {
+    if(aux.isValidMajor(major)) return types.DevErr.MajorCollision;
     bitmap |= @as(@TypeOf(bitmap), 1) << major;
     majors[major].dev = dev;
     majors[major].minors[0] = 1;
@@ -25,33 +25,33 @@ pub noinline fn dev_add(major: types.Major_T, dev: *const types.Dev_T) types.Dev
         majors[major].minors[i] = 0;
 }
 
-pub inline fn dev_rm(major: types.Major_T, dev: *const types.Dev_T) types.DevErr_T!void {
+pub inline fn devRm(major: types.Major, dev: *const types.Dev) types.DevErr!void {
     if((bitmap >> major) == 0 or majors[major].dev != dev)
-        return types.DevErr_T.MajorNoNFound;
+        return types.DevErr.MajorNoNFound;
     bitmap &= ~major;
 }
 
-pub noinline fn dev_minor_add(major: types.Major_T, minor: types.Minor_T) types.DevErr_T!void {
-    return aux.minor_op(.add, major, minor);
+pub noinline fn devMinorAdd(major: types.Major, minor: types.Minor) types.DevErr!void {
+    return aux.minorOp(.add, major, minor);
 }
 
-pub noinline fn dev_minor_rm(major: types.Major_T, minor: types.Minor_T) types.DevErr_T!void {
-    return aux.minor_op(.rm, major, minor);
+pub noinline fn devMinorRm(major: types.Major, minor: types.Minor) types.DevErr!void {
+    return aux.minorOp(.rm, major, minor);
 }
 
-pub noinline fn valid_major(major: types.Major_T) bool {
-    return aux.is_valid_major(major);
+pub noinline fn validMajor(major: types.Major) bool {
+    return aux.isValidMajor(major);
 }
 
-pub noinline fn valid_minor(major: types.Major_T, minor: types.Minor_T) bool {
-    return if(!aux.is_valid_major(major)) false else
-        majors[major].is_valid_minor(minor);
+pub noinline fn validMinor(major: types.Major, minor: types.Minor) bool {
+    return if(!aux.isValidMajor(major)) false else
+        majors[major].isValidMinor(minor);
 }
 
-pub noinline fn next_major() types.DevErr_T!types.Major_T {
-    if((~bitmap) == 0) return types.DevErr_T.WithoutMajor;
+pub noinline fn nextMajor() types.DevErr!types.Major {
+    if((~bitmap) == 0) return types.DevErr.WithoutMajor;
     var map: usize = bitmap;
-    var bit: types.Major_T = 0;
+    var bit: types.Major = 0;
     while(map > 0) : ({ map >>= 1; bit += 1; }) {
         if((map & 1) == 0)
             return bit;
@@ -59,6 +59,6 @@ pub noinline fn next_major() types.DevErr_T!types.Major_T {
     unreachable;
 }
 
-pub noinline fn next_minor(major: types.Major_T) types.DevErr_T!types.Minor_T {
+pub noinline fn nextMinor(major: types.Major) types.DevErr!types.Minor {
     _ = major;
 }

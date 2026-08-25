@@ -3,43 +3,43 @@
 // │            Author: Linuxperoxo             │
 // └────────────────────────────────────────────┘
 
-const ArchManifest_T: type = @import("root").interfaces.arch.ArchManifest_T;
+const ArchManifest: type = @import("root").interfaces.arch.ArchManifest;
 
-pub const __SaturnArchManifests__ = [_]ArchManifest_T {
+pub const __SaturnArchManifests__ = [_]ArchManifest {
     .{
         .target = .i386,
         .arch = @import("kernel/arch/i386/i386.zig"),
-        .exposed = &[_]ArchManifest_T.ContainerExposed_T {
-            ArchManifest_T.ContainerExposed_T {
+        .exposed = &[_]ArchManifest.ContainerExposed {
+            ArchManifest.ContainerExposed {
                 .name = "entry",
-                .container = @import("kernel/entries/i386/entry.zig"),
+                .container = @import("kernel/entry/i386/entry.zig"),
             },
 
-            ArchManifest_T.ContainerExposed_T {
+            ArchManifest.ContainerExposed {
                 .name = "init",
                 .container = @import("kernel/init/i386/init.zig"),
             },
 
-            ArchManifest_T.ContainerExposed_T {
+            ArchManifest.ContainerExposed {
                 .name = "interrupts",
                 .container = @import("kernel/interrupts/i386/interrupts.zig"),
             },
 
-            ArchManifest_T.ContainerExposed_T {
+            ArchManifest.ContainerExposed {
                 .name = "physio",
                 .container = @import("kernel/physio/i386/physio.zig"),
             },
 
-            ArchManifest_T.ContainerExposed_T {
+            ArchManifest.ContainerExposed {
                 .name = "mm",
                 .container = @import("mm/i386/mm.zig"),
             },
 
-            ArchManifest_T.ContainerExposed_T {
+            ArchManifest.ContainerExposed {
                 .name = "lib",
                 .container = struct {
-                    pub const kernel: type = @import("lib/saturn/kernel/arch/i386/lib.zig");
-                    pub const userspace: type = @import("lib/saturn/userspace/i386/lib.zig");
+                    pub const kernel: type = @import("lib/kernel/arch/i386/lib.zig");
+                    pub const userspace: type = @import("lib/userspace/i386/lib.zig");
                 },
             },
         },

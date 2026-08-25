@@ -5,4 +5,4 @@
 
 const types: type = @import("types.zig");
 
-pub var kernel_modules: types.Mods_T = .{};
+pub var kernel_modules: types.Mods = .{};

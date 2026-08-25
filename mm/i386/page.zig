@@ -34,9 +34,9 @@ pub const KernelPageIndex: type = enum {
     mmio,
 };
 
-pub var kernel_page_dir: [1024]types.PageDirEntry_T align(4) = r: {
-    var page_dir = [_]types.PageDirEntry_T {
-        types.PageDirEntry_T {
+pub var kernel_page_dir: [1024]types.PageDirEntry align(4) = r: {
+    var page_dir = [_]types.PageDirEntry {
+        types.PageDirEntry {
             .present = 0,
             .rw = 0,
             .user = 0,
@@ -57,9 +57,9 @@ pub var kernel_page_dir: [1024]types.PageDirEntry_T align(4) = r: {
     break :r page_dir;
 };
 
-pub var kernel_page_table: [kernel_index.len][1024]types.PageTableEntry_T align(4096) = [_][1024]types.PageTableEntry_T {
-    [_]types.PageTableEntry_T {
-        types.PageTableEntry_T {
+pub var kernel_page_table: [kernel_index.len][1024]types.PageTableEntry align(4096) = [_][1024]types.PageTableEntry {
+    [_]types.PageTableEntry {
+        types.PageTableEntry {
             .present = 0,
             .rw = 0,
             .user = 0,
@@ -75,8 +75,8 @@ pub var kernel_page_table: [kernel_index.len][1024]types.PageTableEntry_T align(
 // isso e importante, ja que antes de pular para o endereco virtual apenas, precisamos continuar
 // onde estamos, no caso 0x01000000, entao precisamos mapear o endereco virtual 0x01000000 para o
 // mesmo endereco fisico, depois essa tabela de paginas nunca mais sera usada
-pub var bootstrap_page_table: [1024]types.PageTableEntry_T align(4096) = [_]types.PageTableEntry_T {
-    types.PageTableEntry_T {
+pub var bootstrap_page_table: [1024]types.PageTableEntry align(4096) = [_]types.PageTableEntry {
+    types.PageTableEntry {
         .present = 0,
         .rw = 1,
         .user = 0,
@@ -108,17 +108,17 @@ comptime {
 }
 
 // sao usados somente para o alocador de paginas consiga manipular as paginas diretamente
-pub const kernel_page_dir_virtual: *[1024]types.PageDirEntry_T = @ptrFromInt(kernel_mmu_main);
-pub const kernel_page_table_virtual: *[kernel_index.len][1024]types.PageTableEntry_T = @ptrFromInt(kernel_mmu_main + @sizeOf(@TypeOf(kernel_page_dir)));
+pub const kernel_page_dir_virtual: *[1024]types.PageDirEntry = @ptrFromInt(kernel_mmu_main);
+pub const kernel_page_table_virtual: *[kernel_index.len][1024]types.PageTableEntry = @ptrFromInt(kernel_mmu_main + @sizeOf(@TypeOf(kernel_page_dir)));
 
-pub fn alloc_page() types.AllocPageErr_T!types.AllocPage_T {
+pub fn allocPage() types.AllocPageErr!types.AllocPage {
     return r: {
         // tentamos alocar uma pagina na zone_kernel, em caso de pageout,
         // tantamos alocar na zone_high
-        break :r zone.alloc_zone_page(
+        break :r zone.allocZonePage(
             .kernel,
         ) catch |err| switch(err) {
-            types.AllocPageErr_T.OutPage => break :r zone.alloc_zone_page(
+            types.AllocPageErr.OutPage => break :r zone.allocZonePage(
                 .high,
             ),
             else => return err,
@@ -126,23 +126,23 @@ pub fn alloc_page() types.AllocPageErr_T!types.AllocPage_T {
     };
 }
 
-pub fn alloc_pages(_: usize) []types.AllocPage_T {
+pub fn allocPages(_: usize) []types.AllocPage {
 
 }
 
-pub fn alloc_zeroed_page() []types.AllocPage_T {
+pub fn allocZeroedPage() []types.AllocPage {
 
 }
 
-pub fn free_page(page: *const types.AllocPage_T) types.AllocPageErr_T!void {
-    return zone.free_zone_page(.kernel, page);
+pub fn freePage(page: *const types.AllocPage) types.AllocPageErr!void {
+    return zone.freeZonePage(.kernel, page);
 }
 
-pub fn free_pages(_: []types.AllocPage_T) void {
+pub fn freePages(_: []types.AllocPage) void {
 
 }
 
-pub fn mmu_decode_virtual(virtual: u32) struct { u10, u10, u12 } {
+pub fn mmuDecodeVirtual(virtual: u32) struct { u10, u10, u12 } {
     return .{
         @intCast((virtual >> 22) & 0x3FF),
         @intCast((virtual >> 12) & 0x3FF),

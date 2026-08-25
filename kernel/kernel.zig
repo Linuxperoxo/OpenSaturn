@@ -11,7 +11,7 @@ pub const core: type = saturn.core;
 pub const ar: type = saturn.ar;
 pub const interfaces: type = saturn.interfaces;
 pub const supervisor: type = saturn.supervisor;
-pub const lib: type = saturn.lib.saturn;
+pub const lib: type = saturn.lib;
 pub const config: type = saturn.config;
 pub const modules: type = saturn.modules;
 pub const decls: type = saturn.decls;
@@ -20,8 +20,8 @@ pub const codes: type = saturn.codes;
 pub const rtests: type = saturn.rtests;
 pub const srtr: type = saturn.srtr;
 pub const kparam: type = opaque {
-    pub const params_search = saturn.kparam.params_search;
-    const params_loader = saturn.kparam.params_loader;
+    pub const paramsSearch = saturn.kparam.paramsSearch;
+    const paramsLoader = saturn.kparam.paramsLoader;
 };
 pub const modsys: type = opaque {
     pub const modules: type = saturn.modsys.modules;
@@ -51,7 +51,7 @@ const csl: type = saturn.csl;
 //    chamar a fn main do kernel, feito isso, o kernel vai fazer o resto
 
 comptime {
-    @export(&saturn_main, .{
+    @export(&saturnMain, .{
         .name = "saturn.main",
     });
 }
@@ -61,12 +61,12 @@ comptime {
     _ = csl; // carregado c sources
 }
 
-fn saturn_main(kparams: *const packed struct { ptr: [*]const u8, len: usize }) callconv(.c) noreturn {
+fn saturnMain(kparams: *const packed struct { ptr: [*]const u8, len: usize }) callconv(.c) noreturn {
     // Carregamos os parametros do kernel que foi passado pelo bootloader
     if(comptime config.kernel.kparam.kparam_enable) {
         @call(
             .always_inline,
-            kparam.params_loader,
+            kparam.paramsLoader,
             .{
                 if(config.kernel.kparam.kparam_dynamic_loader) kparams.ptr[0..kparams.len] else
                     config.kernel.kparam.kernel_parameter,
@@ -88,15 +88,15 @@ fn saturn_main(kparams: *const packed struct { ptr: [*]const u8, len: usize }) c
     // exported symbol collision, como resolver isso então? Simplemente usando o .never_inline
     // ou usando somente loader.SaturnArch, isso evita de criar um possivel .never_inline
     // implicito
-    @call(.always_inline, fusium.saturn_fusium_loader, .{ .before });
+    @call(.always_inline, fusium.saturnFusiumLoader, .{ .before });
     // Depois da arquitetura resolver todos os seus detalhes, podemos iniciar
     // os modulos linkados ao kernel
-    @call(.always_inline, modsys.core.saturn_modules_loader, .{});
-    @call(.always_inline, fusium.saturn_fusium_loader, .{ .after });
+    @call(.always_inline, modsys.core.saturnModulesLoader, .{});
+    @call(.always_inline, fusium.saturnFusiumLoader, .{ .after });
 
     // Executa testes na inicializacao do kernel
     if(comptime config.kernel.test_suite.test_suite_enable)
-        @call(.always_inline, srtr.saturn_test_runner, .{});
+        @call(.always_inline, srtr.saturnTestRunner, .{});
 
     @call(.always_inline, opaque { pub fn trap() noreturn { while(true) {} } }.trap, .{}); // noreturn fn
 }

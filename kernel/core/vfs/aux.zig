@@ -3,24 +3,20 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const builtin: type = @import("builtin");
 const types: type = @import("types.zig");
 const lib: type = @import("root").lib;
 const main: type = @import("main.zig");
 
-const allocator: type = if(!builtin.is_test) @import("allocator.zig") else
-    @import("test/allocator.zig");
-const mem: type = if(!builtin.is_test) lib.utils.mem else
-    @import("test/mem.zig");
-const fmt: type = if(!builtin.is_test) lib.utils.fmt else
-    @import("test/fmt.zig");
+const allocator: type = @import("allocator.zig");
+const mem: type = lib.kernel.mem;
+const fmt: type = lib.kernel.fmt;
 
-const Inode_T: type = types.Inode_T;
-const InodeOp_T: type = types.InodeOp_T;
-const SuperBlock_T: type = types.Superblock_T;
-const Dentry_T: type = types.Dentry_T;
-const VfsErr_T: type = types.VfsErr_T;
-const Op_T: type = enum {
+const Inode: type = types.Inode;
+const InodeOp: type = types.InodeOp;
+const SuperBlock: type = types.Superblock;
+const Dentry: type = types.Dentry;
+const VfsErr: type = types.VfsErr;
+const Op: type = enum {
     read,
     write,
     exec,
@@ -31,11 +27,11 @@ const Op_T: type = enum {
     chown,
 };
 
-pub noinline fn resolve_path(path: []const u8, root: *Dentry_T) VfsErr_T!*Dentry_T {
-    const dentries = fmt.broken_str(path, '/', &allocator.sba.allocator)
+pub noinline fn resolvePath(path: []const u8, root: *Dentry) VfsErr!*Dentry {
+    const dentries = fmt.splitAlloc(path, '/', &allocator.sba.allocator)
     catch |err| switch(err) {
         error.WithoutSub => return root,
-        else => return VfsErr_T.PathResolveError,
+        else => return VfsErr.PathResolveError,
     };
     defer {
         allocator.sba.allocator.free(dentries) catch {
@@ -43,21 +39,21 @@ pub noinline fn resolve_path(path: []const u8, root: *Dentry_T) VfsErr_T!*Dentry
             // klog()
         };
     }
-    if(root.d_sblock == null) return VfsErr_T.NoNFound;
+    if(root.d_sblock == null) return VfsErr.NoNFound;
     if(root.child == null) {
         root.child = root.d_sblock.?.inode_op.lookup.?(root, dentries[0]) catch
-            return VfsErr_T.NoNFound;
+            return VfsErr.NoNFound;
         root.child.?.parent = root;
         root.child.?.younger_brother = null;
         root.child.?.older_brother = null;
         root.child.?.child = null;
     }
-    var current_dentry: *Dentry_T = root.child.?;
+    var current_dentry: *Dentry = root.child.?;
     for(dentries, 0..) |dentry, i| {
         sw: switch((enum { step0, step1 }).step0) {
             .step0 => {
                 @branchHint(.likely);
-                var next: ?*Dentry_T = current_dentry;
+                var next: ?*Dentry = current_dentry;
                 while(next != null) : (next = next.?.younger_brother) {
                     if(mem.eql(next.?.d_name, dentry, .{ .case = true })) {
                         @branchHint(.cold);
@@ -65,10 +61,10 @@ pub noinline fn resolve_path(path: []const u8, root: *Dentry_T) VfsErr_T!*Dentry
                         if(next.?.child == null) {
                             @branchHint(.cold);
                             next.?.child = next.?.d_op.?.lookup.?(next.?, dentries[i + 1]) catch
-                                return VfsErr_T.NoNFound;
+                                return VfsErr.NoNFound;
                             next.?.child.?.parent = next;
                         }
-                        if(next.?.d_inode.?.type != .directory) return VfsErr_T.NoNFound;
+                        if(next.?.d_inode.?.type != .directory) return VfsErr.NoNFound;
                         current_dentry = next.?.child.?;
                         break :sw {};
                     }
@@ -78,7 +74,7 @@ pub noinline fn resolve_path(path: []const u8, root: *Dentry_T) VfsErr_T!*Dentry
             .step1 => {
                 @branchHint(.unlikely);
                 current_dentry.younger_brother = current_dentry.parent.?.d_op.?.lookup.?(current_dentry.parent.?, dentry) catch
-                    return VfsErr_T.NoNFound;
+                    return VfsErr.NoNFound;
                 current_dentry.younger_brother.?.parent = current_dentry.parent;
                 current_dentry.younger_brother.?.older_brother = current_dentry;
                 current_dentry.younger_brother.?.younger_brother = null;
@@ -91,7 +87,7 @@ pub noinline fn resolve_path(path: []const u8, root: *Dentry_T) VfsErr_T!*Dentry
     return current_dentry;
 }
 
-pub inline fn perm_decode(dentry: *Dentry_T, gid: []const types.gid_T, uid: types.uid_T) types.perm_T {
+pub inline fn permDecode(dentry: *Dentry, gid: []const types.Gid, uid: types.Uid) types.Perm {
     if(dentry.d_inode.?.uid == uid)
         return dentry.d_inode.?.mode.owner;
     for(dentry.d_inode.?.gid) |inode_gid|
@@ -100,32 +96,32 @@ pub inline fn perm_decode(dentry: *Dentry_T, gid: []const types.gid_T, uid: type
     return dentry.d_inode.?.mode.other;
 }
 
-pub inline fn is_valid_op(dentry: *Dentry_T, op: Op_T) VfsErr_T!void {
-    const file_type: types.FileType_T = r: {
+pub inline fn isValidOp(dentry: *Dentry, op: Op) VfsErr!void {
+    const file_type: types.FileType = r: {
         if(dentry == &main.root) break :r .directory;
-        if(dentry.d_inode == null or dentry.d_op == null) return VfsErr_T.InvalidDentry;
+        if(dentry.d_inode == null or dentry.d_op == null) return VfsErr.InvalidDentry;
         break :r dentry.d_inode.?.type;
     };
     switch(file_type) {
         .block, .char, .regular => {
             return switch(op) {
-                .read => if(dentry.d_op.?.read == null) VfsErr_T.InvalidOperation,
-                .write => if(dentry.d_op.?.write == null) VfsErr_T.InvalidOperation,
-                .unlink => if(dentry.d_op.?.unlink == null) VfsErr_T.InvalidOperation,
-                .chmod => if(dentry.d_op.?.chmod == null) VfsErr_T.InvalidOperation,
-                .chown => if(dentry.d_op.?.chown == null) VfsErr_T.InvalidOperation,
+                .read => if(dentry.d_op.?.read == null) VfsErr.InvalidOperation,
+                .write => if(dentry.d_op.?.write == null) VfsErr.InvalidOperation,
+                .unlink => if(dentry.d_op.?.unlink == null) VfsErr.InvalidOperation,
+                .chmod => if(dentry.d_op.?.chmod == null) VfsErr.InvalidOperation,
+                .chown => if(dentry.d_op.?.chown == null) VfsErr.InvalidOperation,
                 .exec => unreachable, // TODO:
-                else => VfsErr_T.InvalidOperation,
+                else => VfsErr.InvalidOperation,
             };
         },
         .directory, .link => {
             return switch(op) {
-                .unlink => if(dentry.d_op.?.unlink == null) VfsErr_T.InvalidOperation,
-                .create => if(dentry.d_op.?.create == null) VfsErr_T.InvalidOperation,
-                .mkdir => if(dentry.d_op.?.mkdir == null) VfsErr_T.InvalidOperation,
-                .chmod => if(dentry.d_op.?.chmod == null) VfsErr_T.InvalidOperation,
-                .chown => if(dentry.d_op.?.chown == null) VfsErr_T.InvalidOperation,
-                else => VfsErr_T.InvalidOperation,
+                .unlink => if(dentry.d_op.?.unlink == null) VfsErr.InvalidOperation,
+                .create => if(dentry.d_op.?.create == null) VfsErr.InvalidOperation,
+                .mkdir => if(dentry.d_op.?.mkdir == null) VfsErr.InvalidOperation,
+                .chmod => if(dentry.d_op.?.chmod == null) VfsErr.InvalidOperation,
+                .chown => if(dentry.d_op.?.chown == null) VfsErr.InvalidOperation,
+                else => VfsErr.InvalidOperation,
             };
         },
     }
