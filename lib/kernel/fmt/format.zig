@@ -5,7 +5,7 @@
 
 pub const format: type = opaque {
     pub fn format(allocator: anytype, comptime fmt: []const u8, args: anytype) anyerror![]u8 {
-        const buffer_len: usize = (comptime total_bytes_fmt(fmt, args)) + total_bytes_args(args);
+        const buffer_len: usize = (comptime totalBytesFmt(fmt, args)) + totalBytesArgs(args);
         const buffer: []u8 = try allocator.alloc(u8, buffer_len);
         var buffer_index: usize = 0;
 
@@ -35,8 +35,8 @@ pub const format: type = opaque {
                 },
                 'd' => {
                     const int = @field(args, fields[fields_index].name);
-                    const dest = buffer[buffer_index .. buffer_index + int_to_bytes(int)];
-                    buffer_index += str_from_int(int, dest);
+                    const dest = buffer[buffer_index .. buffer_index + intToBytes(int)];
+                    buffer_index += strFromInt(int, dest);
                     fmt_index += 2;
                     fields_index += 1;
                     inside = false;
@@ -51,7 +51,7 @@ pub const format: type = opaque {
         return buffer;
     }
 
-    pub fn str_from_int(int: usize, buffer: []u8) usize {
+    pub fn strFromInt(int: usize, buffer: []u8) usize {
         var current: usize = int;
         var i: usize = @intFromBool(int == 0);
         buffer[0] = '0';
@@ -63,7 +63,7 @@ pub const format: type = opaque {
         return i;
     }
 
-    pub fn total_bytes_fmt(comptime fmt: []const u8, args: anytype) usize {
+    pub fn totalBytesFmt(comptime fmt: []const u8, args: anytype) usize {
         var fmt_len: usize = 0;
         comptime {
             if (@typeInfo(@TypeOf(args)) != .@"struct")
@@ -142,20 +142,20 @@ pub const format: type = opaque {
         return fmt_len;
     }
 
-    pub fn total_bytes_args(args: anytype) usize {
+    pub fn totalBytesArgs(args: anytype) usize {
         var total: usize = 0;
         inline for (@typeInfo(@TypeOf(args)).@"struct".fields) |field| {
             total += switch (@typeInfo(field.type)) {
                 .pointer => (@field(args, field.name)).len,
-                .int => int_to_bytes(@field(args, field.name)),
-                .comptime_int => comptime int_to_bytes(@field(args, field.name)),
+                .int => intToBytes(@field(args, field.name)),
+                .comptime_int => comptime intToBytes(@field(args, field.name)),
                 else => unreachable,
             };
         }
         return total;
     }
 
-    pub fn int_to_bytes(int: usize) usize {
+    pub fn intToBytes(int: usize) usize {
         if (int == 0) return 1;
         var current: usize = int;
         var total: usize = 0;

@@ -4,37 +4,37 @@
 // └──────────────────────────────────────────────┘
 
 pub const MsrReturn: type = packed struct {
-    Low: u32,
-    High: u32,
+    low: u32,
+    high: u32,
 };
 
-pub fn wrmsr(Msr: u32, Low: u32, High: u32) void {
+pub fn wrmsr(msr: u32, low: u32, high: u32) void {
     asm volatile(
         \\ wrmsr
 
         :
-        :[_] "{ecx}" (Msr),
-         [_] "{eax}" (Low),
-         [_] "{edx}" (High)
+        :[_] "{ecx}" (msr),
+         [_] "{eax}" (low),
+         [_] "{edx}" (high)
         : .{}
     );
 }
 
-pub fn rdmsr(Msr: u32) MsrReturn {
-    var Low: u32 = undefined;
-    var High: u32 = undefined;
+pub fn rdmsr(msr: u32) MsrReturn {
+    var low: u32 = undefined;
+    var high: u32 = undefined;
 
     asm volatile(
         \\ rdmsr
 
-        :[_] "={eax}" (Low),
-         [_] "={edx}" (High)
-        :[_] "{ecx}" (Msr)
+        :[_] "={eax}" (low),
+         [_] "={edx}" (high)
+        :[_] "{ecx}" (msr)
         : .{}
     );
 
     return MsrReturn {
-        .Low = Low,
-        .High = High,
+        .low = low,
+        .high = high,
     };
 }

@@ -19,7 +19,7 @@ const ModuleDescriptionTarget: type = module.ModuleDescriptionTarget;
 const ModuleDescriptionLibMine: type = module.ModuleDescriptionLibMine;
 const ModuleDescriptionLibOut: type = module.ModuleDescriptionLibOut;
 
-pub const create_device_node = ops.create_device_node;
+pub const createDeviceNode = ops.createDeviceNode;
 
 pub const __SaturnModuleDescription__: ModuleDescription = .{
     .mod = &devfs,
@@ -41,7 +41,7 @@ pub const __SaturnModuleDescription__: ModuleDescription = .{
     },
     .libs = .{
         .mines = &[_]ModuleDescriptionLibMine {
-            module.ModuleDescriptionLibMine_T {
+            ModuleDescriptionLibMine {
                 .name = "devfs-operations",
                 .stable = 0,
                 .current = 0,
@@ -53,7 +53,7 @@ pub const __SaturnModuleDescription__: ModuleDescription = .{
                 .versions = &[_]ModuleDescriptionLibMine.Version {
                     ModuleDescriptionLibMine.Version {
                         .tag = "1.0.0",
-                        .lib = @field(libs, "devfs-operations-1.0.0"),
+                        .lib = libs.devfs_operations_1_0_0,
                         .flags = .{
                             .enable = 1,
                         },
@@ -74,7 +74,7 @@ pub const devfs: Mod = .{
     .desc = "Core Kernel Devices Filesystem",
     .author = "Linuxperoxo",
     .version = "0.1.0",
-    .license = .GPL2_only,
+    .license = .gpl2_only,
     .type = .filesystem,
     .deps = &[_][]const u8{
         "ke_m_rootfs",
@@ -92,11 +92,11 @@ fn init() anyerror!void {
     });
 
     vfs.touch("/dev") catch |err| switch(err) {
-        vfs.VfsErr_T.NoNFound => {
+        vfs.VfsErr.NoNFound => {
             try vfs.mkdir("/", "dev", 0, 0, .{
-                .owner = vfs.R | vfs.W,
-                .group = vfs.R,
-                .other = vfs.R,
+                .owner = vfs.r | vfs.w,
+                .group = vfs.r,
+                .other = vfs.r,
             });
         },
         else => return err,

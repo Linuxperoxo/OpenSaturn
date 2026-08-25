@@ -5,19 +5,19 @@
 
 const vfs: type = @import("root").core.vfs;
 
-pub const uid: type = vfs.uid_T;
-pub const gid: type = vfs.gid_T;
-pub const mode: type = vfs.mode_T;
-pub const FileType: type = vfs.FileType_T;
-pub const Inode: type = vfs.Inode_T;
-pub const InodeOp: type = vfs.InodeOp_T;
-pub const Dentry: type = vfs.Dentry_T;
-pub const Superblock: type = vfs.Superblock_T;
-pub const VfsErr: type = vfs.VfsErr_T;
+pub const Uid: type = vfs.Uid;
+pub const Gid: type = vfs.Gid;
+pub const Mode: type = vfs.Mode;
+pub const FileType: type = vfs.FileType;
+pub const Inode: type = vfs.Inode;
+pub const InodeOp: type = vfs.InodeOp;
+pub const Dentry: type = vfs.Dentry;
+pub const Superblock: type = vfs.Superblock;
+pub const VfsErr: type = vfs.VfsErr;
 
-pub const R: u3 = vfs.R;
-pub const W: u3 = vfs.W;
-pub const X: u3 = vfs.X;
+pub const r: u3 = vfs.r;
+pub const w: u3 = vfs.w;
+pub const x: u3 = vfs.x;
 
 pub const write = vfs.write;
 pub const read = vfs.read;

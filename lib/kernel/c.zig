@@ -3,6 +3,6 @@
 // │            Author: Linuxperoxo             │
 // └────────────────────────────────────────────┘
 
-pub inline fn c_bool(num: usize) bool {
+pub inline fn cBool(num: usize) bool {
     return num != 0;
 }

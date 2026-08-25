@@ -9,7 +9,7 @@ const config: type = @import("root").config;
 // C Sources Loader
 
 comptime {
-    if(config.compile.options.CSupport) {
+    if(config.compile.options.c_support) {
         for(modsys.saturn_modules) |module| {
             if(module.c_sources == null) continue;
             const c_sources: type = @cImport({

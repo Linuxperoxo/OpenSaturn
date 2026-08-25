@@ -10,27 +10,27 @@ const types: type = @import("sba/types.zig");
 // === Saturn Byte Allocator ===
 
 const default_block_size: comptime_int = 16;
-const total_bytes_of_pool = switch (config.arch.options.Target) {
+const total_bytes_of_pool = switch (config.arch.options.target) {
     .i386 => config.kernel.options.kernel_page_size,
     else => unreachable,
 };
 
 pub fn buildByteAllocator(
     comptime block: ?comptime_int,
-    comptime personality: types.Personality_T,
+    comptime personality: types.Personality,
 ) type {
     return struct {
-        root: Pool_T = .{},
-        top: ?*Pool_T = null,
+        root: Pool = .{},
+        top: ?*Pool = null,
 
         // esse calculo e equivalente a fazer:
         //
-        // var blocks_reserved = block / @sizeOf(Pool_T);
-        // if((block % @sizeOf(Pool_T)) != 0) blocks_reserved += 1;
-        pub const blocks_reserved = if (personality.resize) ((@sizeOf(Pool_T) + block_size - 1) / block_size) else 0;
+        // var blocks_reserved = block / @sizeOf(Pool);
+        // if((block % @sizeOf(Pool)) != 0) blocks_reserved += 1;
+        pub const blocks_reserved = if (personality.resize) ((@sizeOf(Pool) + block_size - 1) / block_size) else 0;
         pub const block_size = block orelse default_block_size;
 
-        pub const Pool_T: type = struct {
+        pub const Pool: type = struct {
             bytes: ?[]u8 = null,
             refs: usize = blocks_reserved,
             next: ?usize = null,
@@ -47,17 +47,17 @@ pub fn buildByteAllocator(
                 parent: u1 = 0,
                 reserved: u4 = 0,
             } = .{},
-            private: Private_T = if (Private_T == void) {} else undefined,
+            private: Private = if (Private == void) {} else undefined,
 
             pub const pool_bitmap_len = total_bytes_of_pool / block_size;
 
-            pub const Private_T: type = switch (config.arch.options.Target) {
-                .i386 => mm.AllocPage_T,
+            pub const Private: type = switch (config.arch.options.target) {
+                .i386 => mm.AllocPage,
                 else => void,
             };
         };
 
-        pub const err_T: type = error{
+        pub const Err: type = error{
             PoolInitFailed,
             PoolResizeFailed,
             OutOfMemory,
@@ -70,30 +70,30 @@ pub fn buildByteAllocator(
             DoubleFree,
         };
 
-        fn pool_init(pool: *Pool_T) err_T!void {
-            switch (config.arch.options.Target) {
+        fn poolInit(pool: *Pool) Err!void {
+            switch (config.arch.options.target) {
                 .i386 => {
-                    pool.private = @call(.never_inline, mm.alloc_page, .{}) catch return err_T.PoolInitFailed;
+                    pool.private = @call(.never_inline, mm.allocPage, .{}) catch return Err.PoolInitFailed;
                     pool.bytes = pool.private.virtual;
                 },
                 else => unreachable,
             }
         }
 
-        fn pool_deinit(pool: *Pool_T) err_T!void {
-            switch (config.arch.options.Target) {
-                .i386 => @call(.never_inline, mm.free_page, .{&pool.private}) catch return err_T.PoolInitFailed,
+        fn poolDeinit(pool: *Pool) Err!void {
+            switch (config.arch.options.target) {
+                .i386 => @call(.never_inline, mm.freePage, .{&pool.private}) catch return Err.PoolInitFailed,
                 else => unreachable,
             }
         }
 
-        fn resize(self: *@This()) err_T!void {
-            const pool_config = opaque {
-                pub fn config(pool: *Pool_T) void {
+        fn resize(self: *@This()) Err!void {
+            const poolConfig = opaque {
+                pub fn config(pool: *Pool) void {
                     for (0..blocks_reserved) |i| {
                         pool.bitmap[i] = 1;
                     }
-                    for (blocks_reserved..Pool_T.pool_bitmap_len) |i| {
+                    for (blocks_reserved..Pool.pool_bitmap_len) |i| {
                         pool.bitmap[i] = 0;
                     }
                     pool.refs = blocks_reserved;
@@ -106,14 +106,14 @@ pub fn buildByteAllocator(
                     };
                 }
             }.config;
-            const pool: *Pool_T = @ptrCast(@alignCast(&self.top.?.bytes.?[0]));
-            try @call(.always_inline, pool_init, .{pool});
-            @call(.always_inline, pool_config, .{pool});
+            const pool: *Pool = @ptrCast(@alignCast(&self.top.?.bytes.?[0]));
+            try @call(.always_inline, poolInit, .{pool});
+            @call(.always_inline, poolConfig, .{pool});
             self.top.?.flags.parent = 1;
             self.top = pool;
         }
 
-        inline fn check_blocks_range(pool: *Pool_T, blocks: usize, locale: usize, state: ?u1) struct { index: ?usize, result: bool } {
+        inline fn checkBlocksRange(pool: *Pool, blocks: usize, locale: usize, state: ?u1) struct { index: ?usize, result: bool } {
             return r: {
                 if ((locale + blocks) > pool.bitmap.len) break :r .{
                     .index = null,
@@ -132,27 +132,27 @@ pub fn buildByteAllocator(
             };
         }
 
-        inline fn cast_block_to_byte(blocks: usize) usize {
+        inline fn castBlockToByte(blocks: usize) usize {
             return blocks * block_size;
         }
 
-        inline fn cast_bytes_to_block(bytes: usize) usize {
+        inline fn castBytesToBlock(bytes: usize) usize {
             return @intCast((block_size + bytes - 1) / block_size);
         }
 
-        inline fn mark_blocks(pool: *Pool_T, index: usize, blocks: usize) err_T!void {
+        inline fn markBlocks(pool: *Pool, index: usize, blocks: usize) Err!void {
             // total_bytes_of_pool / block_size = bitmap.len
-            if ((index + blocks) > pool.bitmap.len) return err_T.IndexOutBounds;
+            if ((index + blocks) > pool.bitmap.len) return Err.IndexOutBounds;
             for (index..(index + blocks)) |i|
                 pool.bitmap[i] = 1;
         }
 
-        inline fn found_pool_of_ptr(self: *@This(), ptr: []u8) struct { ?*Pool_T, ?*Pool_T } {
-            var child_pool: ?*Pool_T = null;
-            var parent_pool: ?*Pool_T = null;
-            var current_pool: *Pool_T = &self.root;
+        inline fn foundPoolOfPtr(self: *@This(), ptr: []u8) struct { ?*Pool, ?*Pool } {
+            var child_pool: ?*Pool = null;
+            var parent_pool: ?*Pool = null;
+            var current_pool: *Pool = &self.root;
             while (true) {
-                if (check_bounds(current_pool, ptr)) {
+                if (checkBounds(current_pool, ptr)) {
                     child_pool = current_pool;
                     break;
                 }
@@ -166,40 +166,40 @@ pub fn buildByteAllocator(
             };
         }
 
-        inline fn check_bounds(pool: *Pool_T, ptr: []u8) bool {
+        inline fn checkBounds(pool: *Pool, ptr: []u8) bool {
             return if (@intFromPtr(ptr.ptr) < @intFromPtr(&pool.bytes.?[0])) false else (@intFromPtr(ptr.ptr) - @intFromPtr(&pool.bytes.?[0])) < total_bytes_of_pool;
         }
 
-        fn alloc_sigle_frame(self: *@This(), bytes: usize) err_T![]u8 {
-            if (self.root.flags.full == 1) return err_T.OutOfMemory;
+        fn allocSigleFrame(self: *@This(), bytes: usize) Err![]u8 {
+            if (self.root.flags.full == 1) return Err.OutOfMemory;
 
-            const blocks_to_alloc: usize = cast_bytes_to_block(bytes);
+            const blocks_to_alloc: usize = castBytesToBlock(bytes);
             var index: usize = self.root.next orelse 0;
 
             for (index..self.root.bitmap.len) |_| {
-                const check = check_blocks_range(&self.root, blocks_to_alloc, index, 0);
+                const check = checkBlocksRange(&self.root, blocks_to_alloc, index, 0);
                 if (check.result) break;
-                if (check.index == null) return err_T.MemoryFrag;
+                if (check.index == null) return Err.MemoryFrag;
                 index = check.index.? + 1;
             }
-            try mark_blocks(&self.root, index, blocks_to_alloc);
+            try markBlocks(&self.root, index, blocks_to_alloc);
 
             self.root.refs += blocks_to_alloc;
             self.root.flags.full = if (self.root.refs >= self.root.bitmap.len) 1 else 0;
 
-            return self.root.bytes.?[cast_block_to_byte(index)..cast_block_to_byte(index + blocks_to_alloc)];
+            return self.root.bytes.?[castBlockToByte(index)..castBlockToByte(index + blocks_to_alloc)];
         }
 
-        fn alloc_resized_frame(self: *@This(), bytes: usize) err_T![]u8 {
-            var current_pool: *Pool_T = r: {
+        fn allocResizedFrame(self: *@This(), bytes: usize) Err![]u8 {
+            var current_pool: *Pool = r: {
                 if (self.top.?.flags.full == 1) try @call(.never_inline, resize, .{self});
                 break :r self.top.?;
             };
-            const blocks_to_alloc: usize = cast_bytes_to_block(bytes);
+            const blocks_to_alloc: usize = castBytesToBlock(bytes);
             var index: usize = current_pool.next orelse blocks_reserved;
 
             for (index..current_pool.bitmap.len) |_| {
-                const check = check_blocks_range(current_pool, blocks_to_alloc, index, 0);
+                const check = checkBlocksRange(current_pool, blocks_to_alloc, index, 0);
                 if (check.result) break;
                 if (check.index == null) {
                     try @call(.never_inline, resize, .{self});
@@ -209,49 +209,49 @@ pub fn buildByteAllocator(
                 }
                 index = check.index.? + 1;
             }
-            try mark_blocks(current_pool, index, blocks_to_alloc);
+            try markBlocks(current_pool, index, blocks_to_alloc);
 
             current_pool.refs += blocks_to_alloc;
             current_pool.flags.full = if (current_pool.refs >= current_pool.bitmap.len) 1 else 0;
 
-            return current_pool.bytes.?[cast_block_to_byte(index)..cast_block_to_byte(index + blocks_to_alloc)];
+            return current_pool.bytes.?[castBlockToByte(index)..castBlockToByte(index + blocks_to_alloc)];
         }
 
-        pub fn alloc(self: *@This(), comptime T: type, N: usize) err_T![]T {
-            const bytes: usize = @sizeOf(T) * N;
+        pub fn alloc(self: *@This(), comptime t: type, n: usize) Err![]t {
+            const bytes: usize = @sizeOf(t) * n;
             self.top = self.top orelse &self.root;
-            if (bytes == 0) return err_T.ZeroBytes;
+            if (bytes == 0) return Err.ZeroBytes;
             if (self.root.bytes == null) {
                 @branchHint(.cold);
-                try @call(.never_inline, pool_init, .{&self.root});
+                try @call(.never_inline, poolInit, .{&self.root});
             }
             if (comptime personality.resize) {
-                return @as([]T, @ptrCast(@alignCast(try @call(.always_inline, alloc_resized_frame, .{ self, bytes }))))[0..N];
+                return @as([]t, @ptrCast(@alignCast(try @call(.always_inline, allocResizedFrame, .{ self, bytes }))))[0..n];
             }
-            return @as([]T, @ptrCast(@alignCast(try @call(.always_inline, alloc_sigle_frame, .{ self, bytes }))))[0..N];
+            return @as([]t, @ptrCast(@alignCast(try @call(.always_inline, allocSigleFrame, .{ self, bytes }))))[0..n];
         }
 
-        fn free_resized_frame(self: *@This(), ptr: []u8) err_T!void {
-            const parent_pool, const alloc_pool = self.found_pool_of_ptr(ptr);
+        fn freeResizedFrame(self: *@This(), ptr: []u8) Err!void {
+            const parent_pool, const alloc_pool = self.foundPoolOfPtr(ptr);
             if (alloc_pool == null)
-                return err_T.IndexOutBounds;
+                return Err.IndexOutBounds;
 
-            const block_to_free: usize = cast_bytes_to_block(ptr.len);
-            const initial_block: usize = cast_bytes_to_block(@intFromPtr(ptr.ptr) - @intFromPtr(&alloc_pool.?.bytes.?[0]));
+            const block_to_free: usize = castBytesToBlock(ptr.len);
+            const initial_block: usize = castBytesToBlock(@intFromPtr(ptr.ptr) - @intFromPtr(&alloc_pool.?.bytes.?[0]));
 
-            const check = check_blocks_range(alloc_pool.?, block_to_free, initial_block, null); // NULL == 1
+            const check = checkBlocksRange(alloc_pool.?, block_to_free, initial_block, null); // NULL == 1
             if (check.index != null and !check.result)
-                return err_T.DoubleFree;
+                return Err.DoubleFree;
 
             if ((alloc_pool.?.refs - block_to_free) == blocks_reserved and parent_pool != null) {
                 @branchHint(.cold);
                 self.top = if (alloc_pool.?.flags.parent == 0) parent_pool else self.top;
                 parent_pool.?.flags.parent = alloc_pool.?.flags.parent;
-                try @call(.never_inline, pool_deinit, .{alloc_pool.?});
+                try @call(.never_inline, poolDeinit, .{alloc_pool.?});
                 if (alloc_pool.?.flags.parent == 1) {
                     @branchHint(.cold);
-                    const dest: *Pool_T = @ptrCast(@alignCast(&parent_pool.?.bytes.?[0]));
-                    const src: *Pool_T = @ptrCast(@alignCast(&alloc_pool.?.bytes.?[0]));
+                    const dest: *Pool = @ptrCast(@alignCast(&parent_pool.?.bytes.?[0]));
+                    const src: *Pool = @ptrCast(@alignCast(&alloc_pool.?.bytes.?[0]));
                     dest.* = src.*;
                 }
                 return;
@@ -264,17 +264,17 @@ pub fn buildByteAllocator(
             alloc_pool.?.flags.full = 0;
         }
 
-        fn free_single_frame(self: *@This(), ptr: []u8) err_T!void {
-            if (self.root.bytes == null) return err_T.NonPoolInitialized;
-            if (!check_bounds(&self.root, ptr))
-                return err_T.IndexOutBounds;
+        fn freeSingleFrame(self: *@This(), ptr: []u8) Err!void {
+            if (self.root.bytes == null) return Err.NonPoolInitialized;
+            if (!checkBounds(&self.root, ptr))
+                return Err.IndexOutBounds;
 
-            const block_to_free: usize = cast_bytes_to_block(ptr.len);
-            const initial_block: usize = cast_bytes_to_block(@intFromPtr(ptr.ptr) - @intFromPtr(&self.root.bytes.?[0]));
+            const block_to_free: usize = castBytesToBlock(ptr.len);
+            const initial_block: usize = castBytesToBlock(@intFromPtr(ptr.ptr) - @intFromPtr(&self.root.bytes.?[0]));
 
-            const check = check_blocks_range(&self.root, block_to_free, initial_block, null); // NULL == 1
+            const check = checkBlocksRange(&self.root, block_to_free, initial_block, null); // NULL == 1
             if (check.index != null and !check.result)
-                return err_T.DoubleFree;
+                return Err.DoubleFree;
 
             for (initial_block..(initial_block + block_to_free)) |i| {
                 self.root.bitmap[i] = 0;
@@ -283,8 +283,8 @@ pub fn buildByteAllocator(
             self.root.flags.full = 0;
         }
 
-        pub fn free(self: *@This(), ptr: anytype) err_T!void {
-            const byte_slice_fn = comptime sw0: switch (@typeInfo(@TypeOf(ptr))) {
+        pub fn free(self: *@This(), ptr: anytype) Err!void {
+            const byteSliceFn = comptime sw0: switch (@typeInfo(@TypeOf(ptr))) {
                 .pointer => |ptr_info| {
                     switch (ptr_info.size) {
                         .slice => break :sw0 opaque {
@@ -302,11 +302,11 @@ pub fn buildByteAllocator(
                 },
                 else => @compileError("expect slice to free or single pointer"),
             };
-            const byte_slice = @call(.always_inline, byte_slice_fn, .{ptr});
+            const byte_slice = @call(.always_inline, byteSliceFn, .{ptr});
             if (comptime personality.resize) {
-                return @call(.always_inline, free_resized_frame, .{ self, byte_slice });
+                return @call(.always_inline, freeResizedFrame, .{ self, byte_slice });
             }
-            return @call(.always_inline, free_single_frame, .{ self, byte_slice });
+            return @call(.always_inline, freeSingleFrame, .{ self, byte_slice });
         }
     };
 }

@@ -6,7 +6,7 @@
 const modules: type = @import("root").config.modules;
 const fusium: type = @import("root").config.fusium;
 
-pub const Target: type = @TypeOf(@import("root").config.arch.options.Target);
+pub const Target: type = @TypeOf(@import("root").config.arch.options.target);
 
 pub const ArchCoreCodeImpl: type = struct {
     maintainer: []const u8,
@@ -53,7 +53,7 @@ pub const ArchDescription: type = struct {
             c: *const fn() callconv(.c) void,
             naked: *const fn() callconv(.naked) void,
 
-            pub fn actived_field(comptime self: *const @This()) @FieldType(@This(), if(self.* == .c) "c" else "naked") {
+            pub fn activedField(comptime self: *const @This()) @FieldType(@This(), if(self.* == .c) "c" else "naked") {
                 return switch(self.*) {
                     .c => |c| c,
                     .naked => |naked| naked,
@@ -74,17 +74,17 @@ pub const ArchDescription: type = struct {
 
     pub const ModuleOverrider: type = struct {
         module: []const u8,
-        value: modules.menuconfig.Load_T,
+        value: modules.menuconfig.Load,
     };
 
     pub const Fusium: type = struct {
-        default: ?fusium.menuconfig.Load_T,
+        default: ?fusium.menuconfig.Load,
         overriders: []const FusiumOverrider,
     };
 
     pub const FusiumOverrider: type = struct {
         fusioner: []const u8,
-        value: fusium.menuconfig.Load_T,
+        value: fusium.menuconfig.Load,
     };
 
     pub const Overrider: type = struct {

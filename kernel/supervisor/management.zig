@@ -3,26 +3,26 @@
 // │            Author: Linuxperoxo                 │
 // └────────────────────────────────────────────────┘
 
-const supervisor_T: type = @import("types.zig").supervisor_T;
-const supervisorIsrTable_T: type = @import("types.zig").supervisorIsrTable_T;
+const Supervisor: type = @import("types.zig").Supervisor;
+const SupervisorIsrTable: type = @import("types.zig").SupervisorIsrTable;
 
-const SaturnSupervisorTable = @import("root").cpu.Interrupt.supervisor.__SaturnSupervisorTable__;
+const saturn_supervisor_table = @import("root").cpu.Interrupt.supervisor.__SaturnSupervisorTable__;
 
 const fmt: type = struct {
-    pub fn toString(comptime N: usize, comptime C: usize) [C]u8 {
-        var num: usize = N;
-        var str: [C]u8 = undefined;
-        for(0..C) |i| {
-            str[(C - 1) - i] = @intCast((num % 10) + '0');
+    pub fn toString(comptime n: usize, comptime c: usize) [c]u8 {
+        var num: usize = n;
+        var str: [c]u8 = undefined;
+        for(0..c) |i| {
+            str[(c - 1) - i] = @intCast((num % 10) + '0');
             num = num / 10;
         }
         return str;
     }
 
-    pub fn digitCount(comptime N: usize) usize {
+    pub fn digitCount(comptime n: usize) usize {
         return comptime c: {
-            if(N == 0) break :c 1;
-            var num: usize = N;
+            if(n == 0) break :c 1;
+            var num: usize = n;
             var count: usize = 0;
             while(num != 0) : (count += 1) {
                 num = num / 10;
@@ -32,31 +32,31 @@ const fmt: type = struct {
     }
 };
 
-pub const supervisorIsrTable = sIT: {
-    var archSupervisorISRInfo: [SaturnSupervisorTable.len]supervisorIsrTable_T = undefined;
-    for(0..SaturnSupervisorTable.len) |i| {
-        archSupervisorISRInfo[i].rewritten = SaturnSupervisorTable[i].rewritten;
-        archSupervisorISRInfo[i].status = SaturnSupervisorTable[i].status;
-        archSupervisorISRInfo[i].type = SaturnSupervisorTable[i].type;
-        archSupervisorISRInfo[i].isr = switch(SaturnSupervisorTable[i].type) {
+pub const supervisor_isr_table = sIT: {
+    var arch_supervisor_isr_info: [saturn_supervisor_table.len]SupervisorIsrTable = undefined;
+    for(0..saturn_supervisor_table.len) |i| {
+        arch_supervisor_isr_info[i].rewritten = saturn_supervisor_table[i].rewritten;
+        arch_supervisor_isr_info[i].status = saturn_supervisor_table[i].status;
+        arch_supervisor_isr_info[i].type = saturn_supervisor_table[i].type;
+        arch_supervisor_isr_info[i].isr = switch(saturn_supervisor_table[i].type) {
             .exception => .{ .exception = null },
             else => .{ .noexception = null },
         };
     }
-    break :sIT archSupervisorISRInfo;
+    break :sIT arch_supervisor_isr_info;
 };
 
-pub const supervisorHandlerPerIsr = sHP: {
+pub const supervisor_handler_per_isr = sHP: {
     @setEvalBranchQuota(4096);
-    var isrHandlers: [SaturnSupervisorTable.len]*const fn() callconv(.c) void = undefined;
+    var isr_handlers: [saturn_supervisor_table.len]*const fn() callconv(.c) void = undefined;
     var counts: struct {exception: usize, irq: usize, syscall: usize, none: usize} = .{
         .exception = 0,
         .irq = 0,
         .syscall = 0,
         .none = 0,
     };
-    for(0..SaturnSupervisorTable.len) |i| {
-        isrHandlers[i] = iH: switch(SaturnSupervisorTable[i].type) {
+    for(0..saturn_supervisor_table.len) |i| {
+        isr_handlers[i] = iH: switch(saturn_supervisor_table[i].type) {
             .exception => {
                 const exception = &(struct {
                     pub fn exception() callconv(.c) void {
@@ -107,7 +107,7 @@ pub const supervisorHandlerPerIsr = sHP: {
             },
         };
     }
-    break :sHP isrHandlers;
+    break :sHP isr_handlers;
 };
 
 fn exceptionHandler(_: usize) void {

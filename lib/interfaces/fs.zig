@@ -5,7 +5,7 @@
 
 const fs: type = @import("root").core.fs;
 
-pub const Fs: type = fs.Fs_T;
-pub const FsErr: type = fs.FsErr_T;
+pub const Fs: type = fs.Fs;
+pub const FsErr: type = fs.FsErr;
 
 pub const schfs = fs.schfs;

@@ -7,41 +7,41 @@ const types: type = @import("types.zig");
 const allocator: type = @import("allocator.zig");
 const aux: type = @import("aux.zig");
 
-const default_priority: types.KTaskPriority_T = types.KTaskPriority_T.normal;
+const default_priority: types.KTaskPriority = types.KTaskPriority.normal;
 
-var tasks = [_]types.ListKTask_T {
+var tasks = [_]types.ListKTask {
     .{},
-} ** @typeInfo(types.KTaskPriority_T).@"enum".fields.len;
+} ** @typeInfo(types.KTaskPriority).@"enum".fields.len;
 
-var current_priority: types.KTaskPriority_T = .highly;
+var current_priority: types.KTaskPriority = .highly;
 
-pub fn sched_task(task: *types.KTask_T, priority: ?types.KTaskPriority_T) types.KTaskErr_T!void {
+pub fn schedTask(task: *types.KTask, priority: ?types.KTaskPriority) types.KTaskErr!void {
     const task_prio = priority orelse default_priority;
-    const task_list: *types.ListKTask_T = &tasks[@intFromEnum(task_prio)];
-    if(!task_list.is_initialized()) task_list.init(
+    const task_list: *types.ListKTask = &tasks[@intFromEnum(task_prio)];
+    if(!task_list.isInitialized()) task_list.init(
         &allocator.sba.allocator
-    ) catch return types.KTaskErr_T.SchedPriorityInitError;
-    task_list.push_in_list(
+    ) catch return types.KTaskErr.SchedPriorityInitError;
+    task_list.pushInList(
         &allocator.sba.allocator,
         task,
-    ) catch return types.KTaskErr_T.SchedFailed;
+    ) catch return types.KTaskErr.SchedFailed;
 }
 
-pub fn sched_tasks(priority: types.KTaskPriority_T) usize {
-    return tasks[@intFromEnum(priority)].how_many_nodes();
+pub fn schedTasks(priority: types.KTaskPriority) usize {
+    return tasks[@intFromEnum(priority)].howManyNodes();
 }
 
-pub fn sched_run(priority: ?types.KTaskPriority_T) void {
+pub fn schedRun(priority: ?types.KTaskPriority) void {
     defer r: {
         if(priority != null and priority.? != current_priority) break :r {};
         current_priority = switch(current_priority) {
-            .low => types.KTaskPriority_T.highly,
+            .low => types.KTaskPriority.highly,
             else => @enumFromInt(@intFromEnum(current_priority) + 1),
         };
     }
-    const task_list: *types.ListKTask_T = &tasks[@intFromEnum(priority orelse current_priority)];
-    if(!task_list.is_initialized()) return;
-    task_list.iterator_reset() catch unreachable;
+    const task_list: *types.ListKTask = &tasks[@intFromEnum(priority orelse current_priority)];
+    if(!task_list.isInitialized()) return;
+    task_list.iteratorReset() catch unreachable;
     while(task_list.iterator()) |task| {
         task.flags.internal = .{};
         sw: switch((enum { flags, task, exit, drop }).flags) {
@@ -52,10 +52,10 @@ pub fn sched_run(priority: ?types.KTaskPriority_T) void {
             },
 
             .task => {
-                if(aux.call_task(task)) |_| {} else |_| {
+                if(aux.callTask(task)) |_| {} else |_| {
                     if(task.flags.control.stop == 1) break :sw {};
                 }
-                aux.call_childs(task);
+                aux.callChilds(task);
                 continue :sw .exit;
             },
 
@@ -65,15 +65,15 @@ pub fn sched_run(priority: ?types.KTaskPriority_T) void {
             },
 
             .drop => {
-                task_list.drop_on_list(
-                    (task_list.iterator_index() catch unreachable) - 1,
+                task_list.dropOnList(
+                    (task_list.iteratorIndex() catch unreachable) - 1,
                     &allocator.sba.allocator
                 ) catch unreachable;
-                if(task_list.how_many_nodes() == 0) task_list.deinit(&allocator.sba.allocator) catch unreachable;
+                if(task_list.howManyNodes() == 0) task_list.deinit(&allocator.sba.allocator) catch unreachable;
             },
         }
     } else |err| switch(err) {
-        types.ListKTaskErr_T.EndOfIterator => {},
+        types.ListKTaskErr.EndOfIterator => {},
         else => {
             @branchHint(.unlikely);
             // klog()

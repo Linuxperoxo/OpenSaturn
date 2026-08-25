@@ -5,4 +5,4 @@
 
 const types: type = @import("types.zig");
 
-pub const VideoVendor: types.ConfigVendors_T = .qemu;
+pub const video_vendor: types.ConfigVendors = .qemu;

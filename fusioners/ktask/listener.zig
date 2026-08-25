@@ -7,12 +7,12 @@ const events: type = @import("root").interfaces.events;
 const config: type = @import("root").config;
 const sched: type = @import("sched.zig");
 
-pub var listener: events.EventListener_T = .{
+pub var listener: events.EventListener = .{
     .listening = config.kernel.options.timer_event.who,
     .event = 0, // para timer temos apenas o evento 0
     .handler = &opaque {
-        pub fn handler(_: events.EventOut_T) ?events.EventInput_T {
-            @call(.always_inline, sched.sched_run, .{
+        pub fn handler(_: events.EventOut) ?events.EventInput {
+            @call(.always_inline, sched.schedRun, .{
                 null
             });
             return null;
@@ -26,23 +26,23 @@ pub var listener: events.EventListener_T = .{
     },
 };
 
-pub fn ktask_install_listener() anyerror!void {
+pub fn ktaskInstallListener() anyerror!void {
     errdefer {
         // klog()
     }
-    try events.install_listener_event(&listener, .{
+    try events.installListener(&listener, .{
         .default = .timer,
     });
 }
 
-pub inline fn ktask_enable() void {
+pub inline fn ktaskEnable() void {
     listener.flags.control = .{
         .all = 1,
         .satisfied = 0,
     };
 }
 
-pub inline fn ktask_disable() void {
+pub inline fn ktaskDisable() void {
     listener.flags.control = .{
         .all = 0,
         .satisfied = 1,

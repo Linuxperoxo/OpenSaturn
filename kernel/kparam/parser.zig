@@ -3,19 +3,18 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const builtin: type = @import("builtin");
 const types: type = @import("types.zig");
 const allocator: type = @import("allocator.zig");
 const mem: type = @import("root").lib.kernel.mem;
 
-pub inline fn params_parser(params: []const u8) types.KParamErr_T![]const types.Param_T {
+pub inline fn paramsParser(params: []const u8) types.KParamErr![]const types.Param {
     var rvalue: bool = false;
     var local_index: usize = 0;
     var parsed_index: usize = 0;
     var i: usize = 0;
 
-    const parsed_params: []types.Param_T = allocator.sba.allocator.alloc(types.Param_T, params_counter(params))
-        catch return types.KParamErr_T.AllocatorInternalError;
+    const parsed_params: []types.Param = allocator.sba.allocator.alloc(types.Param, paramsCounter(params))
+        catch return types.KParamErr.AllocatorInternalError;
 
     for(params) |char| {
         sw: switch(char) {
@@ -25,24 +24,24 @@ pub inline fn params_parser(params: []const u8) types.KParamErr_T![]const types.
                     parsed_index += 1;
                     rvalue = false;
                 }
-                if(mem.eql(params[local_index..i], @tagName(types.Value_T.yes), .{})) {
-                    parsed_params[parsed_index].value = types.Value_T.yes;
+                if(mem.eql(params[local_index..i], @tagName(types.Value.yes), .{})) {
+                    parsed_params[parsed_index].value = types.Value.yes;
                     break :sw {};
                 }
-                if(mem.eql(params[local_index..i], @tagName(types.Value_T.no), .{})) {
-                    parsed_params[parsed_index].value = types.Value_T.no;
+                if(mem.eql(params[local_index..i], @tagName(types.Value.no), .{})) {
+                    parsed_params[parsed_index].value = types.Value.no;
                     break :sw {};
                 }
-                return types.KParamErr_T.ParserInvalidValue;
+                return types.KParamErr.ParserInvalidValue;
             },
 
             '=' => {
-                if(rvalue) return types.KParamErr_T.ParserSyntaxError;
-                if(local_index >= i) return types.KParamErr_T.ParserMissingParameter;
-                if((i + 1) == params.len) return types.KParamErr_T.ParserMissingValue;
+                if(rvalue) return types.KParamErr.ParserSyntaxError;
+                if(local_index >= i) return types.KParamErr.ParserMissingParameter;
+                if((i + 1) == params.len) return types.KParamErr.ParserMissingValue;
 
                 switch(params[i + 1]) {
-                    '\n', ' ' => return types.KParamErr_T.ParserMissingValue,
+                    '\n', ' ' => return types.KParamErr.ParserMissingValue,
                     else => {},
                 }
 
@@ -68,24 +67,9 @@ pub inline fn params_parser(params: []const u8) types.KParamErr_T![]const types.
     return parsed_params;
 }
 
-inline fn params_counter(params: []const u8) usize {
+inline fn paramsCounter(params: []const u8) usize {
     var counter: usize = 0;
     for(params) |char|
         counter += @intFromBool(char == '=');
     return counter;
-}
-
-test "Parsing Test" {
-    const std: type = @import("std");
-    const kernel_param: []const u8 =
-        \\sysmod_disable_devfs=yes
-        \\sysmod_enable_devfs=no
-    ;
-
-    for(try params_parser(kernel_param)) |parsed_param| {
-        std.debug.print("{s} = {s}\n", .{
-            parsed_param.param,
-            @tagName(parsed_param.value),
-        });
-    }
 }

@@ -38,7 +38,7 @@ pub noinline fn deinit(self: *const Self) Err!void {
 }
 
 /// * alloc a slice of type []T containing "n" elements
-pub noinline fn alloc(self: *const Self, comptime T: type, n: usize) Err![]T {
+pub noinline fn alloc(self: *const Self, comptime t: type, n: usize) Err![]t {
     return @ptrCast(@alignCast(try @call(.always_inline, self.vtable.alloc, .{ self.private, n })));
 }
 
@@ -51,8 +51,8 @@ pub noinline fn free(self: *const Self, ptr: anytype) void {
 }
 
 /// * alloc a single element pointer
-pub noinline fn create(self: *const Self, comptime T: type) Err!*T {
-    return @ptrCast(@alignCast(try @call(.always_inline, self.vtable.alloc, .{ self.private, @sizeOf(T) })));
+pub noinline fn create(self: *const Self, comptime t: type) Err!*t {
+    return @ptrCast(@alignCast(try @call(.always_inline, self.vtable.alloc, .{ self.private, @sizeOf(t) })));
 }
 
 /// * free a single element pointer
@@ -65,7 +65,7 @@ pub noinline fn destroy(self: *const Self, ptr: anytype) void {
 
 /// * readjusts the size of a slice
 /// * depending on the implementation, you can allocate a new slice and copy the old data, or just expand the old slice
-pub noinline fn resize(self: *const Self, ptr: anytype, new_size: usize) Err![]meta.Child(@TypeOf(ptr)) {
+pub noinline fn resize(self: *const Self, ptr: anytype, new_size: usize) Err![]meta.child(@TypeOf(ptr)) {
     if (!comptime meta.isSlice(@TypeOf(ptr)))
         @compileError("\"fn resize()\" expect a slice!");
 

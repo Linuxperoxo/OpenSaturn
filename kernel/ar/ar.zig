@@ -31,9 +31,9 @@ comptime {
 pub const arch_impl = r: {
     const manifest: arch.ArchManifest = t: {
         for(codes.__SaturnArchManifests__) |manifest|
-            if(manifest.target == config.arch.options.Target)
+            if(manifest.target == config.arch.options.target)
                 break :t manifest;
-        @compileError("target \"" ++ @tagName(config.arch.options.Target) ++ "\" does not have implementation");
+        @compileError("target \"" ++ @tagName(config.arch.options.target) ++ "\" does not have implementation");
     };
 
     // .target and .arch is required
@@ -43,7 +43,7 @@ pub const arch_impl = r: {
     ]builtin.Type.StructField = undefined;
 
     manifest_fields[0].name = "target";
-    manifest_fields[0].type = arch.Target_T;
+    manifest_fields[0].type = arch.Target;
     manifest_fields[0].default_value_ptr = &manifest.target;
     manifest_fields[0].is_comptime = true;
     manifest_fields[0].alignment = 1;

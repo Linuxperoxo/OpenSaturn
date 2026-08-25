@@ -3,46 +3,42 @@
 // │            Author: Linuxperoxo                  │
 // └─────────────────────────────────────────────────┘
 
-const builtin: type = @import("builtin");
 const types: type = @import("types.zig");
 const allocator: type = @import("allocator.zig");
-const pci: type = if(!builtin.is_test) @import("root").code.lib.kernel.io.pci else @import("test/types.zig");
-const tree: type = if(!builtin.is_test) @import("root").lib.kernel.binary_tree else @import("test/tree.zig");
+const tree: type = @import("root").lib.kernel.binary_tree;
 
-const PCIPhysIo_T: type = pci.PCIPhysIo_T;
+pub var listeners_tree: tree.binaryTree(*types.PhysIo) = .{};
 
-pub var listeners_tree: tree.BinaryTree(*types.PhysIo_T) = .{};
-
-inline fn physio_tree_id(bus: u8, device: u5, function: u3) usize {
+inline fn physioTreeId(bus: u8, device: u5, function: u3) usize {
     return
         (@as(usize, bus) << 8) |
         (@as(usize, device) << 3) |
         (@as(usize, function) << 0);
 }
 
-pub fn physio_listen(phys: *types.PhysIo_T) types.PhysIoErr_T!void {
-    listeners_tree.put_in_tree(
-        physio_tree_id(phys.device.bus, phys.device.device, phys.device.function),
+pub fn physioListen(phys: *types.PhysIo) types.PhysIoErr!void {
+    listeners_tree.putInTree(
+        physioTreeId(phys.device.bus, phys.device.device, phys.device.function),
         phys,
         &allocator.sba.allocator
     ) catch |err| switch(err) {
-        @TypeOf(listeners_tree).TreeErr_T.Collision => return types.PhysIoErr_T.ListenerCollision,
-        else => return types.PhysIoErr_T.InternalError,
+        @TypeOf(listeners_tree).TreeErr.Collision => return types.PhysIoErr.ListenerCollision,
+        else => return types.PhysIoErr.InternalError,
     };
 }
 
-pub fn physio_listen_drop(phys: *types.PhysIo_T) types.PhysIoErr_T!void {
-    listeners_tree.drop_in_tree(
-        physio_tree_id(phys.device.bus, phys.device.device, phys.device.function),
+pub fn physioListenDrop(phys: *types.PhysIo) types.PhysIoErr!void {
+    listeners_tree.dropInTree(
+        physioTreeId(phys.device.bus, phys.device.device, phys.device.function),
         &allocator.sba.allocator
     ) catch |err| switch(err) {
-        @TypeOf(listeners_tree).TreeErr_T.NoNFound => return types.PhysIoErr_T.NoNListener,
-        else => return types.PhysIoErr_T.InternalError,
+        @TypeOf(listeners_tree).TreeErr.NoNFound => return types.PhysIoErr.NoNListener,
+        else => return types.PhysIoErr.InternalError,
     };
 }
 
-pub fn physio_listener_search(bus: u8, device: u5, function: u3) types.PhysIoErr_T!*types.PhysIo_T {
-    return listeners_tree.search_in_tree(
-        physio_tree_id(bus, device, function)
-    ) catch types.PhysIoErr_T.NoNListener;
+pub fn physioListenerSearch(bus: u8, device: u5, function: u3) types.PhysIoErr!*types.PhysIo {
+    return listeners_tree.searchInTree(
+        physioTreeId(bus, device, function)
+    ) catch types.PhysIoErr.NoNListener;
 }

@@ -5,10 +5,10 @@
 
 const arch: type = @import("root").interfaces.arch;
 
-pub const FusiumDescription_T: type = struct {
-    pub const Target_T: type = arch.Target;
+pub const FusiumDescription: type = struct {
+    pub const Target: type = arch.Target;
 
-    pub const Order_T: type = enum {
+    pub const Order: type = enum {
         // before: chama init antes dos modulos
         // after: chama init depois dos modulos
         before,
@@ -17,12 +17,12 @@ pub const FusiumDescription_T: type = struct {
 
     name: []const u8,
     author: []const u8,
-    order: Order_T,
+    order: Order,
     contributors: ?[]const[]const u8 = null,
     description: ?[]const u8 = null,
     fusioner: type,
     init: ?*const fn() anyerror!void,
-    arch: []const Target_T,
+    arch: []const Target,
     flags: packed struct {
         blocked: u1,
     },

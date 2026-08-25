@@ -8,9 +8,9 @@ const hashtable: type = @import("root").lib.kernel.hash_table;
 const internal: type = @import("internal.zig");
 const allocator: type = @import("allocator.zig");
 
-pub const Fs_T: type = struct {
+pub const Fs: type = struct {
     name: []const u8,
-    mount: *const fn(src: []const u8) anyerror!*const vfs.Superblock_T,
+    mount: *const fn(src: []const u8) anyerror!*const vfs.Superblock,
     umount: *const fn() anyerror!void,
 
     pub const regfs = internal.regfs;
@@ -18,39 +18,39 @@ pub const Fs_T: type = struct {
     pub const updfs = internal.updfs;
 };
 
-pub const FsInfo_T: type = struct {
-    fs: *const Fs_T,
-    flags: FsControlFlags_T,
+pub const FsInfo: type = struct {
+    fs: *const Fs,
+    flags: FsControlFlags,
 
-    pub inline fn builder(fs: *const Fs_T, flags: FsControlFlags_T) @This() {
+    pub inline fn builder(fs: *const Fs, flags: FsControlFlags) @This() {
         return @This() {
             .fs = fs,
             .flags = flags,
         };
     }
 
-    pub inline fn create(fs: *const Fs_T, flags: FsControlFlags_T) FsErr_T!*@This() {
-        const ptr: *@This() = @ptrCast(allocator.sba.allocator.alloc(@This(), 1) catch return FsErr_T.FsAllocatorFailed);
+    pub inline fn create(fs: *const Fs, flags: FsControlFlags) FsErr!*@This() {
+        const ptr: *@This() = @ptrCast(allocator.sba.allocator.alloc(@This(), 1) catch return FsErr.FsAllocatorFailed);
         ptr.* = @This().builder(fs, flags);
         return ptr;
     }
 
-    pub inline fn destroy(self: *@This()) FsErr_T!void {
+    pub inline fn destroy(self: *@This()) FsErr!void {
         return allocator.sba.allocator.free(self)
-            catch FsErr_T.FsAllocatorFailed;
+            catch FsErr.FsAllocatorFailed;
     }
 };
 
-pub const FsControlFlags_T: type = packed struct {
+pub const FsControlFlags: type = packed struct {
     noumount: u1, // se recusa a desmontar
     nomount: u1, // se recusa a montar
     readonly: u1, // montagem apenas para leitura
-    anon: u1, // search_fs nunca vai retornar
+    anon: u1, // searchFs nunca vai retornar
 };
 
-pub const FsKernelRegister_T: type = hashtable.HashMap([]const u8, *FsInfo_T, null, null);
+pub const FsKernelRegister: type = hashtable.hashMap([]const u8, *FsInfo, null, null);
 
-pub const FsErr_T: type = error {
+pub const FsErr: type = error {
     MountFailed,
     UmountFailed,
     MountDenied,

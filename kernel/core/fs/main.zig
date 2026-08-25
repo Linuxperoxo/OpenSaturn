@@ -9,42 +9,42 @@ const c: type = @import("root").lib.kernel.c;
 const allocator: type = @import("allocator.zig");
 const module: type = @import("root").interfaces.module;
 
-pub var fs_register: types.FsRegister_T = .{
+pub var fs_register: types.FsRegister = .{
     .fs = .{},
     .flags = .{
         .init = 0,
     },
 };
 
-pub fn register_fs(fs: *types.Fs_T) types.FsErr_T!void {
-    try aux.check_init();
-    if(aux.search_by_fs(fs, null)) |found| {
+pub fn registerFs(fs: *types.Fs) types.FsErr!void {
+    try aux.checkInit();
+    if(aux.searchByFs(fs, null)) |found| {
         const collided_fs, const collision = found;
         if(collision != null)
             @as(*u2, @alignCast(@ptrCast(&collided_fs.flags.internal.collision))).* = @as(u2, @intFromEnum(collision.?));
-        return types.FsErr_T.FsCollision;
+        return types.FsErr.FsCollision;
     } else |_| {
-        fs_register.fs.push_in_list(&allocator.sba.allocator, fs)
-            catch return types.FsErr_T.FsRegisterFailed;
+        fs_register.fs.pushInList(&allocator.sba.allocator, fs)
+            catch return types.FsErr.FsRegisterFailed;
     }
 }
 
-pub fn unregister_fs(fs: *types.Fs_T) types.FsErr_T!void {
-    try aux.check_init();
-    _ = try aux.search_by_fs(fs, null);
-    return fs_register.fs.drop_on_list(
-        (fs_register.fs.iterator_index() catch unreachable) - 1,
+pub fn unregisterFs(fs: *types.Fs) types.FsErr!void {
+    try aux.checkInit();
+    _ = try aux.searchByFs(fs, null);
+    return fs_register.fs.dropOnList(
+        (fs_register.fs.iteratorIndex() catch unreachable) - 1,
         &allocator.sba.allocator
     ) catch {
-        return types.FsErr_T.FsRegisterFailed;
+        return types.FsErr.FsRegisterFailed;
     };
 }
 
-pub fn search_fs(fs: []const u8) types.FsErr_T!*const types.Fs_T {
-    try aux.check_init();
-    const fs_found, _ = try aux.search_by_fs(null, fs);
-    if(!c.c_bool(fs_found.flags.control.anon)) {
+pub fn searchFs(fs: []const u8) types.FsErr!*const types.Fs {
+    try aux.checkInit();
+    const fs_found, _ = try aux.searchByFs(null, fs);
+    if(!c.cBool(fs_found.flags.control.anon)) {
         return fs_found;
     }
-    return types.FsErr_T.NoNFound;
+    return types.FsErr.NoNFound;
 }

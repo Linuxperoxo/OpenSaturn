@@ -3,18 +3,18 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const IOAPICBasePhys: u32 = 0xFEC00000;
+pub const ioapic_base_phys: u32 = 0xFEC00000;
 
 pub const IOAPICRegs: type = enum(u8) {
-    IDRegister = 0x00, // Contêm o ID do IOAPIC em bits 24-27, o resto é reservado(pode ser alterado, mas normalmente fixo)
-    VersionRegister = 0x01, // Contêm a versão 0-7 Bits e 16-23 a quantidade máxima de entrada Redirection Table, o resto é reservado. Apenas leitura
-    ArbitrationRegister = 0x02, // pega a arbitragem de prioridade nos bits 24-27. Todos os outros são reservador. Apenas leitura
-    RedirectionEntryRegister = 0x10, // Cada IRQ configurável ocupa dois registros: parte baixa e alta, exemplo: 0x12 e 0x13, vai de 0x10 a 0x3F
+    id_register = 0x00, // Contêm o ID do IOAPIC em bits 24-27, o resto é reservado(pode ser alterado, mas normalmente fixo)
+    version_register = 0x01, // Contêm a versão 0-7 Bits e 16-23 a quantidade máxima de entrada Redirection Table, o resto é reservado. Apenas leitura
+    arbitration_register = 0x02, // pega a arbitragem de prioridade nos bits 24-27. Todos os outros são reservador. Apenas leitura
+    redirection_entry_register = 0x10, // Cada IRQ configurável ocupa dois registros: parte baixa e alta, exemplo: 0x12 e 0x13, vai de 0x10 a 0x3F
 };
 
 pub const IOAPICOffset: type = enum(u8) {
-    RegSel = 0x00, // Seleciona qual registrador acessar
-    Win = 0x10, // Leitura/escrita do registrador selecionado
+    reg_sel = 0x00, // Seleciona qual registrador acessar
+    win = 0x10, // Leitura/escrita do registrador selecionado
 };
 
 // Bits 0–7: Interrupt Vector
@@ -66,23 +66,23 @@ pub const IOAPICOffset: type = enum(u8) {
 // - Se Destination Mode = 1 (lógico): bits 56–63 = bitmap indicando CPUs destino.
 
 pub const LowEntryRegisterLayout: type = packed struct {
-    IDTEntry: u8, // Número do vetor na IDT, aceita apenas de 0x10 a 0xFE, os primeeiros vetores são reservador para exceções da CPU
-    DeliveryMode: u3, // Modo de entrega (Fixed, NMI, etc.)
-    DestMode: u1, // Modo de endereçamento (físico = 0, lógico = 1)
-    DeliveryStatus: u1, // Leitura: 1 se pendente (não deve ser escrito)
-    Polarity: u1, // 0 = ativo alto, 1 = ativo baixo
-    RemoteIrr: u1, // Leitura: 1 se IRQ ainda não foi reconhecida (APIC), ignorar na escrita
-    TriggerMode: u1, // 0 = edge, 1 = level
-    Mask: u1, // 1 = mascarado (não entrega interrupção)
-    Reserved: u15 = 0,
+    idt_entry: u8, // Número do vetor na IDT, aceita apenas de 0x10 a 0xFE, os primeeiros vetores são reservador para exceções da CPU
+    delivery_mode: u3, // Modo de entrega (Fixed, NMI, etc.)
+    dest_mode: u1, // Modo de endereçamento (físico = 0, lógico = 1)
+    delivery_status: u1, // Leitura: 1 se pendente (não deve ser escrito)
+    polarity: u1, // 0 = ativo alto, 1 = ativo baixo
+    remote_irr: u1, // Leitura: 1 se IRQ ainda não foi reconhecida (APIC), ignorar na escrita
+    trigger_mode: u1, // 0 = edge, 1 = level
+    mask: u1, // 1 = mascarado (não entrega interrupção)
+    reserved: u15 = 0,
 };
 
 pub const HighEntryRegisterLayout: type = packed struct {
-    Reserved: u24 = 0,
-    LAPICId: u8, // ID do LAPIC de destino
+    reserved: u24 = 0,
+    lapic_id: u8, // ID do LAPIC de destino
 };
 
-pub fn writeIOAPIC(Register: IOAPICRegs, Data: u32) void {
+pub fn writeIOAPIC(register: IOAPICRegs, data: u32) void {
     asm volatile(
         \\ movl %[SelectedRegister], %eax
         \\ movl %eax, %[IOAPICRegSel](%[IOAPICBase])
@@ -90,26 +90,26 @@ pub fn writeIOAPIC(Register: IOAPICRegs, Data: u32) void {
         \\ movl %eax, %[IOAPICWin](%[IOAPICBase])
 
         :
-        :[Data] "m" (&Data),
-         [SelectedRegister] "m" (&Register),
-         [IOAPICBase] "i" (IOAPICBasePhys),
-         [IOAPICRegSel] "i" (IOAPICOffset.RegSel),
-         [IOAPICWin] "i" (IOAPICOffset.Win)
+        :[Data] "m" (&data),
+         [SelectedRegister] "m" (&register),
+         [IOAPICBase] "i" (ioapic_base_phys),
+         [IOAPICRegSel] "i" (IOAPICOffset.reg_sel),
+         [IOAPICWin] "i" (IOAPICOffset.win)
         : .{}
     );
 }
 
-pub fn readIOAPIC(Register: IOAPICRegs) u32 {
+pub fn readIOAPIC(register: IOAPICRegs) u32 {
     return asm volatile(
         \\ movl %[SelectedRegister], %eax
         \\ movl %eax, %[IOAPICRegSel](%[IOAPICBase])
         \\ movl %[IOAPICWin](%[IOAPICBase]), %eax
 
         :[_] "={eax}" (-> u32)
-        :[SelectedRegister] "m" (&Register),
-         [IOAPICBase] "i" (IOAPICBasePhys),
-         [IOAPICRegSel] "i" (IOAPICOffset.RegSel),
-         [IOAPICWin] "i" (IOAPICOffset.Win)
+        :[SelectedRegister] "m" (&register),
+         [IOAPICBase] "i" (ioapic_base_phys),
+         [IOAPICRegSel] "i" (IOAPICOffset.reg_sel),
+         [IOAPICWin] "i" (IOAPICOffset.win)
         : .{}
     );
 }
@@ -119,20 +119,20 @@ pub fn maxIRQ() u8 {
         .always_inline,
         &readIOAPIC,
         .{
-            IOAPICRegs.VersionRegister
+            IOAPICRegs.version_register
         }
     ) >> 16) & 0xFF); // Resultado disso é pegar os bits 0x00FF0000, isso é a quantidade de IRQ suportada pelo IOAPIC
 }
 
-pub fn setIRQ(IDTEntry: u8, IRQ: u8, LAPICID: u8) void {
+pub fn setIRQ(idt_entry: u8, irq: u8, lapic_id: u8) void {
     @call(
         .always_inline, 
         &writeIOAPIC,
         .{
-            .RedirectionEntryRegister + IRQ * 2,
+            .redirection_entry_register + irq * 2,
             LowEntryRegisterLayout {
                 // TODO:
-                .IDTEntry = IDTEntry,
+                .idt_entry = idt_entry,
             }
         }
     );
@@ -141,9 +141,9 @@ pub fn setIRQ(IDTEntry: u8, IRQ: u8, LAPICID: u8) void {
         .always_inline, 
         &writeIOAPIC,
         .{
-            .RedirectionEntryRegister + IRQ * 2 + 1,
+            .redirection_entry_register + irq * 2 + 1,
             HighEntryRegisterLayout {
-                .LAPICId = LAPICID,
+                .lapic_id = lapic_id,
             }
         }
     );

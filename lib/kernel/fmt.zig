@@ -7,7 +7,7 @@ const format_impl: type = @import("fmt/format.zig");
 const split: type = @import("fmt/split.zig");
 
 pub fn format(allocator: anytype, comptime fmt: []const u8, args: anytype) anyerror![]u8 {
-    const buffer_len: usize = (format_impl.format.total_bytes_fmt(fmt, args) + format_impl.format.total_bytes_args(args));
+    const buffer_len: usize = (format_impl.format.totalBytesFmt(fmt, args) + format_impl.format.totalBytesArgs(args));
     const buffer: []u8 = try allocator.alloc(u8, buffer_len);
     var buffer_index: usize = 0;
 
@@ -42,9 +42,9 @@ pub fn format(allocator: anytype, comptime fmt: []const u8, args: anytype) anyer
 
             'd' => {
                 const int = @field(args, fields[fields_index].name);
-                const dest = buffer[buffer_index..(buffer_index + format_impl.format.int_to_bytes(int))];
+                const dest = buffer[buffer_index..(buffer_index + format_impl.format.intToBytes(int))];
 
-                buffer_index += format_impl.format.str_from_int(int, dest);
+                buffer_index += format_impl.format.strFromInt(int, dest);
                 fmt_index += 2;
                 fields_index += 1;
                 inside = false;
@@ -62,7 +62,7 @@ pub fn format(allocator: anytype, comptime fmt: []const u8, args: anytype) anyer
 }
 
 pub fn splitAlloc(str: []const u8, broken: u8, allocator: anytype) anyerror![][]const u8 {
-    const initial_offset, const final_offset, const subs = try split.broken_info(str, broken);
+    const initial_offset, const final_offset, const subs = try split.brokenInfo(str, broken);
     const sub_strs: [][]const u8 = try allocator.alloc([]const u8, subs);
 
     var sub_strs_index: usize = 0;

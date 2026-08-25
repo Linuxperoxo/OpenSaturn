@@ -35,31 +35,31 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription = .{
     .interrupts = .{
         .maintainer = "Linuxperoxo",
         .label = ".i386.interrupts",
-        .entry = &interrupts.idt_init,
+        .entry = &interrupts.idtInit,
     },
 
     .mm = .{
         .maintainer = "Linuxperoxo",
         .label = ".i386.mm",
-        .entry = &mm.mmu_init,
+        .entry = &mm.mmuInit,
     },
 
     .physio = .{
         .maintainer = "Linuxperoxo",
         .label = ".i386.physio",
-        .entry = &physio.physio_init,
+        .entry = &physio.physioInit,
     },
 
     .symbols = .{
         .segments = 1,
     },
 
-    .extra = &[_]interfaces.arch.ArchDescription.Extra_T {
+    .extra = &[_]interfaces.arch.ArchDescription.Extra {
         .{
             .maintainer = "Linuxperoxo",
             .label = ".i386.gdt",
             .entry = .{
-                .naked = &init.gdt.gdt_config,
+                .naked = &init.gdt.gdtConfig,
             },
         },
 
@@ -67,7 +67,7 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription = .{
             .maintainer = "Linuxperoxo",
             .label = ".i386.idt.csi",
             .entry = .{
-                .c = &interrupts.csi.csi_event_install,
+                .c = &interrupts.csi.csiEventInstall,
             },
         },
 
@@ -81,12 +81,12 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription = .{
                 // fn(u32) ou fn(), o unico problema seria se a funcao for
                 // chamada por esse ponteiro, nesse caso, poderiamos ter problema
                 // por causa da ABI
-                .c = @ptrCast(&interrupts.handler.csi_handler),
+                .c = @ptrCast(&interrupts.handler.csiHandler),
             },
         },
     },
 
-    .data = &[_]interfaces.arch.ArchDescription.Data_T {
+    .data = &[_]interfaces.arch.ArchDescription.Data {
         .{
             .label = "gdt_struct",
             .section = sections.section_data_persist,
@@ -112,8 +112,8 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription = .{
         },
     },
 
-    .overrider = interfaces.arch.ArchDescription.Overrider_T {
-        .modules = &[_]interfaces.arch.ArchDescription.ModuleOverrider_T {
+    .overrider = interfaces.arch.ArchDescription.Overrider {
+        .modules = &[_]interfaces.arch.ArchDescription.ModuleOverrider {
             .{
                 .module = "ke_m_rootfs",
                 .value = .yes,

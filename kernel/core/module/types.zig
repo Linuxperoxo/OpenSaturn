@@ -13,7 +13,7 @@ const internal: type = @import("internal.zig");
 const allocator: type = @import("allocator.zig");
 
 pub const ModuleDescriptionTarget: type = arch.Target;
-pub const Mods_T: type = hashtable.HashMap([]const u8, *ModInfo, null, null);
+pub const Mods: type = hashtable.hashMap([]const u8, *ModInfo, null, null);
 
 pub const ModuleDescriptionLoad: type = enum {
     linkable,
@@ -83,22 +83,22 @@ pub const ModuleDescription: type = struct {
         outside: ?[]const ModuleDescriptionLibOut = null,
     } = .{},
 
-    pub fn request_all(comptime self: *const @This()) struct { [
+    pub fn requestAll(comptime self: *const @This()) struct { [
         if(self.libs.outside == null) 0 else
             self.libs.outside.?.len
     ]?type, bool } {
-        return comptime modsys.smll.search_all(self);
+        return comptime modsys.smll.searchAll(self);
     }
 
-    pub fn request_libs(comptime self: *const @This(), comptime libs: []const[]const u8) struct { [libs.len]?type, bool } {
-        return comptime modsys.smll.search_libs(self, libs);
+    pub fn requestLibs(comptime self: *const @This(), comptime libs: []const[]const u8) struct { [libs.len]?type, bool } {
+        return comptime modsys.smll.searchLibs(self, libs);
     }
 
-    pub fn request_lib(self: *const @This(), lib: []const u8) ?type {
-        return comptime modsys.smll.search_lib(self, lib);
+    pub fn requestLib(self: *const @This(), lib: []const u8) ?type {
+        return comptime modsys.smll.searchLib(self, lib);
     }
 
-    pub fn abort_compile(self: *const @This(), comptime msg: []const u8) noreturn {
+    pub fn abortCompile(self: *const @This(), comptime msg: []const u8) noreturn {
         @compileError(self.name ++ ": " ++ msg);
     }
 };
@@ -147,15 +147,15 @@ pub const ModType: type = enum(u8) {
 };
 
 pub const ModLicense: type = enum(u8) {
-    GPL2_only,
-    GPL2_or_later,
-    GPL3_only,
-    GPL3_or_later,
-    BSD_2_Clause,
-    BSD_3_Clause,
-    MIT,
-    APACHE_2_0,
-    PROPRIETARY,
+    gpl2_only,
+    gpl2_or_later,
+    gpl3_only,
+    gpl3_or_later,
+    bsd_2_clause,
+    bsd_3_clause,
+    mit,
+    apache_2_0,
+    proprietary,
 };
 
 pub const ModErr: type = error {

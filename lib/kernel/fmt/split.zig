@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub inline fn broken_info(str: []const u8, separator: u8) anyerror!struct { usize, usize, usize } {
+pub inline fn brokenInfo(str: []const u8, separator: u8) anyerror!struct { usize, usize, usize } {
     if (str.len == 0) return error.Empty;
     r: {
         for (0..str.len) |i|

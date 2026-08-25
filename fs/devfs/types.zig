@@ -7,15 +7,15 @@ const devices: type = @import("root").interfaces.devices;
 const list: type = @import("root").lib.kernel.linked_list;
 const vfs: type = @import("root").interfaces.vfs;
 
-pub const DevfsList_T: type = list.BuildList(*vfs.Dentry);
-pub const DevfsListErr_T: type = DevfsList_T.ListErr_T;
+pub const DevfsList: type = list.buildList(*vfs.Dentry);
+pub const DevfsListErr: type = DevfsList.ListErr;
 
-pub const DevfsPrivate_T: type = struct {
-    major: devices.Major_T,
-    minor: devices.Minor_T,
+pub const DevfsPrivate: type = struct {
+    major: devices.Major,
+    minor: devices.Minor,
 };
 
-pub const DevfsErr_T: type = error {
+pub const DevfsErr: type = error {
     CorruptDentry,
     CorruptFilesystem,
     DeviceNoFound,

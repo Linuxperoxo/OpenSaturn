@@ -11,7 +11,7 @@ const aux: type = @import("aux.zig");
 
 pub const saturn_modules = r: {
     var modules_check_index: usize = 0;
-    var modules_check: [(modules.__SaturnAllMods__.len - aux.check_module_collision())]interfaces.module.ModuleDescription = undefined;
+    var modules_check: [(modules.__SaturnAllMods__.len - aux.checkModuleCollision())]interfaces.module.ModuleDescription = undefined;
     for(modules.__SaturnAllMods__, 0..) |mod, i| {
         t: {
             for(0..i) |j| {
@@ -23,26 +23,26 @@ pub const saturn_modules = r: {
                 )) break :t {};
             }
 
-            if(!decls.container_decl_exist(mod, .module)) {
+            if(!decls.containerDeclExist(mod, .module)) {
                 @compileError(
-                    "Modsys Error: " ++ decls.what_is_decl(.module) ++
+                    "Modsys Error: " ++ decls.whatIsDecl(.module) ++
                     " is not defined in the module file " ++ @typeName(mod)
                 );
             }
 
-            if(!decls.container_decl_type(@TypeOf(mod.__SaturnModuleDescription__), .module)) {
+            if(!decls.containerDeclType(@TypeOf(mod.__SaturnModuleDescription__), .module)) {
                 @compileError(
-                    "Modsys Error: declaration " ++ decls.what_is_decl(.module) ++
+                    "Modsys Error: declaration " ++ decls.whatIsDecl(.module) ++
                     " for module " ++ @typeName(mod) ++
-                    " must be type: " ++ @typeName(decls.what_is_decl_type(.module))
+                    " must be type: " ++ @typeName(decls.whatIsDeclType(.module))
                 );
             }
 
-            aux.check_module_load(&mod.__SaturnModuleDescription__) catch continue;
-            aux.check_module_in_menuconfig(&mod.__SaturnModuleDescription__);
-            aux.check_blacklist(&mod.__SaturnModuleDescription__);
-            aux.check_module_menuconfig_enable(&mod.__SaturnModuleDescription__) catch continue;
-            aux.check_module_arch(&mod.__SaturnModuleDescription__) catch continue;
+            aux.checkModuleLoad(&mod.__SaturnModuleDescription__) catch continue;
+            aux.checkModuleInMenuconfig(&mod.__SaturnModuleDescription__);
+            aux.checkBlacklist(&mod.__SaturnModuleDescription__);
+            aux.checkModuleMenuconfigEnable(&mod.__SaturnModuleDescription__) catch continue;
+            aux.checkModuleArch(&mod.__SaturnModuleDescription__) catch continue;
 
             modules_check[modules_check_index] = mod.__SaturnModuleDescription__;
             modules_check_index += 1;

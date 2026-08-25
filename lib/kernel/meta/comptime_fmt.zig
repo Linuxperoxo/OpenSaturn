@@ -5,13 +5,13 @@
 
 const format_impl: type = @import("format.zig");
 
-pub fn format(comptime fmt: []const u8, comptime args: anytype) [format_impl.format.total_bytes_fmt(fmt, args) + format_impl.format.total_bytes_args(args)]u8 {
+pub fn format(comptime fmt: []const u8, comptime args: anytype) [format_impl.format.totalBytesFmt(fmt, args) + format_impl.format.totalBytesArgs(args)]u8 {
     if (!@inComptime())
         @compileError("comptime only fn");
 
     const fields = @typeInfo(@TypeOf(args)).@"struct".fields;
 
-    var buffer = [_]u8{0} ** (format_impl.format.total_bytes_fmt(fmt, args) + format_impl.format.total_bytes_args(args));
+    var buffer = [_]u8{0} ** (format_impl.format.totalBytesFmt(fmt, args) + format_impl.format.totalBytesArgs(args));
 
     var fmt_index: usize = 0;
     var fields_index: usize = 0;
@@ -39,8 +39,8 @@ pub fn format(comptime fmt: []const u8, comptime args: anytype) [format_impl.for
 
             'd' => {
                 const int = @field(args, fields[fields_index].name);
-                const dest = buffer[buffer_index..(buffer_index + format_impl.format.int_to_bytes(int))];
-                buffer_index += format_impl.format.str_from_int(int, dest);
+                const dest = buffer[buffer_index..(buffer_index + format_impl.format.intToBytes(int))];
+                buffer_index += format_impl.format.strFromInt(int, dest);
                 fmt_index += 2;
                 fields_index += 1;
                 inside = false;

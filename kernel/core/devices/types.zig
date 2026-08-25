@@ -4,12 +4,11 @@
 // └──────────────────────────────────────────────┘
 
 const vfs: type = @import("root").interfaces.vfs;
-const builtin: type = @import("builtin");
 
-pub const Major_T: type = u5;
-pub const Minor_T: type = u4;
+pub const Major: type = u5;
+pub const Minor: type = u4;
 
-pub const DevErr_T: type = error {
+pub const DevErr: type = error {
     MajorNoNFound,
     MinorCollision,
     MinorNoExist,
@@ -21,7 +20,7 @@ pub const DevErr_T: type = error {
     MinorDoubleFree,
 };
 
-pub const Ops_T: type = enum {
+pub const Ops: type = enum {
     ioctl,
     mount,
     umount,
@@ -31,26 +30,26 @@ pub const Ops_T: type = enum {
     write,
 };
 
-pub const DevType_T: type = enum {
+pub const DevType: type = enum {
     char,
     block,
 };
 
-pub const DevOps_T: type = struct {
-    ioctl: ?*const fn(Minor_T, usize, ?*anyopaque) anyerror!usize = null,
-    mount: if(!builtin.is_test) ?*const fn(Minor_T) anyerror!*const vfs.Superblock else void =  if(!builtin.is_test) null else {},
-    umount: ?*const fn(Minor_T) anyerror!void = null,
-    open: ?*const fn(Minor_T) anyerror!void = null,
-    close: ?*const fn(Minor_T) anyerror!void = null,
-    read: ?*const fn(Minor_T, usize) anyerror![]u8 = null,
-    write: ?*const fn(Minor_T, []const u8, usize) anyerror!void = null,
+pub const DevOps: type = struct {
+    ioctl: ?*const fn(Minor, usize, ?*anyopaque) anyerror!usize = null,
+    mount: ?*const fn(Minor) anyerror!*const vfs.Superblock = null,
+    umount: ?*const fn(Minor) anyerror!void = null,
+    open: ?*const fn(Minor) anyerror!void = null,
+    close: ?*const fn(Minor) anyerror!void = null,
+    read: ?*const fn(Minor, usize) anyerror![]u8 = null,
+    write: ?*const fn(Minor, []const u8, usize) anyerror!void = null,
 };
 
-pub const Dev_T: type = struct {
+pub const Dev: type = struct {
     name: []const u8,
-    ops: *const DevOps_T, // device op
-    type: DevType_T,
-    minor: ?*const fn(Minor_T) anyerror!void = null,
+    ops: *const DevOps, // device op
+    type: DevType,
+    minor: ?*const fn(Minor) anyerror!void = null,
     flags: packed struct {
         control: packed struct {
             minor: u1, // aceita novos minors
@@ -62,22 +61,22 @@ pub const Dev_T: type = struct {
     },
 };
 
-pub const DevBranch_T: type = struct {
-    dev: *const Dev_T,
+pub const DevBranch: type = struct {
+    dev: *const Dev,
     minors: [16]u1,
 
-    pub fn validade_minor(self: *@This(), minor: Minor_T) void {
+    pub fn validadeMinor(self: *@This(), minor: Minor) void {
         self.minors[minor] = 1;
     }
 
-    pub fn invalidate_minor(self: *@This(), minor: Minor_T) void {
+    pub fn invalidateMinor(self: *@This(), minor: Minor) void {
         // minor 0 e a primeira instancia do dev, sempre deve existir
         if(minor == 0)
             return;
         self.minors[minor] = 0;
     }
 
-    pub fn is_valid_minor(self: *const @This(), minor: Minor_T) bool {
+    pub fn isValidMinor(self: *const @This(), minor: Minor) bool {
         return self.minors[minor] == 1;
     }
 };

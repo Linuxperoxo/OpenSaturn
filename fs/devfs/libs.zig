@@ -5,7 +5,7 @@
 
 const ops: type = @import("ops.zig");
 
-pub const @"devfs-operations-1.0.0": type = opaque {
-    pub const create_device_node = ops.create_device_node;
-    pub const unlink_device_node = ops.unlink_device_node;
+pub const devfs_operations_1_0_0: type = opaque {
+    pub const createDeviceNode = ops.createDeviceNode;
+    pub const unlinkDeviceNode = ops.unlinkDeviceNode;
 };

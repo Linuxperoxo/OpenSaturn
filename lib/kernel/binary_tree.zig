@@ -3,23 +3,23 @@
 // │            Author: Linuxperoxo                    │
 // └───────────────────────────────────────────────────┘
 
-pub fn BinaryTree(comptime T: type) type {
+pub fn binaryTree(comptime t: type) type {
     return struct {
-        root: ?*TreeNode_T = null,
+        root: ?*TreeNode = null,
 
-        const TreeNode_T: type = struct {
+        const TreeNode: type = struct {
             left: ?*@This(),
             right: ?*@This(),
             id: ?usize,
-            private: ?T,
+            private: ?t,
         };
 
-        const Direct_T: type = enum {
+        const Direct: type = enum {
             right,
             left,
         };
 
-        pub const TreeErr_T: type = error{
+        pub const TreeErr: type = error{
             NoNFound,
             OutMemory,
             AllocError,
@@ -28,25 +28,25 @@ pub fn BinaryTree(comptime T: type) type {
             AllocatorFreeErr,
         };
 
-        inline fn solve_path(node: *TreeNode_T) enum { all_null, left_null, right_null, no_null } {
+        inline fn solvePath(node: *TreeNode) enum { all_null, left_null, right_null, no_null } {
             if (node.right != null and node.left != null) return .no_null;
             if (node.right != null) return .left_null;
             if (node.left != null) return .right_null;
             return .all_null;
         }
 
-        fn allocator_verify(Allocator_T: type) void {
+        fn allocatorVerify(allocator: type) void {
             if (true)
                 return;
-            const A = switch (@typeInfo(Allocator_T)) {
+            const allocator_type = switch (@typeInfo(allocator)) {
                 .pointer => |info| info.child,
-                .@"struct" => Allocator_T,
+                .@"struct" => allocator,
                 else => @compileError(
                     \\ expect allocator struct or pointer to allocator struct
                 ),
             };
-            if (@hasDecl(A, "alloc")) {
-                sw: switch (@typeInfo(@TypeOf(A.alloc))) {
+            if (@hasDecl(allocator_type, "alloc")) {
+                sw: switch (@typeInfo(@TypeOf(allocator_type.alloc))) {
                     .@"fn" => |info| {
                         if (info.return_type == null or info.return_type.?) {
                             continue :sw @typeInfo(void);
@@ -57,10 +57,10 @@ pub fn BinaryTree(comptime T: type) type {
                     ),
                 }
             }
-            if (!@hasDecl(A, "free")) {
-                sw: switch (@typeInfo(@TypeOf(A.free))) {
+            if (!@hasDecl(allocator_type, "free")) {
+                sw: switch (@typeInfo(@TypeOf(allocator_type.free))) {
                     .@"fn" => |info| {
-                        if (info.return_type == null or info.return_type.? != void or info.params.len != 2 or info.params[0].type != *A or info.params[1].type != []u8) {
+                        if (info.return_type == null or info.return_type.? != void or info.params.len != 2 or info.params[0].type != *allocator_type or info.params[1].type != []u8) {
                             continue :sw @typeInfo(void);
                         }
                     },
@@ -71,11 +71,11 @@ pub fn BinaryTree(comptime T: type) type {
             }
         }
 
-        fn find_node(self: *@This(), id: usize) TreeErr_T!struct { *TreeNode_T, *TreeNode_T } {
-            if (self.root == null) return TreeErr_T.NoNFound;
-            var prev_branch: *TreeNode_T = self.root.?;
-            var current_branch: *TreeNode_T = self.root.?;
-            var direct: ?Direct_T = null;
+        fn findNode(self: *@This(), id: usize) TreeErr!struct { *TreeNode, *TreeNode } {
+            if (self.root == null) return TreeErr.NoNFound;
+            var prev_branch: *TreeNode = self.root.?;
+            var current_branch: *TreeNode = self.root.?;
+            var direct: ?Direct = null;
             while (current_branch.id != null) {
                 if (id < current_branch.id.?) {
                     if (current_branch.left != null) {
@@ -84,7 +84,7 @@ pub fn BinaryTree(comptime T: type) type {
                         current_branch = current_branch.left.?;
                         continue;
                     }
-                    return TreeErr_T.NoNFound;
+                    return TreeErr.NoNFound;
                 }
                 if (id > current_branch.id.?) {
                     if (current_branch.right != null) {
@@ -93,20 +93,20 @@ pub fn BinaryTree(comptime T: type) type {
                         current_branch = current_branch.right.?;
                         continue;
                     }
-                    return TreeErr_T.NoNFound;
+                    return TreeErr.NoNFound;
                 }
                 return .{
                     prev_branch,
                     current_branch,
                 };
             }
-            return TreeErr_T.NoNFound;
+            return TreeErr.NoNFound;
         }
 
-        pub fn put_in_tree(self: *@This(), id: usize, some: T, sba: anytype) TreeErr_T!void {
-            comptime allocator_verify(@TypeOf(sba));
+        pub fn putInTree(self: *@This(), id: usize, some: t, sba: anytype) TreeErr!void {
+            comptime allocatorVerify(@TypeOf(sba));
             if (self.root == null) {
-                const alloc = sba.alloc(@sizeOf(TreeNode_T)) catch return TreeErr_T.AllocError;
+                const alloc = sba.alloc(@sizeOf(TreeNode)) catch return TreeErr.AllocError;
                 self.root = @ptrCast(@alignCast(alloc.ptr));
                 self.root.?.* = .{
                     .left = null,
@@ -115,14 +115,14 @@ pub fn BinaryTree(comptime T: type) type {
                     .private = null,
                 };
             }
-            var current_brach: *TreeNode_T = self.root.?;
+            var current_brach: *TreeNode = self.root.?;
             while (current_brach.id != null) {
                 if (id < current_brach.id.?) {
                     if (current_brach.left != null) {
                         current_brach = current_brach.left.?;
                         continue;
                     }
-                    const alloc = sba.alloc(@sizeOf(TreeNode_T)) catch return TreeErr_T.AllocError;
+                    const alloc = sba.alloc(@sizeOf(TreeNode)) catch return TreeErr.AllocError;
                     current_brach.left = @ptrCast(@alignCast(alloc.ptr));
                     current_brach.left.?.* = .{
                         .left = null,
@@ -137,7 +137,7 @@ pub fn BinaryTree(comptime T: type) type {
                         current_brach = current_brach.right.?;
                         continue;
                     }
-                    const alloc = sba.alloc(@sizeOf(TreeNode_T)) catch return TreeErr_T.AllocError;
+                    const alloc = sba.alloc(@sizeOf(TreeNode)) catch return TreeErr.AllocError;
                     current_brach.right = @ptrCast(@alignCast(alloc.ptr));
                     current_brach.right.?.* = .{
                         .left = null,
@@ -147,19 +147,19 @@ pub fn BinaryTree(comptime T: type) type {
                     };
                     return;
                 }
-                return TreeErr_T.Collision;
+                return TreeErr.Collision;
             }
             current_brach.id = id;
             current_brach.private = some;
         }
 
-        pub fn drop_in_tree(self: *@This(), id: usize, sba: anytype) TreeErr_T!void {
-            comptime allocator_verify(@TypeOf(sba));
-            var prev, var current = @call(.always_inline, find_node, .{ self, id }) catch |err| return err;
-            sw: switch (solve_path(current)) {
+        pub fn dropInTree(self: *@This(), id: usize, sba: anytype) TreeErr!void {
+            comptime allocatorVerify(@TypeOf(sba));
+            var prev, var current = @call(.always_inline, findNode, .{ self, id }) catch |err| return err;
+            sw: switch (solvePath(current)) {
                 .no_null => {
-                    var prev_node: *TreeNode_T = current.left.?;
-                    var next_node: *TreeNode_T = current.left.?;
+                    var prev_node: *TreeNode = current.left.?;
+                    var next_node: *TreeNode = current.left.?;
                     while (next_node.right != null) : (next_node = next_node.right.?) {
                         prev_node = next_node;
                     }
@@ -193,11 +193,11 @@ pub fn BinaryTree(comptime T: type) type {
                     if (prev.left == current) prev.left = current.right else prev.right = current.right;
                 },
             }
-            sba.free(@as([*]u8, @ptrCast(current))[0..@sizeOf(TreeNode_T)]) catch return TreeErr_T.AllocatorFreeErr;
+            sba.free(@as([*]u8, @ptrCast(current))[0..@sizeOf(TreeNode)]) catch return TreeErr.AllocatorFreeErr;
         }
 
-        pub fn search_in_tree(self: *@This(), id: usize) TreeErr_T!T {
-            _, const node = @call(.always_inline, find_node, .{ self, id }) catch |err| return err;
+        pub fn searchInTree(self: *@This(), id: usize) TreeErr!t {
+            _, const node = @call(.always_inline, findNode, .{ self, id }) catch |err| return err;
             return node.private.?;
         }
     };

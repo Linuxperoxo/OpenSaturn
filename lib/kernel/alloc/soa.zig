@@ -10,20 +10,20 @@
 const mm: type = @import("root").mm;
 const config: type = @import("root").config;
 
-pub const Optimize_T: type = @import("soa/types.zig").Optimize_T;
-pub const Cache_T: type = @import("soa/types.zig").Cache_T;
+pub const Optimize: type = @import("soa/types.zig").Optimize;
+pub const Cache: type = @import("soa/types.zig").Cache;
 
 pub fn buildObjAllocator(
-    comptime T: type,
+    comptime t: type,
     comptime zero_init: bool,
     comptime num: usize,
-    comptime optimize: Optimize_T,
-    comptime cache: Cache_T,
+    comptime optimize: Optimize,
+    comptime cache: Cache,
 ) type {
     comptime {
-        if (@sizeOf(T) == 0) {
+        if (@sizeOf(t) == 0) {
             @compileError("SOA: type" ++
-                @typeName(T) ++
+                @typeName(t) ++
                 " cannot have size 0 (incomplete or invalid).");
         }
 
@@ -40,37 +40,37 @@ pub fn buildObjAllocator(
         }
     }
     return struct {
-        pool: ?[]T = null,
+        pool: ?[]t = null,
         allocs: BitMaxIPool = 0,
         bitmap: [
             r: {
-                break :r (num / BitMap_T.MapSize) + if ((num % BitMap_T.MapSize) != 0) 1 else 0;
+                break :r (num / BitMapStorage.map_size) + if ((num % BitMapStorage.map_size) != 0) 1 else 0;
                 // essa calculo garante que tenha a quantidade certa
-                // de bitmap para objetos caso nao seja multiplo do MapSize.
+                // de bitmap para objetos caso nao seja multiplo do map_size.
             }
-        ]BitMap_T = [_]BitMap_T{
-            BitMap_T{
-                .map = [_]BitMap_T.Map_T{
+        ]BitMapStorage = [_]BitMapStorage{
+            BitMapStorage{
+                .map = [_]BitMapStorage.Map{
                     .free,
-                } ** BitMap_T.MapSize,
+                } ** BitMapStorage.map_size,
             },
-        } ** ((num / BitMap_T.MapSize) + if ((num % BitMap_T.MapSize) != 0) 1 else 0),
+        } ** ((num / BitMapStorage.map_size) + if ((num % BitMapStorage.map_size) != 0) 1 else 0),
         lindex: ?BitMaxIPool = null,
-        cindex: CindexType_T = if (CindexType_T == void) {} else null,
-        cmiss: CmissType_T = if (CmissType_T == void) {} else 0,
-        cache: CacheType_T = if (optimize.type == .linear) {} else [_]?BitMaxIPool{null} ** CacheElementSize,
-        page: Page_T = if (Page_T == void) {} else undefined,
+        cindex: CindexType = if (CindexType == void) {} else null,
+        cmiss: CmissType = if (CmissType == void) {} else 0,
+        cache: CacheType = if (optimize.type == .linear) {} else [_]?BitMaxIPool{null} ** cache_element_size,
+        page: Page = if (Page == void) {} else undefined,
 
         const Self: type = @This();
-        const Page_T: type = switch (config.arch.options.Target) {
-            .i386 => mm.AllocPage_T,
+        const Page: type = switch (config.arch.options.target) {
+            .i386 => mm.AllocPage,
             else => void,
         };
-        const BitMap_T: type = struct {
-            map: [MapSize]Map_T align(1),
+        const BitMapStorage: type = struct {
+            map: [map_size]Map align(1),
 
-            pub const MapSize: comptime_int = 8;
-            pub const Map_T: type = enum(u1) {
+            pub const map_size: comptime_int = 8;
+            pub const Map: type = enum(u1) {
                 free,
                 busy,
             };
@@ -80,31 +80,31 @@ pub fn buildObjAllocator(
             256...65535 => u16,
             else => usize,
         };
-        const InternalErr_T: type = error{
+        const InternalErr: type = error{
             NonOptimize,
             Rangeless,
         };
-        const CacheType_T: type = if (optimize.type == .linear) void else [CacheElementSize]?BitMaxIPool;
-        const CindexType_T: type = if (optimize.type == .linear) void else ?BitMaxIPool;
-        const CmissType_T: type = r: {
+        const CacheType: type = if (optimize.type == .linear) void else [cache_element_size]?BitMaxIPool;
+        const CindexType: type = if (optimize.type == .linear) void else ?BitMaxIPool;
+        const CmissType: type = r: {
             if (optimize.type == .linear) break :r void;
             switch (cache.sync) {
                 .burning => break :r void,
                 else => break :r u2,
             }
         };
-        const CacheElementSize = r: {
+        const cache_element_size = r: {
             const divisor = if (cache.size != .auto and num >= @intFromEnum(cache.size)) @intFromEnum(cache.size) else t: {
-                sw: switch (@sizeOf(T)) {
-                    1...16 => if (num <= 16) break :t @intFromEnum(Cache_T.CacheSize_T.huge) else continue :sw 17,
-                    17...32 => if (num <= 32) break :t @intFromEnum(Cache_T.CacheSize_T.large) else continue :sw 33,
-                    else => break :t @intFromEnum(Cache_T.CacheSize_T.small),
+                sw: switch (@sizeOf(t)) {
+                    1...16 => if (num <= 16) break :t @intFromEnum(Cache.CacheSize.huge) else continue :sw 17,
+                    17...32 => if (num <= 32) break :t @intFromEnum(Cache.CacheSize.large) else continue :sw 33,
+                    else => break :t @intFromEnum(Cache.CacheSize.small),
                 }
             };
             break :r num / divisor;
         };
 
-        pub const err_T: type = error{
+        pub const Err: type = error{
             OutOfMemory,
             DoubleFree,
             IndexOutBounds,
@@ -113,26 +113,26 @@ pub fn buildObjAllocator(
         };
 
         pub const Options: type = struct {
-            pub const Type: type = T;
-            pub const config: struct { optimize: Optimize_T, cache: Cache_T } = .{
+            pub const Type: type = t;
+            pub const config: struct { optimize: Optimize, cache: Cache } = .{
                 .optimize = optimize,
                 .cache = cache,
             };
         };
 
         const CacheAction: type = struct {
-            pub const CacheErr_T: type = error{
+            pub const CacheErr: type = error{
                 NonSync,
             };
 
-            var midHigh: u1 = 1;
-            pub fn sync(self: *Self) CacheErr_T!void {
+            var mid_high: u1 = 1;
+            pub fn sync(self: *Self) CacheErr!void {
                 const init, const end = switch (cache.mode) {
-                    .PrioritizeHits => .{ 0, self.cache.len },
+                    .prioritize_hits => .{ 0, self.cache.len },
 
-                    .PrioritizeSpeed => .{
-                        (self.cache.len / 2) * midHigh,
-                        (self.cache.len / 2) + ((self.cache.len / 2) * midHigh),
+                    .prioritize_speed => .{
+                        (self.cache.len / 2) * mid_high,
+                        (self.cache.len / 2) + ((self.cache.len / 2) * mid_high),
                     },
                 };
                 var first: ?BitMaxIPool = null;
@@ -141,7 +141,7 @@ pub fn buildObjAllocator(
                     if (self.cache[cindex]) |_| continue;
                     r: {
                         while (bindex < self.bitmap.len) : (bindex += 1) {
-                            while (mindex < BitMap_T.MapSize) : (mindex += 1) {
+                            while (mindex < BitMapStorage.map_size) : (mindex += 1) {
                                 if (self.bitmap[bindex].map[mindex] == .free) {
                                     self.cache[cindex] = @call(.always_inline, &BitMap.bitMapIndexToIPool, .{ bindex, mindex });
                                     first = if (first) |_| first else @intCast(cindex);
@@ -153,43 +153,43 @@ pub fn buildObjAllocator(
                         }
                     }
                 }
-                midHigh ^= 1;
-                self.cindex = first orelse return CacheErr_T.NonSync;
+                mid_high ^= 1;
+                self.cindex = first orelse return CacheErr.NonSync;
             }
 
-            pub fn push(_: *Self) CacheErr_T!void {}
+            pub fn push(_: *Self) CacheErr!void {}
         };
 
         const BitMap: type = struct {
             fn obtain(ipool: BitMaxIPool) struct { BitMaxIPool, u4 } {
                 return .{
-                    ipool / BitMap_T.MapSize,
-                    @intCast(ipool % BitMap_T.MapSize),
+                    ipool / BitMapStorage.map_size,
+                    @intCast(ipool % BitMapStorage.map_size),
                 };
             }
 
             pub fn bitMapIndexToIPool(bindex: BitMaxIPool, mindex: BitMaxIPool) BitMaxIPool {
-                return (bindex * BitMap_T.MapSize) + mindex;
+                return (bindex * BitMapStorage.map_size) + mindex;
             }
 
-            pub fn read(self: *Self, ipool: BitMaxIPool) BitMap_T.Map_T {
+            pub fn read(self: *Self, ipool: BitMaxIPool) BitMapStorage.Map {
                 const index, const offset = @call(.always_inline, obtain, .{ipool});
                 return self.bitmap[index].map[offset];
             }
 
-            pub fn addrsToIPool(self: *Self, obj: *T) ?BitMaxIPool {
+            pub fn addrsToIPool(self: *Self, obj: *t) ?BitMaxIPool {
                 return if (@intFromPtr(obj) < @intFromPtr(&self.pool.?[0]) and @intFromPtr(obj) > @intFromPtr(&self.pool.?[self.pool.?.len - 1])) null else r: {
-                    break :r @intCast((@intFromPtr(obj) - @intFromPtr(&self.pool.?[0])) / @sizeOf(T));
+                    break :r @intCast((@intFromPtr(obj) - @intFromPtr(&self.pool.?[0])) / @sizeOf(t));
                 };
             }
 
-            pub fn set(self: *Self, ipool: BitMaxIPool, value: BitMap_T.Map_T) void {
+            pub fn set(self: *Self, ipool: BitMaxIPool, value: BitMapStorage.Map) void {
                 const index, const offset = @call(.always_inline, obtain, .{ipool});
                 self.bitmap[index].map[offset] = value;
             }
         };
 
-        fn auto(self: *Self) InternalErr_T!*T {
+        fn auto(self: *Self) InternalErr!*t {
             return r: {
                 const init, const end = t: {
                     if (self.cindex != null and self.cindex.? + @intFromEnum(optimize.range) < self.cache.len)
@@ -206,7 +206,7 @@ pub fn buildObjAllocator(
             };
         }
 
-        fn fast(self: *Self, passthrough: bool) InternalErr_T!*T {
+        fn fast(self: *Self, passthrough: bool) InternalErr!*t {
             return r: {
                 const Steps: type = enum {
                     shot,
@@ -254,14 +254,14 @@ pub fn buildObjAllocator(
                     },
 
                     .continuos => {
-                        break :r if (passthrough) @call(.never_inline, &continuos, .{ self, null, null }) catch unreachable else break :r InternalErr_T.NonOptimize;
+                        break :r if (passthrough) @call(.never_inline, &continuos, .{ self, null, null }) catch unreachable else break :r InternalErr.NonOptimize;
                     },
                 }
                 unreachable;
             };
         }
 
-        fn continuos(self: *Self, init: ?BitMaxIPool, end: ?BitMaxIPool) InternalErr_T!*T {
+        fn continuos(self: *Self, init: ?BitMaxIPool, end: ?BitMaxIPool) InternalErr!*t {
             return r: {
                 for (init orelse 0..if (end == null or end.? > self.pool.?.len) self.pool.?.len else end.?) |i| {
                     if (@call(.always_inline, &BitMap.read, .{ self, @as(BitMaxIPool, @intCast(i)) }) == .free) {
@@ -271,69 +271,69 @@ pub fn buildObjAllocator(
                         break :r &self.pool.?[i];
                     }
                 }
-                break :r InternalErr_T.Rangeless;
+                break :r InternalErr.Rangeless;
             };
         }
 
-        fn pool_init(self: *Self) err_T!void {
-            switch (comptime config.arch.options.Target) {
+        fn poolInit(self: *Self) Err!void {
+            switch (comptime config.arch.options.target) {
                 .i386 => {
-                    if ((@sizeOf(T) * num) > config.kernel.options.kernel_page_size) {
+                    if ((@sizeOf(t) * num) > config.kernel.options.kernel_page_size) {
                         @compileError("SOA still does not support objects larger than a page");
                     }
                     _ = zero_init;
-                    self.page = mm.alloc_page() catch return err_T.UndefinedAction;
-                    self.pool = @as([*]T, @ptrCast(@alignCast(self.page.virtual.ptr)))[0 .. config.kernel.options.kernel_page_size / @sizeOf(T)];
+                    self.page = mm.allocPage() catch return Err.UndefinedAction;
+                    self.pool = @as([*]t, @ptrCast(@alignCast(self.page.virtual.ptr)))[0 .. config.kernel.options.kernel_page_size / @sizeOf(t)];
                 },
-                else => @compileError("SOA does not yet support " ++ @tagName(config.arch.options.Target)),
+                else => @compileError("SOA does not yet support " ++ @tagName(config.arch.options.target)),
             }
         }
 
-        fn pool_deinit(self: *Self) err_T!void {
-            switch (comptime config.arch.options.Target) {
-                .i386 => mm.page_free(&self.page) catch return err_T.UndefinedAction,
+        fn poolDeinit(self: *Self) Err!void {
+            switch (comptime config.arch.options.target) {
+                .i386 => mm.freePage(&self.page) catch return Err.UndefinedAction,
                 else => {},
             }
         }
 
-        pub fn alloc(self: *Self, calling: ?Optimize_T.CallingAlloc_T) err_T!*T {
+        pub fn alloc(self: *Self, calling: ?Optimize.CallingAlloc) Err!*t {
             if (self.pool == null)
-                try @call(.never_inline, pool_init, .{self});
+                try @call(.never_inline, poolInit, .{self});
             switch (optimize.type) {
                 .dinamic => {
-                    if (self.pool == null) return err_T.NotInitialized;
-                    return if (self.allocs >= num) err_T.OutOfMemory else switch (calling orelse .auto) {
-                        Optimize_T.CallingAlloc_T.auto => @call(.never_inline, &auto, .{self}) catch err_T.UndefinedAction,
-                        Optimize_T.CallingAlloc_T.continuos => @call(.never_inline, &continuos, .{ self, self.lindex, @as(u16, @intCast(self.pool.?.len)) }) catch err_T.UndefinedAction,
-                        Optimize_T.CallingAlloc_T.fast => @call(.never_inline, &fast, .{ self, true }) catch err_T.UndefinedAction,
+                    if (self.pool == null) return Err.NotInitialized;
+                    return if (self.allocs >= num) Err.OutOfMemory else switch (calling orelse .auto) {
+                        Optimize.CallingAlloc.auto => @call(.never_inline, &auto, .{self}) catch Err.UndefinedAction,
+                        Optimize.CallingAlloc.continuos => @call(.never_inline, &continuos, .{ self, self.lindex, @as(u16, @intCast(self.pool.?.len)) }) catch Err.UndefinedAction,
+                        Optimize.CallingAlloc.fast => @call(.never_inline, &fast, .{ self, true }) catch Err.UndefinedAction,
                     };
                 },
 
                 .linear => {
-                    if (self.pool == null) return err_T.NotInitialized;
-                    return if (self.allocs >= num) err_T.OutOfMemory else @call(.always_inline, &continuos, .{ self, self.lindex, null }) catch err_T.UndefinedAction;
+                    if (self.pool == null) return Err.NotInitialized;
+                    return if (self.allocs >= num) Err.OutOfMemory else @call(.always_inline, &continuos, .{ self, self.lindex, null }) catch Err.UndefinedAction;
                 },
 
                 .optimized => {
-                    if (self.pool == null) return err_T.NotInitialized;
-                    return if (self.allocs >= num) err_T.OutOfMemory else @call(.always_inline, &auto, .{self}) catch err_T.UndefinedAction;
+                    if (self.pool == null) return Err.NotInitialized;
+                    return if (self.allocs >= num) Err.OutOfMemory else @call(.always_inline, &auto, .{self}) catch Err.UndefinedAction;
                 },
             }
         }
 
-        pub fn free(self: *Self, obj: *T) err_T!void {
+        pub fn free(self: *Self, obj: *t) Err!void {
             return r: {
-                if (self.pool == null) return err_T.NotInitialized;
+                if (self.pool == null) return Err.NotInitialized;
                 const ipool = @call(.always_inline, &BitMap.addrsToIPool, .{ self, obj });
-                if (ipool == null) break :r err_T.IndexOutBounds;
-                if (@call(.always_inline, &BitMap.read, .{ self, ipool.? }) == .free) break :r err_T.DoubleFree;
+                if (ipool == null) break :r Err.IndexOutBounds;
+                if (@call(.always_inline, &BitMap.read, .{ self, ipool.? }) == .free) break :r Err.DoubleFree;
                 @call(.always_inline, &BitMap.set, .{ self, ipool.?, .free });
                 self.allocs -= 1;
                 self.lindex = if (self.lindex) |_| self.lindex else ipool;
                 if (optimize.type != .linear)
                     self.cindex = ipool;
                 if (self.allocs == 0)
-                    @call(.never_inline, pool_deinit, .{self}) catch {};
+                    @call(.never_inline, poolDeinit, .{self}) catch {};
             };
         }
     };

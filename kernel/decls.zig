@@ -16,12 +16,12 @@ pub const saturn_especial_decls = [_][]const u8 {
 pub const saturn_especial_decls_types = [_]type {
     interfaces.arch.ArchDescription,
     interfaces.module.ModuleDescription,
-    interfaces.fusium.FusiumDescription_T,
+    interfaces.fusium.FusiumDescription,
     []const[]const u8,
     []const[]const u8,
 };
 
-pub const DeclsOffset_T: type = enum {
+pub const DeclsOffset: type = enum {
     arch,
     module,
     fusium,
@@ -29,29 +29,29 @@ pub const DeclsOffset_T: type = enum {
     c_includes,
 };
 
-pub fn decl_access(comptime container: type, comptime decl: DeclsOffset_T) @TypeOf(@field(container, what_is_decl(decl))) {
-    return @field(container, what_is_decl(decl));
+pub fn declAccess(comptime container: type, comptime decl: DeclsOffset) @TypeOf(@field(container, whatIsDecl(decl))) {
+    return @field(container, whatIsDecl(decl));
 }
 
-pub fn container_decl_exist(comptime container: type, comptime decl: DeclsOffset_T) bool {
+pub fn containerDeclExist(comptime container: type, comptime decl: DeclsOffset) bool {
     return @hasDecl(container, saturn_especial_decls[
         @intFromEnum(decl)
     ]);
 }
 
-pub fn container_decl_type(comptime container: type, comptime decl: DeclsOffset_T) bool {
+pub fn containerDeclType(comptime container: type, comptime decl: DeclsOffset) bool {
     return container == saturn_especial_decls_types[
         @intFromEnum(decl)
     ];
 }
 
-pub fn what_is_decl(comptime decl: DeclsOffset_T) []const u8 {
+pub fn whatIsDecl(comptime decl: DeclsOffset) []const u8 {
     return saturn_especial_decls[
         @intFromEnum(decl)
     ];
 }
 
-pub fn what_is_decl_type(comptime decl: DeclsOffset_T) type {
+pub fn whatIsDeclType(comptime decl: DeclsOffset) type {
     return saturn_especial_decls_types[
         @intFromEnum(decl)
     ];

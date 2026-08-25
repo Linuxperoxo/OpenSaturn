@@ -12,7 +12,7 @@ pub const LockErr: type = error {
 pub const VTable: type = struct {
     lock: *const fn(*anyopaque) LockErr!void,
     unlock: *const fn(*anyopaque) LockErr!void,
-    tryLock: *const fn(*anyopaque) LockErr!bool,
+    try_lock: *const fn(*anyopaque) LockErr!bool,
 };
 
 private: *anyopaque,
@@ -27,5 +27,5 @@ pub inline fn unlock(self: *const @This()) LockErr!void {
 }
 
 pub inline fn tryLock(self: *const @This()) LockErr!bool {
-    return self.vtable.tryLock(self.private);
+    return self.vtable.try_lock(self.private);
 }

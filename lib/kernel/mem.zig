@@ -25,7 +25,7 @@ pub fn eql(noalias b0: []const u8, noalias b1: []const u8, comptime rule: struct
     };
 }
 
-pub fn zeroe_mem(lhs: anytype) if (@typeInfo(@TypeOf(lhs)) == .pointer) void else @TypeOf(lhs) {
+pub fn zeroeMem(lhs: anytype) if (@typeInfo(@TypeOf(lhs)) == .pointer) void else @TypeOf(lhs) {
     switch (@typeInfo(@TypeOf(lhs))) {
         .pointer => |ptr| {
             switch (ptr.size) {
@@ -59,22 +59,22 @@ pub fn zeroe_mem(lhs: anytype) if (@typeInfo(@TypeOf(lhs)) == .pointer) void els
     }
 }
 
-pub const zero = zeroe_type;
+pub const zero = zeroeType;
 
-pub fn zeroe_type(comptime T: type) T {
+pub fn zeroeType(comptime t: type) t {
     @setEvalBranchQuota(4294967295);
-    switch (@typeInfo(T)) {
-        .int, .float => return @as(T, 0),
+    switch (@typeInfo(t)) {
+        .int, .float => return @as(t, 0),
         .pointer => |info| if (info.is_allowzero) return @intFromPtr(0) else return undefined,
         .null, .optional => return null,
         .array => |info| {
-            var array: T = undefined;
+            var array: t = undefined;
             for (0..info.len) |i| {
                 array[i] = comptime zero(info.child);
             }
         },
         .@"struct" => |info| {
-            var @"struct": T = undefined;
+            var @"struct": t = undefined;
             for (info.fields) |field| {
                 @field(@"struct", field.name) = comptime zero(field.type);
             }

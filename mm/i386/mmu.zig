@@ -77,12 +77,12 @@ comptime {
 const kernel_page_dir_virtual = page.kernel_page_dir_virtual;
 const kernel_page_table_virtual = page.kernel_page_table_virtual;
 
-pub fn mmu_init() linksection(section_text_loader) callconv(.c) void {
-    @call(.always_inline, configure_bootstrap, .{});
-    @call(.always_inline, configure_kernel_text, .{});
-    @call(.always_inline, configure_kernel_data, .{});
-    @call(.always_inline, configure_kernel_stack, .{});
-    @call(.always_inline, configure_kernel_mmu_phys_to_virt, .{});
+pub fn mmuInit() linksection(section_text_loader) callconv(.c) void {
+    @call(.always_inline, configureBootstrap, .{});
+    @call(.always_inline, configureKernelText, .{});
+    @call(.always_inline, configureKernelData, .{});
+    @call(.always_inline, configureKernelStack, .{});
+    @call(.always_inline, configureKernelMmuPhysToVirt, .{});
     asm volatile(
         \\ andl $0x00000FFF, %esp
         \\ andl $0x00000FFF, %ebp
@@ -97,18 +97,18 @@ pub fn mmu_init() linksection(section_text_loader) callconv(.c) void {
          [_] "{edx}" (kernel_stack_base_virtual),
          [cr0_paging_bit] "i" (cr0_paging_bit),
     );
-    @call(.always_inline, configure_zone_kernel, .{}) catch unreachable;
+    @call(.always_inline, configureZoneKernel, .{}) catch unreachable;
 }
 
-fn configure_zone_kernel() types.ZoneErr_T!void {
+fn configureZoneKernel() types.ZoneErr!void {
     errdefer unreachable; // teoriacamente nunca vai dar erro, ja que e a primeira vez que usamos a zona
-    try @call(.always_inline, zone.zone_resize, .{
-        types.Zones_T.kernel, @intFromPtr(phys_address_opensaturn_zone_kernel_start), 32
+    try @call(.always_inline, zone.zoneResize, .{
+        types.Zones.kernel, @intFromPtr(phys_address_opensaturn_zone_kernel_start), 32
     });
-    try @call(.always_inline, zone.zone_reconf, .{
-        types.Zones_T.kernel, 0b0000101
+    try @call(.always_inline, zone.zoneReconf, .{
+        types.Zones.kernel, 0b0000101
     });
-    const page_dir_entry: *types.PageDirEntry_T = &kernel_page_dir_virtual[page.kernel_index[@intFromEnum(page.KernelPageIndex.paged)] >> 22];
+    const page_dir_entry: *types.PageDirEntry = &kernel_page_dir_virtual[page.kernel_index[@intFromEnum(page.KernelPageIndex.paged)] >> 22];
     page_dir_entry.present = 1;
     page_dir_entry.rw = 1;
     page_dir_entry.table_phys = @intCast(@intFromPtr(&page.kernel_page_table[
@@ -116,18 +116,18 @@ fn configure_zone_kernel() types.ZoneErr_T!void {
     ]) >> 12);
 }
 
-fn configure_bootstrap() void {
+fn configureBootstrap() void {
     // NOTE: phys_i386_start == config.kernel.mem.phys.kernel_phys
-    const total_of_pages_arch_sections: u32 = @call(.always_inline, resolve_num_of_pages, .{
+    const total_of_pages_arch_sections: u32 = @call(.always_inline, resolveNumOfPages, .{
         @intFromPtr(phys_i386_end) - @intFromPtr(phys_i386_start)
     });
-    const bootstrap_page_dir_entry: *types.PageDirEntry_T = &page.kernel_page_dir[
+    const bootstrap_page_dir_entry: *types.PageDirEntry = &page.kernel_page_dir[
         // apenas 1 entry deve ser usada para o bootstrap, caso contrario, vai ter
         // sobreescrita da bootstrap_page_table, quanto menor os 10 bits para o
         // bootstrap_page_table melhor
         config.kernel.mem.phys.kernel_phys >> 22
     ];
-    const bootstrap_page_table: *[1024]types.PageTableEntry_T = &page.bootstrap_page_table;
+    const bootstrap_page_table: *[1024]types.PageTableEntry = &page.bootstrap_page_table;
     var page_table_i: u32 = ((config.kernel.mem.phys.kernel_phys >> 12) & 0x3FF);
     for(0..total_of_pages_arch_sections) |_| {
         bootstrap_page_table[page_table_i].present = 1;
@@ -140,57 +140,57 @@ fn configure_bootstrap() void {
     bootstrap_page_dir_entry.table_phys = @intCast(@intFromPtr(bootstrap_page_table) >> 12);
 }
 
-fn configure_kernel_text() void {
-    @call(.always_inline, kernel_map, .{
+fn configureKernelText() void {
+    @call(.always_inline, kernelMap, .{
         @intFromPtr(phys_address_opensaturn_text_start),
         page.KernelPageIndex.text,
-        @call(.always_inline, resolve_num_of_pages, .{
+        @call(.always_inline, resolveNumOfPages, .{
             @intFromPtr(phys_address_opensaturn_text_end) - @intFromPtr(phys_address_opensaturn_text_start)
         }),
         0
     });
 }
 
-fn configure_kernel_stack() void {
-    @call(.always_inline, kernel_map, .{
+fn configureKernelStack() void {
+    @call(.always_inline, kernelMap, .{
         kernel_stack_base_phys_address,
         page.KernelPageIndex.stack,
-        @call(.always_inline, resolve_num_of_pages, .{
+        @call(.always_inline, resolveNumOfPages, .{
             (kernel_stack_base_phys_address + kernel_stack_size) - kernel_stack_base_phys_address
         }),
         1
     });
 }
 
-fn configure_kernel_data() void {
-    @call(.always_inline, kernel_map, .{
+fn configureKernelData() void {
+    @call(.always_inline, kernelMap, .{
         @intFromPtr(phys_address_opensaturn_data_start),
         page.KernelPageIndex.data,
-        @call(.always_inline, resolve_num_of_pages, .{
+        @call(.always_inline, resolveNumOfPages, .{
             @intFromPtr(phys_address_opensaturn_data_end) - @intFromPtr(phys_address_opensaturn_data_start)
         }),
         1
     });
 }
 
-fn configure_kernel_mmu_phys_to_virt() void {
-    @call(.always_inline, kernel_map, .{
+fn configureKernelMmuPhysToVirt() void {
+    @call(.always_inline, kernelMap, .{
         @intFromPtr(&page.kernel_page_dir),
         page.KernelPageIndex.mmu,
-        @call(.always_inline, resolve_num_of_pages, .{
+        @call(.always_inline, resolveNumOfPages, .{
             @intFromPtr(phys_address_opensaturn_mmu_end) - @intFromPtr(phys_address_opensaturn_mmu_start)
         }),
         1
     });
 }
 
-fn kernel_map(phys: u32, index: page.KernelPageIndex, pages: u32, rw: u1) void {
+fn kernelMap(phys: u32, index: page.KernelPageIndex, pages: u32, rw: u1) void {
     // funcao espera que os enderecoes virtuais do kernel sejam alinhados a
     // 4Mib
-    const page_dir: *types.PageDirEntry_T = &page.kernel_page_dir[
+    const page_dir: *types.PageDirEntry = &page.kernel_page_dir[
         page.kernel_index[@intFromEnum(index)] >> 22
     ];
-    const page_table: *[1024]types.PageTableEntry_T = &page.kernel_page_table[
+    const page_table: *[1024]types.PageTableEntry = &page.kernel_page_table[
         @as(u4, page_dir.avail) | (@as(u4, page_dir.reserved) << 3)
     ];
     for(0..pages) |i| {
@@ -203,7 +203,7 @@ fn kernel_map(phys: u32, index: page.KernelPageIndex, pages: u32, rw: u1) void {
     page_dir.table_phys = @intCast(@intFromPtr(page_table) >> 12);
 }
 
-fn resolve_num_of_pages(dif: u32) u32 {
+fn resolveNumOfPages(dif: u32) u32 {
     return asm volatile(
         // edx:eax / ecx
         // % = edx

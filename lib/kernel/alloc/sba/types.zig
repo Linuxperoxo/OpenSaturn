@@ -6,15 +6,15 @@
 const mm: type = @import("root").mm;
 const config: type = @import("root").config;
 
-pub const Personality_T: type = struct {
+pub const Personality: type = struct {
     resize: bool = true,
-    resizeErr: bool = false,
+    resize_err: bool = false,
 };
 
-//pub const Cache_T: type = struct {
-//    size: CacheSize_T = .auto,
+//pub const Cache: type = struct {
+//    size: CacheSize = .auto,
 //
-//    pub const CacheSize_T: type = enum(u3) {
+//    pub const CacheSize: type = enum(u3) {
 //        small = 4,
 //        large = 2,
 //        huge = 1,

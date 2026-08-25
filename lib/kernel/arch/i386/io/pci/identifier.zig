@@ -3,11 +3,11 @@
 // │            Author: Linuxperoxo                  │
 // └─────────────────────────────────────────────────┘
 
-const PCIVendor_T: type = @import("types.zig").PCIVendor_T;
-const PCIClass_T: type = @import("types.zig").PCIClass_T;
+const PCIVendor: type = @import("types.zig").PCIVendor;
+const PCIClass: type = @import("types.zig").PCIClass;
 
-pub fn physIoVendorName(vendorID: PCIVendor_T) []const u8 {
-    return switch(vendorID) {
+pub fn physIoVendorName(vendor_id: PCIVendor) []const u8 {
+    return switch(vendor_id) {
         .intel => "Intel Corporation",
         .amd => "Advanced Micro Devices, Inc. (AMD)",
         .nvidia => "NVIDIA Corporation",
@@ -23,7 +23,7 @@ pub fn physIoVendorName(vendorID: PCIVendor_T) []const u8 {
     };
 }
 
-pub fn physIoClassSubClass(class: PCIClass_T, sub: u8, prog: u8) []const u8 {
+pub fn physIoClassSubClass(class: PCIClass, sub: u8, prog: u8) []const u8 {
     return switch(class) {
         .storage => switch(sub) {
             0x01 => "IDE Controller",

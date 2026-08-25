@@ -5,9 +5,9 @@
 
 const msr: type = @import("msr.zig");
 
-const LAPIC_BASE_PHYS: u32 = 0xFEE00000;
-const LAPIC_ENABLE_BIT: u16 = 1 << 11;
-const LAPIC_SVR_ENABLE: u16 = 1 << 8;
+const lapic_base_phys: u32 = 0xFEE00000;
+const lapic_enable_bit: u16 = 1 << 11;
+const lapic_svr_enable: u16 = 1 << 8;
 
 // MSRs (Model-Specific Registers) são registradores específicos do modelo de processador que permitem acesso a funcionalidades 
 // avançadas e configurações do hardware. Eles são usados para controlar o comportamento do processador, como desempenho, 
@@ -15,37 +15,37 @@ const LAPIC_SVR_ENABLE: u16 = 1 << 8;
 // é necessário configurar corretamente certos MSRs, pois eles controlam aspectos como a ativação do LAPIC e 
 // a configuração de interrupções no sistema. O acesso aos MSRs é feito por instruções especiais, como RDMSR e WRMSR, 
 // e geralmente requer privilégios de anel 0 (modo de kernel).
-const IA32_APIC_BASE_MSR: u8 = 0x1B;
+const ia32_apic_base_msr: u8 = 0x1B;
 
 const LAPICOffsets: type = enum(u16) {
-    IDRegister = 0x20,
-    VersionRegister = 0x30,
-    TaskPriorityRegister = 0x80,
-    ArbitrationPriorityRegister = 0x90,
-    ProcessorPriorityRegister = 0xA0,
-    EndOfIntRegister = 0xB0,
-    RemoteReadRegister = 0xC0,
-    LogicalDestinationRegister = 0xD0,
-    DestinationFormatRegister = 0xE0,
-    SpuriousIntVectorRegister = 0xF0,
-    InServiceRegisterLow = 0x100,
-    InServiceRegisterHigh = 0x170,
-    TriggerModeRegisterLow = 0x180,
-    TriggerModeRegisterHigh = 0x1F0,
-    InterruptRequestRegisterLow = 0x200,
-    InterruptRequestRegisterHigh = 0x270,
-    ErrorStatusRegister = 0x280,
-    InterruptCommandRegisterLow = 0x300,
-    InterruptCommandRegisterHigh = 0x310,
-    LVTTimerRegister = 0x320,
-    LVTThermalSensorRegister = 0x330,
-    LVTPerformanceMonitoringCountersRegister = 0x340,
-    LVTLINT0Register = 0x350,
-    LVTLINT1Register = 0x360,
-    LVTErrorRegister = 0x370,
-    TimerInitialCountRegister = 0x380,
-    TimerCurrentCountRegister = 0x390,
-    TimerDivideConfigurationRegister = 0x3E0,
+    id_register = 0x20,
+    version_register = 0x30,
+    task_priority_register = 0x80,
+    arbitration_priority_register = 0x90,
+    processor_priority_register = 0xA0,
+    end_of_int_register = 0xB0,
+    remote_read_register = 0xC0,
+    logical_destination_register = 0xD0,
+    destination_format_register = 0xE0,
+    spurious_int_vector_register = 0xF0,
+    in_service_register_low = 0x100,
+    in_service_register_high = 0x170,
+    trigger_mode_register_low = 0x180,
+    trigger_mode_register_high = 0x1F0,
+    interrupt_request_register_low = 0x200,
+    interrupt_request_register_high = 0x270,
+    error_status_register = 0x280,
+    interrupt_command_register_low = 0x300,
+    interrupt_command_register_high = 0x310,
+    lvt_timer_register = 0x320,
+    lvt_thermal_sensor_register = 0x330,
+    lvt_performance_monitoring_counters_register = 0x340,
+    lvt_lint0_register = 0x350,
+    lvt_lint1_register = 0x360,
+    lvt_error_register = 0x370,
+    timer_initial_count_register = 0x380,
+    timer_current_count_register = 0x390,
+    timer_divide_configuration_register = 0x3E0,
 };
 
 // Bits 0–7: IDTEntry
@@ -71,13 +71,13 @@ const LAPICOffsets: type = enum(u16) {
 //   111 = ExtINT (para compatibilidade com o PIC 8259).
 
 pub const DeliveryModes: type = enum(u3) {
-    Fixed = 0b000,
-    Lowest = 0b001,
-    SystemManagementInterrupt = 0b010,
-    NonMaskableInterrupt = 0b011,
-    Init = 0b101,
-    Startup = 0b110,
-    ExtINT = 0b111,
+    fixed = 0b000,
+    lowest = 0b001,
+    system_management_interrupt = 0b010,
+    non_maskable_interrupt = 0b011,
+    init = 0b101,
+    startup = 0b110,
+    ext_int = 0b111,
 };
 
 // Bit 11: Destination Mode
@@ -86,8 +86,8 @@ pub const DeliveryModes: type = enum(u3) {
 //   1 = Modo lógico (bits 56–63 representam um mapa lógico de CPUs).
 
 pub const DestinationModes: type = enum(u1) {
-    Physical,
-    Logical,
+    physical,
+    logical,
 };
 
 // Bit 12: Delivery Status (somente leitura)
@@ -96,8 +96,8 @@ pub const DestinationModes: type = enum(u1) {
 //   1 = Pendente (a interrupção ainda está sendo entregue).
 
 pub const DeliveryStatus: type = enum(u1) {
-    Idle,
-    Pending,
+    idle,
+    pending,
 };
 
 // Bit 14: Level (Assert/Deassert)
@@ -117,8 +117,8 @@ pub const DeliveryStatus: type = enum(u1) {
 // a execução, normalmente reiniciando sua sequência de boot.
 
 pub const Levels: type = enum(u1) {
-    Deassert,
-    Assert,
+    deassert,
+    assert,
 };
 
 // Bit 15: Trigger Mode
@@ -137,8 +137,8 @@ pub const Levels: type = enum(u1) {
 //     - Esse modo pode ser útil para detectar falhas persistentes de hardware ou eventos de longa duração que necessitam de uma resposta contínua do sistema. 
 
 pub const TriggerModes: type = enum(u1) {
-    EdgeTriggered,
-    LevelTriggered,
+    edge_triggered,
+    level_triggered,
 };
 
 // Bits 18–19: Destination Shorthand
@@ -149,48 +149,48 @@ pub const TriggerModes: type = enum(u1) {
 //   11 = Todos os LAPICs, exceto a CPU que enviou.
 
 pub const DestinationShorthands: type = enum(u2) {
-    ICRHigh,
-    CurrentCPU,
-    AllLAPICs,
-    ALLExceptCurrent,
+    icr_high,
+    current_cpu,
+    all_lapics,
+    all_except_current,
 };
 
 pub const ICRLow: type = packed struct {
-    IDTEntry: u8,
-    DeliveryMode: DeliveryModes,
-    DestMode: DestinationModes,
-    DeliveryStatus: DeliveryStatus = .Idle,
-    Reserved0: u1 = 0,
-    Level: Levels,
-    TriggerMode: TriggerModes,
-    Reserved1: u2 = 0,
-    DestinationShorthand: DestinationShorthands,
-    Reserved2: u12 = 0,
+    idt_entry: u8,
+    delivery_mode: DeliveryModes,
+    dest_mode: DestinationModes,
+    delivery_status: DeliveryStatus = .idle,
+    reserved0: u1 = 0,
+    level: Levels,
+    trigger_mode: TriggerModes,
+    reserved1: u2 = 0,
+    destination_shorthand: DestinationShorthands,
+    reserved2: u12 = 0,
 };
 
 pub const ICRHigh: type = packed struct {
-    Reserved: u24 = 0,
-    LAPICid: u8, // ID do LAPIC de destino
+    reserved: u24 = 0,
+    lapic_id: u8, // ID do LAPIC de destino
 };
 
 pub fn enableLAPIC() void {
-    var msrReturn: msr.MsrReturn = @call(
+    var msr_return: msr.MsrReturn = @call(
         .always_inline,
         &msr.rdmsr,
         .{
-            IA32_APIC_BASE_MSR,
+            ia32_apic_base_msr,
         }
     );
    
-    msrReturn.Low |= 0x800; // Bit que ativa o APIC
+    msr_return.low |= 0x800; // Bit que ativa o APIC
 
     @call(
         .always_inline,
         msr.wrmsr,
         .{
-            IA32_APIC_BASE_MSR,
-            msrReturn.Low,
-            msrReturn.High
+            ia32_apic_base_msr,
+            msr_return.low,
+            msr_return.high
         }
     );
 
@@ -207,14 +207,14 @@ pub fn enableLAPIC() void {
         \\ movl %eax,   (%edi)
 
         :
-        :[I0] "i" (comptime LAPIC_BASE_PHYS + @intFromEnum(LAPICOffsets.SpuriousIntVectorRegister)),
+        :[I0] "i" (comptime lapic_base_phys + @intFromEnum(LAPICOffsets.spurious_int_vector_register)),
         : .{
             .eax = true,
         }
     );
 }
 
-pub fn sendIPI(ICRL: ICRLow, ICRH: ICRHigh) void {
+pub fn sendIPI(icr_low: ICRLow, icr_high: ICRHigh) void {
     asm volatile(
         \\ movl %[I1], %ebx
         \\ movl %edx,  (%ebx)
@@ -222,10 +222,10 @@ pub fn sendIPI(ICRL: ICRLow, ICRH: ICRHigh) void {
         \\ movl %eax,  (%ebx)
 
         :
-        :[_] "{eax}" (ICRL),
-         [_] "{edx}" (ICRH),
-         [I0] "i" (comptime LAPIC_BASE_PHYS + @intFromEnum(LAPICOffsets.InterruptCommandRegisterLow)),
-         [I1] "i" (comptime LAPIC_BASE_PHYS + @intFromEnum(LAPICOffsets.InterruptCommandRegisterHigh))
+        :[_] "{eax}" (icr_low),
+         [_] "{edx}" (icr_high),
+         [I0] "i" (comptime lapic_base_phys + @intFromEnum(LAPICOffsets.interrupt_command_register_low)),
+         [I1] "i" (comptime lapic_base_phys + @intFromEnum(LAPICOffsets.interrupt_command_register_high))
         : .{}
     );
 }

@@ -8,6 +8,6 @@ const ops: type = @import("ops.zig");
 
 pub var rootfs: fs.Fs = .{
     .name = "rootfs",
-    .mount = ops.rootfs_mount,
-    .umount = ops.rootfs_umount,
+    .mount = ops.rootfsMount,
+    .umount = ops.rootfsUmount,
 };

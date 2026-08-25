@@ -5,14 +5,14 @@
 
 const module: type = @import("root").core.module;
 
-pub const ModType: type = module.ModType_T;
-pub const Mod: type = module.Mod_T;
-pub const ModControlFlags: type = module.ModControlFlags_T;
-pub const ModErr: type = module.ModErr_T;
-pub const ModuleDescriptionTarget: type =  module.ModuleDescriptionTarget_T;
-pub const ModuleDescription: type = module.ModuleDescription_T;
-pub const ModuleDescriptionLibMine: type = module.ModuleDescriptionLibMine_T;
-pub const ModuleDescriptionLibOut: type = module.ModuleDescriptionLibOut_T;
+pub const ModType: type = module.ModType;
+pub const Mod: type = module.Mod;
+pub const ModControlFlags: type = module.ModControlFlags;
+pub const ModErr: type = module.ModErr;
+pub const ModuleDescriptionTarget: type =  module.ModuleDescriptionTarget;
+pub const ModuleDescription: type = module.ModuleDescription;
+pub const ModuleDescriptionLibMine: type = module.ModuleDescriptionLibMine;
+pub const ModuleDescriptionLibOut: type = module.ModuleDescriptionLibOut;
 
 pub const initmod = module.initmod;
 pub const killmod = module.killmod;

@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo                 │
 // └────────────────────────────────────────────────┘
 
-pub const IDTEntry_T: type = packed struct {
+pub const IDTEntry: type = packed struct {
     low: u16, // Parte baixa do endereço ISR (Interrupt Service Routine)
     segment: u16, // Aponta para o seletor de segmento usado para acessar o codigo do ISR
     always0: u8, // Sempre 0
@@ -21,7 +21,7 @@ pub const IDTEntry_T: type = packed struct {
 // Task Gate(0b0101): CPU Troca para uma task diferente (Task State Segment)
 
 // Forca alinhamento correto para a struct
-pub const IDTStruct_T: type = packed struct {
+pub const IDTStruct: type = packed struct {
     limit: u16, // Offset maximo de entradas em bytes
     entries: u32, // Endereço para as entradas IDT
 };
@@ -80,7 +80,7 @@ pub const IDTStruct_T: type = packed struct {
 // Exceções 17 a 31 - None:
 // Essas exceções não são usadas pela arquitetura x86 e são reservadas para uso futuro ou personalização. Elas podem ser usadas em implementações específicas ou em extensões do processador.
 
-pub const cpuExceptionsMessagens = [_][]const u8{
+pub const cpu_exceptions_messagens = [_][]const u8{
   "Division By Zero",               // Exceção 0  - Division By Zero
   "Debug",                          // Exceção 1  - Debug
   "Non Maskable Interrupt",         // Exceção 2  - Non Maskable Interrupt (NMI)

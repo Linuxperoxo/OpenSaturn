@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const Optimize_T: type = struct {
+pub const Optimize: type = struct {
     /// Defines which allocation strategy will be used.
     ///
     /// * dynamic: Lets you choose the allocation mode at runtime
@@ -17,12 +17,12 @@ pub const Optimize_T: type = struct {
     /// want full control, use `dynamic`.
     ///
     /// Default: .optimized
-    type: OptimizeAlloc_T = .optimized,
+    type: OptimizeAlloc = .optimized,
 
     /// Alignment of allocated objects.
     ///
     /// Default: .in8
-    alignment: OptimizeAlign_T = .in8,
+    alignment: OptimizeAlign = .in8,
 
     /// Number of optimization attempts the allocator will try.
     /// Using a very large value may add overhead in `optimized` mode
@@ -33,35 +33,35 @@ pub const Optimize_T: type = struct {
     /// * huge: 4 attempts
     ///
     /// Default: .large
-    range: OptimizeRange_T = .large,
+    range: OptimizeRange = .large,
 
-    pub const OptimizeAlloc_T: type = enum {
+    pub const OptimizeAlloc: type = enum {
         dinamic,
         linear,
         optimized,
     };
 
-    pub const OptimizeAlign_T: type = enum(u5) {
+    pub const OptimizeAlign: type = enum(u5) {
         in2 = 2,
         in4 = 4,
         in8 = 8,
         in16 = 16,
     };
 
-    pub const OptimizeRange_T: type = enum(u5) {
+    pub const OptimizeRange: type = enum(u5) {
         small = 2,
         large = 3,
         huge = 4,
     };
 
-    pub const CallingAlloc_T: type = enum(u2) {
+    pub const CallingAlloc: type = enum(u2) {
         continuos,
         fast,
         auto,
     };
 };
 
-pub const Cache_T: type = struct {
+pub const Cache: type = struct {
     /// Cache size. A larger cache can reduce misses,
     /// but cache synchronization may take longer.
     ///
@@ -71,7 +71,7 @@ pub const Cache_T: type = struct {
     /// * huge: Full cache, space for all objects
     ///
     /// Default: .auto
-    size: CacheSize_T = .auto,
+    size: CacheSize = .auto,
 
     /// Frequency of cache synchronization. Higher frequency
     /// reduces cache errors, but may negatively impact allocation.
@@ -82,33 +82,33 @@ pub const Cache_T: type = struct {
     /// * burning: Always synchronizes on every allocation
     ///
     /// Default: .heated
-    sync: CacheSync_T = .heated,
+    sync: CacheSync = .heated,
 
     /// How synchronization is performed. Choosing the right mode
     /// can significantly reduce synchronization cost, especially
     /// for larger caches.
     ///
-    /// * PrioritizeHits: Synchronizes the entire cache. Slower, but good
+    /// * prioritize_hits: Synchronizes the entire cache. Slower, but good
     ///   when syncs are infrequent (e.g., when using `sync = chilled`)
-    /// * PrioritizeSpeed: Synchronizes only half of the cache, which helps
+    /// * prioritize_speed: Synchronizes only half of the cache, which helps
     ///   larger caches maintain steady synchronization and avoid misses
     ///
-    /// Default: .PrioritizeHits
-    mode: CacheMode_T = .PrioritizeHits,
+    /// Default: .prioritize_hits
+    mode: CacheMode = .prioritize_hits,
 
-    pub const CacheMode_T: type = enum(u1) {
-        PrioritizeHits,
-        PrioritizeSpeed,
+    pub const CacheMode: type = enum(u1) {
+        prioritize_hits,
+        prioritize_speed,
     };
 
-    pub const CacheSize_T: type = enum(u3) {
+    pub const CacheSize: type = enum(u3) {
         auto,
         small = 4,
         large = 2,
         huge = 1,
     };
 
-    pub const CacheSync_T: type = enum(u2) {
+    pub const CacheSync: type = enum(u2) {
         burning,
         chilled = 3,
         heated = 2,

@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo                │
 // └───────────────────────────────────────────────┘
 
-pub const EventDefaultInstall_T: type = struct {
+pub const EventDefaultInstall: type = struct {
     bus: u2,
     line: u3,
     who: u8,

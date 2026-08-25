@@ -15,34 +15,34 @@ const in: type = struct {
     pub const l = @import("root").__SaturnArchImpl__.lib.kernel.io.ports.inl;
 };
 
-pub const PCIAddress_T: type = @import("types.zig").PCIAddress_T;
-pub const PCIRegsOffset_T: type = @import("types.zig").PCIRegsOffset_T;
-pub const PCIPhysIo_T: type = @import("types.zig").PCIPhysIo_T;
-pub const PCIClass_T: type = @import("types.zig").PCIClass_T;
-pub const PCIVendor_T: type = @import("types.zig").PCIVendor_T;
+pub const PCIAddress: type = @import("types.zig").PCIAddress;
+pub const PCIRegsOffset: type = @import("types.zig").PCIRegsOffset;
+pub const PCIPhysIo: type = @import("types.zig").PCIPhysIo;
+pub const PCIClass: type = @import("types.zig").PCIClass;
+pub const PCIVendor: type = @import("types.zig").PCIVendor;
 
-pub const PCI_UNDEFINED_RETURN: u32 = 0xFFFFFFFF; // or ~0x0;
+pub const pci_undefined_return: u32 = 0xFFFFFFFF; // or ~0x0;
 
-const PCI_CONFIG_ADDRESS_PORT: u16 = 0xCF8;
-const PCI_CONFIG_DATA_PORT: u16 = 0xCFC;
+const pci_config_address_port: u16 = 0xCF8;
+const pci_config_data_port: u16 = 0xCFC;
 
-pub fn pci_config_write(address: PCIAddress_T, data: u32) void {
+pub fn pciConfigWrite(address: PCIAddress, data: u32) void {
     @call(.always_inline, &out.l, .{
-        PCI_CONFIG_ADDRESS_PORT,
+        pci_config_address_port,
         @as(u32, @bitCast(address)),
     });
     @call(.always_inline, &out.l, .{
-        PCI_CONFIG_DATA_PORT,
+        pci_config_data_port,
         data,
     });
 }
 
-pub fn pci_config_read(address: PCIAddress_T) u32 {
+pub fn pciConfigRead(address: PCIAddress) u32 {
     @call(.always_inline, &out.l, .{
-        PCI_CONFIG_ADDRESS_PORT,
+        pci_config_address_port,
         @as(u32, @bitCast(address))
     });
     return @call(.always_inline, &in.l, .{
-        PCI_CONFIG_DATA_PORT,
+        pci_config_data_port,
     });
 }

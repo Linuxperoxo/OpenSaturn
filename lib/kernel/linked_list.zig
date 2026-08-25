@@ -3,25 +3,25 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub fn BuildList(comptime T: type) type {
+pub fn buildList(comptime t: type) type {
     return struct {
         private: ?*anyopaque = null,
 
-        pub const ListNode_T: type = struct {
+        pub const ListNode: type = struct {
             next: ?*@This(),
             prev: ?*@This(),
-            data: T,
+            data: t,
         };
 
-        const Private_T: type = struct {
-            root: ?*ListNode_T,
-            iterator: ?*ListNode_T,
+        const Private: type = struct {
+            root: ?*ListNode,
+            iterator: ?*ListNode,
             iterator_index: usize,
-            eol: ?*ListNode_T,
+            eol: ?*ListNode,
             nodes: usize,
         };
 
-        pub const ListErr_T: type = error{
+        pub const ListErr: type = error{
             AllocatorErr,
             IndexOutBounds,
             NoNInitialized,
@@ -36,8 +36,8 @@ pub fn BuildList(comptime T: type) type {
             FreeInternalError,
         };
 
-        fn check_allocator(comptime AT: type) void {
-            switch (@typeInfo(AT)) {
+        fn checkAllocator(comptime at: type) void {
+            switch (@typeInfo(at)) {
                 .pointer => {},
                 else => @compileError(
                     \\ expect pointer to allocator
@@ -45,10 +45,10 @@ pub fn BuildList(comptime T: type) type {
             }
         }
 
-        fn find_index(self: *@This(), index: usize) ListErr_T!*ListNode_T {
-            const private_casted: *Private_T = @call(.always_inline, cast_private, .{self.private.?});
-            if (private_casted.eol == null) return ListErr_T.NoNInitialized;
-            if (index >= private_casted.nodes) return ListErr_T.IndexOutBounds;
+        fn findIndex(self: *@This(), index: usize) ListErr!*ListNode {
+            const private_casted: *Private = @call(.always_inline, castPrivate, .{self.private.?});
+            if (private_casted.eol == null) return ListErr.NoNInitialized;
+            if (index >= private_casted.nodes) return ListErr.IndexOutBounds;
             var current = private_casted.root.?;
             for (0..index) |_| {
                 current = current.next.?;
@@ -56,27 +56,27 @@ pub fn BuildList(comptime T: type) type {
             return current;
         }
 
-        inline fn check_init(self: *@This(), comptime ignore_root: bool) ListErr_T!void {
+        inline fn checkInit(self: *@This(), comptime ignore_root: bool) ListErr!void {
             if (self.private == null)
-                return ListErr_T.NoNInitialized;
-            if (!ignore_root and cast_private(self.private.?).root == null)
-                return ListErr_T.WithoutNodes;
+                return ListErr.NoNInitialized;
+            if (!ignore_root and castPrivate(self.private.?).root == null)
+                return ListErr.WithoutNodes;
         }
 
-        inline fn cast_private(private: *anyopaque) *Private_T {
+        inline fn castPrivate(private: *anyopaque) *Private {
             return @ptrCast(@alignCast(private));
         }
 
-        pub fn is_initialized(self: *@This()) bool {
-            return self.private != null or self.how_many_nodes() != 0;
+        pub fn isInitialized(self: *@This()) bool {
+            return self.private != null or self.howManyNodes() != 0;
         }
 
         /// * init the list (use whenever the node quantity is 0)
-        pub fn init(self: *@This(), allocator: anytype) ListErr_T!void {
-            comptime check_allocator(@TypeOf(allocator));
+        pub fn init(self: *@This(), allocator: anytype) ListErr!void {
+            comptime checkAllocator(@TypeOf(allocator));
             if (self.private != null) return;
-            self.private = &(allocator.alloc(Private_T, 1) catch return ListErr_T.AllocatorErr)[0];
-            cast_private(self.private.?).* = .{
+            self.private = &(allocator.alloc(Private, 1) catch return ListErr.AllocatorErr)[0];
+            castPrivate(self.private.?).* = .{
                 .root = null,
                 .eol = null,
                 .iterator = null,
@@ -86,31 +86,31 @@ pub fn BuildList(comptime T: type) type {
         }
 
         /// * deinit the list (free all nodes)
-        pub fn deinit(self: *@This(), allocator: anytype) ListErr_T!void {
-            comptime check_allocator(@TypeOf(allocator));
-            if (!self.is_initialized())
-                return ListErr_T.NothingToDeinit;
-            const private_casted: *Private_T = cast_private(self.private.?);
-            var current: ?*ListNode_T = private_casted.eol;
+        pub fn deinit(self: *@This(), allocator: anytype) ListErr!void {
+            comptime checkAllocator(@TypeOf(allocator));
+            if (!self.isInitialized())
+                return ListErr.NothingToDeinit;
+            const private_casted: *Private = castPrivate(self.private.?);
+            var current: ?*ListNode = private_casted.eol;
             while (current) |node| {
-                const prev: ?*ListNode_T = node.prev;
-                allocator.free(node) catch return ListErr_T.FreeNodeError;
+                const prev: ?*ListNode = node.prev;
+                allocator.free(node) catch return ListErr.FreeNodeError;
                 current = prev;
             }
-            allocator.free(private_casted) catch return ListErr_T.FreeInternalError;
+            allocator.free(private_casted) catch return ListErr.FreeInternalError;
             self.private = null;
         }
 
         /// * add a new no to the end of the list
-        pub fn push_in_list(self: *@This(), allocator: anytype, data: T) ListErr_T!void {
-            comptime check_allocator(@TypeOf(allocator));
-            try self.check_init(true);
-            const private_casted: *Private_T = cast_private(self.private.?);
+        pub fn pushInList(self: *@This(), allocator: anytype, data: t) ListErr!void {
+            comptime checkAllocator(@TypeOf(allocator));
+            try self.checkInit(true);
+            const private_casted: *Private = castPrivate(self.private.?);
             r: {
                 if (private_casted.eol == null) {
                     @branchHint(.unlikely);
                     private_casted.* = .{
-                        .root = &(allocator.alloc(ListNode_T, 1) catch return ListErr_T.AllocatorErr)[0],
+                        .root = &(allocator.alloc(ListNode, 1) catch return ListErr.AllocatorErr)[0],
                         .eol = private_casted.root,
                         .iterator = private_casted.root,
                         .nodes = private_casted.nodes,
@@ -123,7 +123,7 @@ pub fn BuildList(comptime T: type) type {
                     };
                     break :r {};
                 }
-                private_casted.eol.?.next = &(allocator.alloc(ListNode_T, 1) catch return ListErr_T.AllocatorErr)[0];
+                private_casted.eol.?.next = &(allocator.alloc(ListNode, 1) catch return ListErr.AllocatorErr)[0];
                 private_casted.eol.?.next.?.* = .{
                     .next = null,
                     .prev = private_casted.eol,
@@ -135,12 +135,12 @@ pub fn BuildList(comptime T: type) type {
         }
 
         /// * remove an index from the list
-        pub fn drop_on_list(self: *@This(), index: usize, allocator: anytype) ListErr_T!void {
-            comptime check_allocator(@TypeOf(allocator));
-            try self.check_init(true);
-            const private_casted: *Private_T = cast_private(self.private.?);
-            if (private_casted.root == null) return ListErr_T.NoNNodes;
-            var current: ?*ListNode_T = try @call(.never_inline, find_index, .{ self, index });
+        pub fn dropOnList(self: *@This(), index: usize, allocator: anytype) ListErr!void {
+            comptime checkAllocator(@TypeOf(allocator));
+            try self.checkInit(true);
+            const private_casted: *Private = castPrivate(self.private.?);
+            if (private_casted.root == null) return ListErr.NoNNodes;
+            var current: ?*ListNode = try @call(.never_inline, findIndex, .{ self, index });
             if (current.?.prev != null) {
                 current.?.prev.?.next = current.?.next;
             }
@@ -150,26 +150,26 @@ pub fn BuildList(comptime T: type) type {
             if (private_casted.iterator == current) {
                 private_casted.iterator = current.?.next;
             }
-            const slice: []ListNode_T = @as([*]ListNode_T, @ptrCast(current.?))[0..1];
+            const slice: []ListNode = @as([*]ListNode, @ptrCast(current.?))[0..1];
             allocator.free(slice) catch {
                 @branchHint(.unlikely);
                 if (current.?.prev != null) {
                     @branchHint(.unlikely);
                     current.?.prev.?.next = current;
                 }
-                return ListErr_T.AllocatorErr;
+                return ListErr.AllocatorErr;
             };
             private_casted.nodes -= 1;
         }
 
         /// * places it on an existing index, if it is a new index, it returns an error.
-        ///     - to create a new index use push_in_list
-        pub fn put_in_index(self: *@This(), index: usize, data: T, allocator: anytype) ListErr_T!void {
-            comptime check_allocator(@TypeOf(allocator));
-            try self.check_init(true);
-            const private_casted: *Private_T = cast_private(self.private.?);
-            const node_found: *ListNode_T = try @call(.never_inline, find_index, .{ self, index });
-            const new_node: *ListNode_T = &(allocator.alloc(ListNode_T, 1) catch return ListErr_T.AllocatorErr)[0];
+        ///     - to create a new index use pushInList
+        pub fn putInIndex(self: *@This(), index: usize, data: t, allocator: anytype) ListErr!void {
+            comptime checkAllocator(@TypeOf(allocator));
+            try self.checkInit(true);
+            const private_casted: *Private = castPrivate(self.private.?);
+            const node_found: *ListNode = try @call(.never_inline, findIndex, .{ self, index });
+            const new_node: *ListNode = &(allocator.alloc(ListNode, 1) catch return ListErr.AllocatorErr)[0];
             new_node.* = .{
                 .next = null,
                 .prev = null,
@@ -191,30 +191,30 @@ pub fn BuildList(comptime T: type) type {
         }
 
         /// * access a list index
-        pub fn access_by_index(self: *@This(), index: usize) ListErr_T!T {
-            return (@call(.always_inline, find_index, .{ self, index }) catch |err| return err).data;
+        pub fn accessByIndex(self: *@This(), index: usize) ListErr!t {
+            return (@call(.always_inline, findIndex, .{ self, index }) catch |err| return err).data;
         }
 
         /// * returns the current index of the iterator, with each call the
         /// iterator pointer moves to the next node
-        pub fn iterator(self: *@This()) ListErr_T!T {
-            try self.check_init(true);
-            const private_casted: *Private_T = cast_private(self.private.?);
-            if (private_casted.eol == null) return ListErr_T.NoNInitialized;
+        pub fn iterator(self: *@This()) ListErr!t {
+            try self.checkInit(true);
+            const private_casted: *Private = castPrivate(self.private.?);
+            if (private_casted.eol == null) return ListErr.NoNInitialized;
             if (private_casted.iterator == null) {
                 private_casted.iterator = private_casted.root.?;
                 private_casted.iterator_index = 0;
-                return ListErr_T.EndOfIterator;
+                return ListErr.EndOfIterator;
             }
-            const current_iterator: *ListNode_T = private_casted.iterator.?;
+            const current_iterator: *ListNode = private_casted.iterator.?;
             private_casted.iterator = private_casted.iterator.?.next;
             private_casted.iterator_index += 1;
             return current_iterator.data;
         }
 
         /// * returns the index where the iterator is pointing
-        pub fn iterator_index(self: *@This()) ListErr_T!usize {
-            return if (self.check_init(false)) |_| cast_private(self.private.?).iterator_index else |err| return err;
+        pub fn iteratorIndex(self: *@This()) ListErr!usize {
+            return if (self.checkInit(false)) |_| castPrivate(self.private.?).iterator_index else |err| return err;
         }
 
         /// * iterator based on a handler
@@ -223,12 +223,12 @@ pub fn BuildList(comptime T: type) type {
         ///     -  If it does not return an error, iterator
         ///     returns what is stored in the current node
         ///     - any is used as a parameter for the handler
-        pub fn iterator_handler(self: *@This(), any: anytype, comptime handler: *const fn (T, @TypeOf(any)) anyerror!void) ListErr_T!T {
-            try self.check_init(false);
-            try self.iterator_reset();
+        pub fn iteratorHandler(self: *@This(), any: anytype, comptime handler: *const fn (t, @TypeOf(any)) anyerror!void) ListErr!t {
+            try self.checkInit(false);
+            try self.iteratorReset();
             while (self.iterator()) |node_data| {
                 @call(.never_inline, handler, .{ node_data, any }) catch |err| switch (err) {
-                    error.ForceExit => return ListErr_T.HandlerForceExit,
+                    error.ForceExit => return ListErr.HandlerForceExit,
                     else => continue,
                 };
                 return node_data;
@@ -238,20 +238,20 @@ pub fn BuildList(comptime T: type) type {
         }
 
         /// * reset the iterator pointer to the first index
-        pub fn iterator_reset(self: *@This()) ListErr_T!void {
-            try self.check_init(true);
-            cast_private(self.private.?).iterator = cast_private(self.private.?).root;
-            cast_private(self.private.?).iterator_index = 0;
+        pub fn iteratorReset(self: *@This()) ListErr!void {
+            try self.checkInit(true);
+            castPrivate(self.private.?).iterator = castPrivate(self.private.?).root;
+            castPrivate(self.private.?).iterator_index = 0;
         }
 
         // * takes the value of the last index in the list
-        pub fn last_index(self: *@This()) ListErr_T!usize {
-            return if (self.check_init(false)) |_| cast_private(self.private.?).*.nodes - 1 else |err| return err;
+        pub fn lastIndex(self: *@This()) ListErr!usize {
+            return if (self.checkInit(false)) |_| castPrivate(self.private.?).*.nodes - 1 else |err| return err;
         }
 
         // * gets the number of nodes in the list
-        pub fn how_many_nodes(self: *@This()) usize {
-            return if (self.check_init(true)) |_| cast_private(self.private.?).nodes else |_| 0;
+        pub fn howManyNodes(self: *@This()) usize {
+            return if (self.checkInit(true)) |_| castPrivate(self.private.?).nodes else |_| 0;
         }
     };
 }

@@ -3,8 +3,8 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const PCIAddress_T: type = packed struct {
-    register: PCIRegsOffset_T,
+pub const PCIAddress: type = packed struct {
+    register: PCIRegsOffset,
     function: u3,
     device: u5,
     bus: u8,
@@ -12,12 +12,12 @@ pub const PCIAddress_T: type = packed struct {
     enable: u1,
 };
 
-pub const PCIPhysIo_T: type = struct {
+pub const PCIPhysIo: type = struct {
     bus: u8,
     device: u5,
     function: u3,
-    vendorID: u16,
-    deviceID: u16,
+    vendor_id: u16,
+    device_id: u16,
     class: u8,
     subclass: u8,
     command: u16,
@@ -29,13 +29,13 @@ pub const PCIPhysIo_T: type = struct {
     bars: [6]?struct {
         addrs: u32,
         type: enum(u1) {
-            MMIO,
-            PORT
+            mmio,
+            port
         },
     },
 };
 
-pub const PCIClass_T: type = enum(u8) {
+pub const PCIClass: type = enum(u8) {
     storage = 0x01,
     network = 0x02,
     display = 0x03,
@@ -45,7 +45,7 @@ pub const PCIClass_T: type = enum(u8) {
     _,
 };
 
-pub const PCIVendor_T: type = enum(u16) {
+pub const PCIVendor: type = enum(u16) {
     intel = 0x8086,
     amd = 0x1002,
     nvidia = 0x10DE,
@@ -60,18 +60,18 @@ pub const PCIVendor_T: type = enum(u16) {
     _,
 };
 
-pub const PCIRegsOffset_T: type = enum(u8) {
-    vendorID = 0x00,
-    deviceID = 0x02,
+pub const PCIRegsOffset: type = enum(u8) {
+    vendor_id = 0x00,
+    device_id = 0x02,
     command = 0x04,
     status = 0x06,
     revision = 0x08,
     prog = 0x09,
     subclass = 0x0A,
     class = 0x0B,
-    cacheLineSize = 0x0C,
-    latencyTimer = 0x0D,
-    headerType = 0x0E,
+    cache_line_size = 0x0C,
+    latency_timer = 0x0D,
+    header_type = 0x0E,
     bist = 0x0F,
     bar0 = 0x10,
     bar1 = 0x14,
@@ -79,13 +79,13 @@ pub const PCIRegsOffset_T: type = enum(u8) {
     bar3 = 0x1C,
     bar4 = 0x20,
     bar5 = 0x24,
-    cardbusCISPointer = 0x28,
-    subsystemVendorID = 0x2C,
-    subsystemID = 0x2E,
-    expansionROMBase = 0x30,
-    capabilitiesPointer = 0x34,
+    cardbus_cis_pointer = 0x28,
+    subsystem_vendor_id = 0x2C,
+    subsystem_id = 0x2E,
+    expansion_rom_base = 0x30,
+    capabilities_pointer = 0x34,
     irq_line = 0x3C,
     irq_pin = 0x3D,
-    minGrant = 0x3E,
-    maxLatency = 0x3F,
+    min_grant = 0x3E,
+    max_latency = 0x3F,
 };
