@@ -3,5 +3,4 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const Allocator: type = @import("root").lib.kernel.memory;
-
+pub const allocator: type = @import("root").lib.kernel.alloc;

@@ -4,26 +4,26 @@
 // └─────────────────────────────────────────────────┘
 
 // Saturn Supervisor
-const supervisor_T: type = @import("root").supervisor.supervisor_T;
+const Supervisor: type = @import("root").supervisor.Supervisor;
 
 // Internal
-const idtEntry_t: type = @import("idt.zig").idtEntry_T;
-const lidt_T: type = @import("idt.zig").lidt_T;
+const IdtEntry: type = @import("idt.zig").IdtEntry;
+const Lidt: type = @import("idt.zig").Lidt;
 
-const InterruptGate: comptime_int = 0b1110;
-const TrapGate: comptime_int = 0b1111;
-const TaskGate: comptime_int = 0b0101;
+const interrupt_gate: comptime_int = 0b1110;
+const trap_gate: comptime_int = 0b1111;
+const task_gate: comptime_int = 0b0101;
 
 // Exceptions Messagens
-const exceptionsMessagens = @import("idt.zig").cpuExceptionsMessagens;
+const exceptions_messagens = @import("idt.zig").cpuExceptionsMessagens;
 
 pub const __SaturnSupervisorTable__ = sst: {
-    var interrupts: [256]supervisor_T = undefined;
+    var interrupts: [256]Supervisor = undefined;
     var index: usize = 0;
     sw: switch(index) {
         0...31 => {
             interrupts[index].status = .reserved;
-            interrupts[index].type = .{ .exception = exceptionsMessagens[index] };
+            interrupts[index].type = .{ .exception = exceptions_messagens[index] };
             interrupts[index].rewritten = .never;
             index += 1;
             continue :sw index;
@@ -51,14 +51,14 @@ pub const __SaturnSupervisorTable__ = sst: {
     break :sst interrupts;
 };
 
-var lidt: lidt_T = undefined;
+var lidt: Lidt = undefined;
 
 pub fn init(handlers: [__SaturnSupervisorTable__.len]*const fn() callconv(.c) void) void {
-    const idtEntries = comptime iE: {
-        var entries: [__SaturnSupervisorTable__.len]idtEntry_t = undefined;
+    const idt_entries = comptime iE: {
+        var entries: [__SaturnSupervisorTable__.len]IdtEntry = undefined;
         for(0..__SaturnSupervisorTable__.len) |i| {
             entries[i].segment = 0x08;
-            entries[i].flags = 0x80 | @as(u8, @intCast(InterruptGate));
+            entries[i].flags = 0x80 | @as(u8, @intCast(interrupt_gate));
             entries[i].always0 = 0x00;
         }
         break :iE entries;
@@ -67,8 +67,8 @@ pub fn init(handlers: [__SaturnSupervisorTable__.len]*const fn() callconv(.c) vo
         // Isso pode ser feito aqui pois estamos no baremetal, em um programa com OS, isso daria
         // um segfault, já que idtEntries é conhecido em tempo de compilação e montado inteiramente
         // na .rodata, pegar o endereço dele dessa maneira iria ser para um endereço de rodata
-        lidt.entries = @constCast(&idtEntries);
-        lidt.limit = (@sizeOf((idtEntry_t)) * __SaturnSupervisorTable__.len) - 1;
+        lidt.entries = @constCast(&idt_entries);
+        lidt.limit = (@sizeOf((IdtEntry)) * __SaturnSupervisorTable__.len) - 1;
         // Aqui precisamos resolver o endereço das funções em execução, já que o compilador
         // sabe da existencia de uma função pois o assembly vamos ter uma label para aquela
         // função, mas mesmo assim o endereço ainda é um misterio para o compilador, ja que

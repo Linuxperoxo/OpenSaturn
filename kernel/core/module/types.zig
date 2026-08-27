@@ -4,163 +4,107 @@
 // └──────────────────────────────────────────────┘
 
 const builtin: type = @import("builtin");
-const list: type = @import("test/list.zig");
 const arch: type = @import("root").interfaces.arch;
 const fs: type = @import("root").interfaces.fs;
+const devices: type = @import("root").interfaces.devices;
+const hashtable: type = @import("root").lib.kernel.hash_table;
 const modsys: type = @import("root").modsys;
-const csl: type = @import("root").interfaces.csl;
+const internal: type = @import("internal.zig");
+const allocator: type = @import("allocator.zig");
 
-// Interfaces
+pub const ModuleDescriptionTarget: type = arch.Target;
+pub const Mods: type = hashtable.hashMap([]const u8, *ModInfo, null, null);
 
-pub const ModuleDescriptionTarget_T: type = arch.Target_T;
-
-pub const ModuleDescriptionLoad_T: type = enum {
+pub const ModuleDescriptionLoad: type = enum {
     linkable,
     dynamic,
     unlinkable
 };
 
-pub const Mod_T: type = struct {
+pub const Mod: type = struct {
     name: []const u8,
     desc: []const u8,
     version: []const u8,
     author: []const u8,
     deps: ?[]const []const u8 = null,
-    license: ModLicense_T,
-    type: ModType_T,
+    license: ModLicense,
+    type: ModType,
     init: *const fn() anyerror!void,
-    after: ?*const fn() anyerror!void = null,
     exit: *const fn() anyerror!void,
-    private: union(ModType_T) {
-        driver: void,
-        syscall: void,
-        irq: void,
-        filesystem: if(!builtin.is_test) fs.Fs_T else void,
-    },
-    flags: packed struct {
-        control: packed struct(u8) {
-            anon: u1, // srchmod() nao expoe modulo
-            call: packed struct {
-                init: u1, // chama init logo no inmod()
-                after: u1, // chama o after logo no inmod() apos chamada de init
-                exit: u1, // chama exit logo no rmmod()
-                remove: u1, // modulo aceita ser removido
-                handler: packed struct {
-                    install: u1,
-                    remove: u1,
-                },
-            },
-            reserved: u1 = 0,
-        },
-        internal: packed struct(u16) {
-            installed: u1 = 0, // foi instalado
-            removed: u1 = 0, // foi removido
-            collision: packed struct {
-                name: u1 = 0, // nomes iguais
-                pointer: u1 = 0, // ponteiros iguais (double reg)
-            } = .{},
-            call: packed struct {
-                init: u1 = 0, // init foi chamado
-                after: u1 = 0, // after foi chamado
-                exit: u1 = 0, // exit foi chamado
-                handler: packed struct {
-                    install: u1 = 0,
-                    remove: u1 = 0,
-                } = .{},
-            } = .{},
-            fault: packed struct {
-                remove: u1 = 0, // tentativa de remover o modulo que nao aceita ser removido
-                // para saber se a operacao deu certo basta fazer
-                // (control.call.init & internal.call.init & ~internal.fault.call.init) == 1
-                call: packed struct {
-                    init: u1 = 0, // init retornou erro
-                    after: u1 = 0, // after retornou erro ou tentou ser chamado com ptr sendo null
-                    exit: u1 = 0, // exit retornou erro
-                    handler: packed struct {
-                        install: u1 = 0,
-                        remove: u1 = 0,
-                    } = .{},
-                } = .{},
-            } = .{},
-            reserved: u1 = 0,
-        } = .{},
 
-        pub inline fn check_op_status(self: *const @This(), comptime op: enum { init, after, exit, install, remove }) u1 {
-            return switch (comptime op) {
-                .init => self.control.call.init & self.internal.call.init & (~self.internal.fault.call.init),
-                .after => self.control.call.after & self.internal.call.after & (~self.internal.fault.call.after),
-                .exit => self.control.call.exit & self.internal.call.exit & (~self.internal.fault.call.exit),
-                .install => self.control.call.handler.install & self.internal.call.handler.install & (~self.internal.fault.call.handler.install),
-                .remove => self.control.call.handler.remove & self.internal.call.handler.remove & (~self.internal.fault.call.handler.remove),
-            };
-        }
-    },
+    pub const insmod = internal.insmod;
+    pub const rmmod = internal.rmmod;
+    pub const updmod = internal.updmod;
+    pub const depmod = internal.depmod;
 };
 
-pub const ModType_T: type = enum(u8) {
-    driver,
-    syscall,
-    irq,
-    filesystem,
+pub const ModControlFlags: type = packed struct {
+    anon: u1,
+    init: u1,
+    exit: u1,
+    remove: u1,
 };
 
-pub const ModLicense_T: type = enum(u8) {
-    GPL2_only,
-    GPL2_or_later,
-    GPL3_only,
-    GPL3_or_later,
-    BSD_2_Clause,
-    BSD_3_Clause,
-    MIT,
-    APACHE_2_0,
-    PROPRIETARY,
-};
+pub const ModInfo: type = struct {
+    module: *const Mod,
+    running: bool,
+    flags: ModControlFlags,
 
-pub const ModFoundByType_T: type = enum(u2) {
-    name = 0b01,
-    pointer = 0b10,
-};
-
-pub const ModRoot_T: type = struct {
-    list: list.BuildList(*Mod_T),
-    type: ModType_T,
-    flags: packed struct(u8) {
-        init: u1,
-        reserved: u7 = 0,
-    },
-};
-
-pub const ModErr_T: type = error {
-    SectionHandlerError,
-    NoNFound,
-    IteratorFailed,
-    ListInitFailed,
-    AllocatorError,
-    ListOperationError,
-    RemovedButWithHandlerError,
-    ModuleCollision,
-    OperationDenied,
-};
-
-pub const ModHandler_T: type = union(ModType_T) {
-    driver: default_struct(null, null),
-    syscall: default_struct(null, null),
-    irq: default_struct(null, null),
-    filesystem: default_struct(
-        if(!builtin.is_test) *fs.Fs_T else null,
-        if(!builtin.is_test) fs.FsErr_T else null,
-    ),
-
-    fn default_struct(comptime mod_struct: ?type, comptime mod_error: ?type) type {
-        return if(mod_struct == null) void else struct {
-            install: ?*const fn(mod_struct.?) if(mod_error != null) mod_error.?!void else anyerror!void,
-            remove: ?*const fn(mod_struct.?) if(mod_error != null) mod_error.?!void else anyerror!void,
+    pub inline fn builder(module: *const Mod, running: bool, flags: ModControlFlags) @This() {
+        return @This() {
+            .module = module,
+            .running = running,
+            .flags = flags,
         };
+    }
+
+    pub inline fn create(module: *const Mod, running: bool, flags: ModControlFlags) ModErr!*@This() {
+        const ptr: *@This() = @ptrCast(allocator.sba.allocator.alloc(@This(), 1) catch return ModErr.ModuleAllocatorError);
+        ptr.* = @This().builder(module, running, flags);
+        return ptr;
+    }
+
+    pub inline fn destroy(self: *@This()) ModErr!void {
+        return allocator.sba.allocator.free(self)
+            catch ModErr.ModuleAllocatorError;
     }
 };
 
-pub const ModuleDescriptionLibMine_T: type = struct {
-    pub const Version_T: type = struct {
+pub const ModuleDescription: type = struct {
+    mod: *const Mod,
+    load: ModuleDescriptionLoad,
+    insf: ModControlFlags,
+    arch: []const ModuleDescriptionTarget, // arch suportadas
+    c_sources: ?[]const[]const u8 = null,
+    panic: bool = false,
+    blacklist: ?[]const[]const u8 = null,
+    libs: struct {
+        mines: ?[]const ModuleDescriptionLibMine = null,
+        outside: ?[]const ModuleDescriptionLibOut = null,
+    } = .{},
+
+    pub fn requestAll(comptime self: *const @This()) struct { [
+        if(self.libs.outside == null) 0 else
+            self.libs.outside.?.len
+    ]?type, bool } {
+        return comptime modsys.smll.searchAll(self);
+    }
+
+    pub fn requestLibs(comptime self: *const @This(), comptime libs: []const[]const u8) struct { [libs.len]?type, bool } {
+        return comptime modsys.smll.searchLibs(self, libs);
+    }
+
+    pub fn requestLib(self: *const @This(), lib: []const u8) ?type {
+        return comptime modsys.smll.searchLib(self, lib);
+    }
+
+    pub fn abortCompile(self: *const @This(), comptime msg: []const u8) noreturn {
+        @compileError(self.name ++ ": " ++ msg);
+    }
+};
+
+pub const ModuleDescriptionLibMine: type = struct {
+    pub const Version: type = struct {
         tag: []const u8,
         lib: type,
         flags: packed struct {
@@ -170,17 +114,17 @@ pub const ModuleDescriptionLibMine_T: type = struct {
 
     name: []const u8,
     whitelist: ?[]const []const u8,
-    m_types: ?[]const ModType_T,
+    m_types: ?[]const ModType,
     current: comptime_int,
     stable: comptime_int,
-    versions: []const Version_T,
+    versions: []const Version,
     flags: packed struct {
         whitelist: u1, // usa whitelist
         enable: u1, // pode ser usada
     },
 };
 
-pub const ModuleDescriptionLibOut_T: type = struct {
+pub const ModuleDescriptionLibOut: type = struct {
     lib: []const u8,
     mod: []const u8,
     version: union(enum) {
@@ -195,55 +139,32 @@ pub const ModuleDescriptionLibOut_T: type = struct {
     },
 };
 
-pub const ModuleDescription_T: type = struct {
-    name: []const u8,
-    load: ModuleDescriptionLoad_T,
-    init: *const fn() anyerror!void, // ponteiro para a funcao init
-    after: ?*const fn() anyerror!void = null, // funcao executada apos init
-    arch: []const ModuleDescriptionTarget_T, // arch suportadas
-    deps: ?[]const[]const u8 = null,
-    c_sources: ?[]const[]const u8 = null,
-    libs: struct {
-        mines: ?[]const ModuleDescriptionLibMine_T = null,
-        outside: ?[]const ModuleDescriptionLibOut_T = null,
-    } = .{},
-    type: union(ModType_T) {
-        driver: void,
-        syscall: void,
-        irq: void,
-        filesystem: union(enum(u1)) {
-            // faz a montagem de forma direta no kernel (fstab permanente)
-            compile: struct {
-                name: []const u8,
-                mountpoint: []const u8,
-            },
-            dynamic: void, // sera adicionado ao kernel, mas sua montagem acontece em runtime
-        },
-    },
-    flags: packed struct(u8) {
-        call: packed struct {
-            handler: u1, // chama handler responsavel pelo type do modulo, por exemplo, fs chama o handler fs
-            after: u1, // chama funcao after, caso after seja null e essa flag seja 1, obtemos um erro em comptime
-        },
-        reserved: u6 = 0,
-    },
+pub const ModType: type = enum(u8) {
+    driver,
+    syscall,
+    irq,
+    filesystem,
+};
 
-    pub fn request_all(comptime self: *const @This()) struct { [
-        if(self.libs.outside == null) 0 else
-            self.libs.outside.?.len
-    ]?type, bool } {
-        return comptime modsys.smll.search_all(self);
-    }
+pub const ModLicense: type = enum(u8) {
+    gpl2_only,
+    gpl2_or_later,
+    gpl3_only,
+    gpl3_or_later,
+    bsd_2_clause,
+    bsd_3_clause,
+    mit,
+    apache_2_0,
+    proprietary,
+};
 
-    pub fn request_libs(comptime self: *const @This(), comptime libs: []const[]const u8) struct { [libs.len]?type, bool } {
-        return comptime modsys.smll.search_libs(self, libs);
-    }
-
-    pub fn request_lib(self: *const @This(), lib: []const u8) ?type {
-        return comptime modsys.smll.search_lib(self, lib);
-    }
-
-    pub fn abort_compile(self: *const @This(), comptime msg: []const u8) noreturn {
-        @compileError(self.name ++ ": " ++ msg);
-    }
+pub const ModErr: type = error {
+    NoNFound,
+    ObsoleteDependency,
+    ModuleAllocatorError,
+    ModuleCollision,
+    OperationDenied,
+    InitFailed,
+    ExitFailed,
+    OperationFailed,
 };

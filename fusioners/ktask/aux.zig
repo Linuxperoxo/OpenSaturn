@@ -6,7 +6,7 @@
 const types: type = @import("types.zig");
 const allocator: type = @import("allocator.zig");
 
-pub inline fn call_task(task: *types.KTask_T) anyerror!void {
+pub inline fn callTask(task: *types.KTask) anyerror!void {
     defer task.flags.internal.done = 1;
     task.result = task.task(task.param) catch |err| {
         task.flags.internal.err = 1;
@@ -14,11 +14,11 @@ pub inline fn call_task(task: *types.KTask_T) anyerror!void {
     };
 }
 
-pub inline fn call_childs(task: *types.KTask_T) void {
+pub inline fn callChilds(task: *types.KTask) void {
     if(task.childs == null) return;
     task.flags.internal.childs.done = 1;
     for(0..task.childs.?.len) |i| {
-        const child: *types.KTaskChild_T = &task.childs.?[i];
+        const child: *types.KTaskChild = &task.childs.?[i];
         child.flags.internal = .{};
         if((child.flags.control.depend & task.flags.internal.err) == 1
             or child.flags.control.pendent == 0) {

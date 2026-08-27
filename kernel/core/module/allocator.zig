@@ -3,10 +3,7 @@
 // │            Author: Linuxperoxo                  │
 // └─────────────────────────────────────────────────┘
 
-const builtin: type = @import("builtin");
-
-const buildByteAllocator = if(!builtin.is_test) @import("root").lib.memory.sba.buildByteAllocator else
-    @import("test/sba.zig").buildByteAllocator;
+const buildByteAllocator = @import("root").lib.kernel.alloc.sba.buildByteAllocator;
 
 pub const sba: type = struct {
     pub var allocator = buildByteAllocator(null, .{}) {};

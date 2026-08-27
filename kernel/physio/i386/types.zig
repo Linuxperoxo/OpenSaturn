@@ -3,24 +3,23 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const builtin: type = @import("builtin");
-const pci: type = if(!builtin.is_test) @import("root").code.lib.kernel.io.pci else @import("test/types.zig");
+const pci: type = @import("root").__SaturnArchImpl__.lib.kernel.io.pci;
 const allocator: type = @import("allocator.zig");
 
-const PCIPhysIo_T: type = pci.PCIPhysIo_T;
-const PCIClass_T: type = pci.PCIClass_T;
-const PCIVendor_T: type = pci.PCIVendor_T;
+const PCIPhysIo: type = pci.PCIPhysIo;
+const PCIClass: type = pci.PCIClass;
+const PCIVendor: type = pci.PCIVendor;
 
-pub const PhysIo_T: type = struct {
-    device: PCIPhysIo_T,
+pub const PhysIo: type = struct {
+    device: PCIPhysIo,
     // quantidade de retornos desse phys, isso e importante para que
     // o driver saiba se outro driver esta possivelmente usando o mesmo
     // phys
     refs: u32,
     brothers: u8,
     events: struct {
-        connect: ?*const fn(*PhysIo_T) void = null,
-        disconnect: ?*const fn(*PhysIo_T) void = null,
+        connect: ?*const fn(*PhysIo) void = null,
+        disconnect: ?*const fn(*PhysIo) void = null,
     },
     status: enum {
         missing,
@@ -37,26 +36,26 @@ pub const PhysIo_T: type = struct {
     private: *anyopaque,
 
     // deve ter essa funcao para que o driver possa ele
-    // mesmo liberar seu proprio PhysIo_T
-    pub fn free(self: *@This()) PhysIoErr_T!void {
+    // mesmo liberar seu proprio PhysIo
+    pub fn free(self: *@This()) PhysIoErr!void {
         return r: {
-            @call(.always_inline, allocator.sba.free_type_single, .{
+            @call(.always_inline, allocator.sba.freeTypeSingle, .{
                 @This(), self
-            }) catch break :r PhysIoErr_T.InternalError;
+            }) catch break :r PhysIoErr.InternalError;
             break :r {};
         };
     }
 };
 
-pub const PhysIoInfo_T: type = struct {
-    phys: *PhysIo_T,
+pub const PhysIoInfo: type = struct {
+    phys: *PhysIo,
     brother: ?*@This(),
     older_brother: ?*@This(),
     next: ?*@This(),
     prev: ?*@This(),
 };
 
-pub const PhysIoErr_T: type = error {
+pub const PhysIoErr: type = error {
     Missing,
     NonFound,
     NoFind,
@@ -76,15 +75,15 @@ pub const PhysIoErr_T: type = error {
     NoNWaiting,
 };
 
-pub const VendorRoot_T: type = struct {
+pub const VendorRoot: type = struct {
     identified: ?*[
-        @typeInfo(PCIVendor_T).@"enum".fields.len
-    ]?*PhysIoInfo_T,
-    unidentified: ?*PhysIoInfo_T, // ordenado por deviceID
+        @typeInfo(PCIVendor).@"enum".fields.len
+    ]?*PhysIoInfo,
+    unidentified: ?*PhysIoInfo, // ordenado por device_id
 
-    pub fn alloc_this_identified(self: *@This()) allocator.sba.AllocatorErr_T!void {
-        const slice = try @call(.never_inline, allocator.sba.alloc_type_single, .{
-            [@typeInfo(PCIVendor_T).@"enum".fields.len]?*PhysIoInfo_T
+    pub fn allocThisIdentified(self: *@This()) allocator.sba.AllocatorErr!void {
+        const slice = try @call(.never_inline, allocator.sba.allocTypeSingle, .{
+            [@typeInfo(PCIVendor).@"enum".fields.len]?*PhysIoInfo
         });
         self.identified = @alignCast(@ptrCast(slice.ptr));
         for(0..self.identified.?.len) |i|
@@ -92,7 +91,7 @@ pub const VendorRoot_T: type = struct {
     }
 };
 
-pub const PhysIoClass_T: type = enum {
+pub const PhysIoClass: type = enum {
     storage,
     network,
     display,
@@ -101,7 +100,7 @@ pub const PhysIoClass_T: type = enum {
     sbus,
 };
 
-pub const PhysIoVendor_T: type = enum {
+pub const PhysIoVendor: type = enum {
     intel,
     amd,
     nvidia,

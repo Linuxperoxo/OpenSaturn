@@ -3,12 +3,13 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const Load_T: type = enum {
+pub const Load: type = enum {
     no,
     yes,
 };
 
-pub const Menuconfig_T: type = struct {
-    ke_m_rootfs: Load_T,
-    ke_m_devfs: Load_T,
+pub const Menuconfig: type = struct {
+    ke_m_rootfs: Load,
+    ke_m_devfs: Load,
+    ke_m_fb: Load,
 };

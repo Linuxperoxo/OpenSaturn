@@ -3,24 +3,25 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const c: type = @import("root").lib.utils.c;
+const c: type = @import("root").lib.kernel.c;
 const builtin: type = @import("builtin");
 const fs: type = @import("root").core.fs;
 const types: type = @import("types.zig");
 const allocator: type = @import("allocator.zig");
 const aux: type = @import("aux.zig");
-const fmt: type = @import("root").lib.utils.fmt;
+const fmt: type = @import("root").lib.kernel.fmt;
 
-const Inode_T: type = types.Inode_T;
-const InodeOp_T: type = types.InodeOp_T;
-const SuperBlock_T: type = types.Superblock_T;
-const Dentry_T: type = types.Dentry_T;
-const VfsErr_T: type = types.VfsErr_T;
-const uid_T: type = types.uid_T;
-const gid_T: type = types.gid_T;
-const mode_T: type = types.mode_T;
+const Fs: type = fs.Fs;
+const Inode: type = types.Inode;
+const InodeOp: type = types.InodeOp;
+const Superblock: type = types.Superblock;
+const Dentry: type = types.Dentry;
+const VfsErr: type = types.VfsErr;
+const Uid: type = types.Uid;
+const Gid: type = types.Gid;
+const Mode: type = types.Mode;
 
-pub var root: Dentry_T = .{
+pub var root: Dentry = .{
     .d_name = "/",
     .d_inode = null,
     .d_sblock = null,
@@ -36,158 +37,149 @@ pub var root: Dentry_T = .{
 // userspace, para cada operacao do vfs, precisamos verificar
 // as permissoes
 
-pub fn mount(
-    path: []const u8,
-    current: ?*Dentry_T,
-    fs_name: []const u8,
-) VfsErr_T!void {
-    const dentry_mount: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{
-        path, current, &root
-    });
-    if(dentry_mount.d_sblock != null) return VfsErr_T.AlreadyMounted;
-    const fs_struct: *fs.Fs_T = @constCast(fs.search_fs(fs_name) catch return VfsErr_T.FilesystemMountError);
-    if(c.c_bool(fs_struct.flags.control.nomount)) {
-        fs_struct.flags.internal.fault.mount = 1;
-        return VfsErr_T.FilesystemMountError;
-    }
-    const sblock = fs_struct.mount() catch {
-        fs_struct.flags.internal.fault.mount = 1;
-        return VfsErr_T.FilesystemMountError;
-    };
+// TODO: armazenar informacoes de todas as montagens
+
+pub fn mount(src: []const u8, path: []const u8, fs_name: []const u8) VfsErr!void {
+    const dentry_mount: *Dentry = try aux.resolvePath(path, &root);
+
+    if(dentry_mount.d_sblock != null)
+        return VfsErr.AlreadyMounted;
+
+    const fs_struct: *Fs = fs.schfs(fs_name)
+        catch return VfsErr.NoNFound;
+
+    const sblock: *const Superblock = fs_struct.mount(src)
+        catch return VfsErr.FilesystemMountError;
+
     dentry_mount.d_sblock = @constCast(sblock);
     dentry_mount.d_op = sblock.inode_op;
-    fs_struct.flags.internal.mounted = 1;
 }
 
-pub fn umount(path: []const u8, current: ?*Dentry_T) VfsErr_T!void {
-    const dentry_umount: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{ 
-        path, current, &root
-    });
-    if(dentry_umount.d_sblock == null) return VfsErr_T.NothingToUmount;
-    @call(.never_inline, dentry_umount.d_sblock.?.fs.unmount, .{});
+pub fn umount(path: []const u8) VfsErr!void {
+    const dentry_umount: *Dentry = try aux.resolvePath(path, &root);
+
+    if(dentry_umount.d_sblock == null)
+        return VfsErr.NothingToUmount;
+
+    @call(.never_inline, dentry_umount.d_sblock.?.fs.umount, .{});
+
     dentry_umount.child = null;
     dentry_umount.d_sblock = null;
     dentry_umount.d_op = dentry_umount.parent.?.d_op;
 }
 
 // NOTE: apenas quando tivermos task
-//pub fn open(path: []const u8, current: ?*Dentry_T) VfsErr_T!*Dentry_T {}
+//pub fn open(path: []const u8, current: ?*Dentry) VfsErr!*Dentry {}
 
 // preferi deixar create/mkdir e chmod/chown em funcoes diferentes por mais que a logica
 // seja exatamente a mesma, isso facilita achar problemas
 
-pub fn create(
+pub noinline fn create(
     parent: []const u8,
     name: []const u8,
-    current: ?*Dentry_T,
-    uid: uid_T,
-    gid: gid_T,
-    mode: mode_T,
-) VfsErr_T!void {
-    const dentry_parent: *Dentry_T = @call(.never_inline, aux.resolve_path, .{ 
-        parent, current, &root
-    }) catch return types.VfsErr_T.WithoutParent;
-    try aux.is_valid_op(dentry_parent, .create);
+    uid: Uid,
+    gid: Gid,
+    mode: Mode,
+) VfsErr!void {
+    const dentry_parent: *Dentry = aux.resolvePath(parent, &root)
+        catch return types.VfsErr.WithoutParent;
+
+    try aux.isValidOp(dentry_parent, .create);
+
     dentry_parent.d_op.?.create.?(dentry_parent, name, uid, gid, mode) catch {
         // klog()
-        return VfsErr_T.OperationFailed;
+        return VfsErr.OperationFailed;
     };
 }
 
-pub fn mkdir(
+pub noinline fn mkdir(
     parent: []const u8,
     name: []const u8,
-    current: ?*Dentry_T,
-    uid: uid_T,
-    gid: gid_T,
-    mode: mode_T,
-) VfsErr_T!void {
-    const dentry_parent: *Dentry_T = @call(.never_inline, aux.resolve_path, .{
-        parent, current, &root
-    }) catch return types.VfsErr_T.WithoutParent;
-    try aux.is_valid_op(dentry_parent, .mkdir);
+    uid: Uid,
+    gid: Gid,
+    mode: Mode,
+) VfsErr!void {
+    const dentry_parent: *Dentry = aux.resolvePath(parent, &root)
+        catch return types.VfsErr.WithoutParent;
+
+    try aux.isValidOp(dentry_parent, .mkdir);
+
     return dentry_parent.d_op.?.mkdir.?(dentry_parent, name, uid, gid, mode) catch {
         // klog()
-        return VfsErr_T.OperationFailed;
+        return VfsErr.OperationFailed;
     };
 }
 
-pub fn chmod(
-    path: []const u8,
-    current: ?*Dentry_T,
-    mode: mode_T,
-) VfsErr_T!void {
-    const dentry_chmod: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{
-        path, current, &root
-    });
-    try aux.is_valid_op(dentry_chmod, .chmod);
+pub noinline fn chmod(path: []const u8, mode: Mode,) VfsErr!void {
+    const dentry_chmod: *Dentry = try aux.resolvePath(path, &root);
+
+    try aux.isValidOp(dentry_chmod, .chmod);
+
     dentry_chmod.d_op.?.chmod(dentry_chmod, mode) catch {
         // klog()
-        return VfsErr_T.OperationFailed;
+        return VfsErr.OperationFailed;
     };
 }
 
-pub fn chown(
+pub noinline fn chown(
     path: []const u8,
-    current: ?*Dentry_T,
-    uid: uid_T,
-    gid: gid_T,
-) VfsErr_T!void {
-    const dentry_chown: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{
-        path, current, &root
-    });
-    try aux.is_valid_op(dentry_chown, .chown);
+    uid: Uid,
+    gid: Gid,
+) VfsErr!void {
+    const dentry_chown: *Dentry = try aux.resolvePath(path, &root);
+
+    try aux.isValidOp(dentry_chown, .chown);
+
     dentry_chown.d_op.?.chmod(dentry_chown, uid, gid) catch {
         // klog()
-        return VfsErr_T.OperationFailed;
+        return VfsErr.OperationFailed;
     };
 }
 
-pub fn read(path: []const u8, current: ?*Dentry_T) VfsErr_T![]u8 {
-    const dentry_read: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{
-        path, current, &root
-    });
-    try aux.is_valid_op(dentry_read, .read);
-    return @call(.never_inline, dentry_read.d_op.?.read.?, .{ dentry_read }) catch {
+pub noinline fn read(path: []const u8, offset: usize) VfsErr![]u8 {
+    const dentry_read: *Dentry = try aux.resolvePath(path, &root);
+
+    try aux.isValidOp(dentry_read, .read);
+
+    return @call(.never_inline, dentry_read.d_op.?.read.?, .{ dentry_read, offset }) catch {
         // klog()
-        return VfsErr_T.OperationFailed;
+        return VfsErr.OperationFailed;
     };
 }
 
-pub fn write(path: []const u8, current: ?*Dentry_T, src: []const u8) VfsErr_T!void {
-    const dentry_write: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{
-        path, current, &root
-    });
-    try aux.is_valid_op(dentry_write, .write);
-    @call(.never_inline,dentry_write.d_op.?.write.?, .{ dentry_write, src }) catch {
+pub noinline fn write(path: []const u8, src: []const u8, offset: usize) VfsErr!void {
+    const dentry_write: *Dentry = try aux.resolvePath(path, &root);
+
+    try aux.isValidOp(dentry_write, .write);
+
+    @call(.never_inline,dentry_write.d_op.?.write.?, .{ dentry_write, src, offset }) catch {
         // klog()
-        return VfsErr_T.OperationFailed;
+        return VfsErr.OperationFailed;
     };
 }
 
-pub fn unlink(path: []const u8, current: ?*Dentry_T) VfsErr_T!void {
-    const dentry_unlink: *Dentry_T = try @call(.never_inline, aux.resolve_path, .{
-        path, current, &root
-    });
-    try aux.is_valid_op(dentry_unlink, .unlink);
+pub noinline fn unlink(path: []const u8) VfsErr!void {
+    const dentry_unlink: *Dentry = try aux.resolvePath(path, &root);
+
+    try aux.isValidOp(dentry_unlink, .unlink);
+
     // removemos dentry da arvore vfs, isso evita acharmos um dentry que nao existe mais
     // no fs, mas existe na arvore vfs
     if(dentry_unlink.older_brother == null) {
         dentry_unlink.parent.?.child = dentry_unlink.younger_brother;
     } else {
         dentry_unlink.older_brother.?.younger_brother = dentry_unlink.younger_brother;
-        if(dentry_unlink.younger_brother != null) {
+
+        if(dentry_unlink.younger_brother != null)
             dentry_unlink.younger_brother.?.older_brother = dentry_unlink.older_brother;
-        }
     }
+
     @call(.never_inline,dentry_unlink.d_op.?.unlink.?, .{ dentry_unlink }) catch {
         // klog()
-        return VfsErr_T.OperationFailed;
+        return VfsErr.OperationFailed;
     };
 }
 
-pub fn touch(path: []const u8, current: ?*Dentry_T) VfsErr_T!void {
-    _ = try @call(.never_inline, aux.resolve_path, .{
-        path, current, &root
-    });
+pub noinline fn touch(path: []const u8) VfsErr!void {
+    _ = try aux.resolvePath(path, &root);
 }

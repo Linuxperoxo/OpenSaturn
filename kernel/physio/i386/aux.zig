@@ -3,47 +3,46 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const builtin: type = @import("builtin");
-const pci: type = if(!builtin.is_test) @import("root").code.lib.kernel.io.pci else @import("test/types.zig");
+const pci: type = @import("root").__SaturnArchImpl__.lib.kernel.io.pci;
 const types: type = @import("types.zig");
 
-pub fn resolve_all_index(class: pci.PCIClass_T, vendor: pci.PCIVendor_T) struct { ?u8, ?u8 } {
+pub fn resolveAllIndex(class: pci.PCIClass, vendor: pci.PCIVendor) struct { ?u8, ?u8 } {
     return .{
-        @call(.always_inline, resolve_index_by_class, .{
+        @call(.always_inline, resolveIndexByClass, .{
             class
         }),
-        @call(.always_inline, resolve_index_by_vendor, .{
+        @call(.always_inline, resolveIndexByVendor, .{
             vendor
         }),
     };
 }
 
-pub fn resolve_index_by_class(class: pci.PCIClass_T) ?u8 {
+pub fn resolveIndexByClass(class: pci.PCIClass) ?u8 {
     const index = switch(class) {
-        .storage => types.PhysIoClass_T.storage,
-        .network => types.PhysIoClass_T.network,
-        .display => types.PhysIoClass_T.display,
-        .multimedia => types.PhysIoClass_T.multimedia,
-        .bridge => types.PhysIoClass_T.bridge,
-        .sbus => types.PhysIoClass_T.sbus,
+        .storage => types.PhysIoClass.storage,
+        .network => types.PhysIoClass.network,
+        .display => types.PhysIoClass.display,
+        .multimedia => types.PhysIoClass.multimedia,
+        .bridge => types.PhysIoClass.bridge,
+        .sbus => types.PhysIoClass.sbus,
         _ => return null,
     };
     return @intFromEnum(index);
 }
 
-pub fn resolve_index_by_vendor(vendor: pci.PCIVendor_T) ?u8 {
+pub fn resolveIndexByVendor(vendor: pci.PCIVendor) ?u8 {
     const index = switch(vendor) {
-        .intel => types.PhysIoVendor_T.intel,
-        .amd => types.PhysIoVendor_T.amd,
-        .nvidia => types.PhysIoVendor_T.nvidia,
-        .broadcom => types.PhysIoVendor_T.broadcom,
-        .realtek => types.PhysIoVendor_T.realtek,
-        .qualcomm => types.PhysIoVendor_T.qualcomm,
-        .marvell => types.PhysIoVendor_T.marvell,
-        .vmware => types.PhysIoVendor_T.vmware,
-        .virtio => types.PhysIoVendor_T.virtio,
-        .virtualbox => types.PhysIoVendor_T.virtualbox,
-        .qemu => types.PhysIoVendor_T.qemu,
+        .intel => types.PhysIoVendor.intel,
+        .amd => types.PhysIoVendor.amd,
+        .nvidia => types.PhysIoVendor.nvidia,
+        .broadcom => types.PhysIoVendor.broadcom,
+        .realtek => types.PhysIoVendor.realtek,
+        .qualcomm => types.PhysIoVendor.qualcomm,
+        .marvell => types.PhysIoVendor.marvell,
+        .vmware => types.PhysIoVendor.vmware,
+        .virtio => types.PhysIoVendor.virtio,
+        .virtualbox => types.PhysIoVendor.virtualbox,
+        .qemu => types.PhysIoVendor.qemu,
         _ => return null,
     };
     return @intFromEnum(index);

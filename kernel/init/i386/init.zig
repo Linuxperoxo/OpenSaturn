@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const arch: type = @import("root").code.arch;
+const arch: type = @import("root").__SaturnArchImpl__.arch;
 
 pub const gdt: type = @import("gdt.zig");
 pub const apic: type = @import("apic.zig");
@@ -40,7 +40,7 @@ pub fn init() linksection(section_text_loader) callconv(.c) void {
     // * Seta os bits OSFXSR (bit 9) do CR4 para habilitar salvamento de contexto e restauração do FPU FXSAVE/FXRSTOR,
     //   e OSXMMEXCPT (bit 10) do CR4 para habilitar SSE e exceções SSE.OTE:
 
-    // NOTE: Habilitar o SSE e FPU e importante ja que o compilador pode usar esse tipo de 
+    // NOTE: Habilitar o SSE e FPU e importante ja que o compilador pode usar esse tipo de
     //       instruçao para otimizaçao, ainda mais se usarmos o tipo @Vector
     asm volatile(
         \\ movl %cr0, %eax
@@ -58,5 +58,5 @@ pub fn init() linksection(section_text_loader) callconv(.c) void {
     // a ideia e que todas as funcoes de entry da arch devem ser 4 funcoes e cada uma
     // com um assembly gigante, assim evitando problemas de endereco virtual e endereco
     // fisico
-    @call(.always_inline, apic.apic_config, .{});
+    @call(.always_inline, apic.apicConfig, .{});
 }

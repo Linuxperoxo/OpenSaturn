@@ -6,11 +6,11 @@
 const interfaces: type = @import("root").interfaces;
 const modules: type = @import("modules.zig");
 const types: type = @import("types.zig");
-const mem: type = @import("root").lib.utils.mem;
+const mem: type = @import("root").lib.kernel.mem;
 
-fn add_vertex_init(
-    comptime vertex: *types.Vertex_T,
-    comptime init_order: *[modules.saturn_modules.len]*const interfaces.module.ModuleDescription_T,
+fn addVertexInit(
+    comptime vertex: *types.Vertex,
+    comptime init_order: *[modules.saturn_modules.len]*const interfaces.module.ModuleDescription,
     comptime init_order_index: *usize,
 ) void {
     comptime {
@@ -22,11 +22,11 @@ fn add_vertex_init(
     }
 }
 
-fn vertex_recursive(
-    comptime current_vertex: *types.Vertex_T,
-    comptime init_order: *[modules.saturn_modules.len]*const interfaces.module.ModuleDescription_T,
+fn vertexRecursive(
+    comptime current_vertex: *types.Vertex,
+    comptime init_order: *[modules.saturn_modules.len]*const interfaces.module.ModuleDescription,
     comptime init_order_index: *usize,
-    comptime root_vertex: *types.Vertex_T,
+    comptime root_vertex: *types.Vertex,
 ) void {
     comptime {
         @setEvalBranchQuota(4294967295);
@@ -37,26 +37,26 @@ fn vertex_recursive(
                 if(child.?.flags.done) continue;
 
                 if(child.? == root_vertex)
-                    @compileError("circular dependency \"" ++ current_vertex.module.?.name ++ "\" with \"" ++ root_vertex.module.?.name ++ "\"");
+                    @compileError("Modsys Error: circular dependency \"" ++ current_vertex.module.?.mod.name ++ "\" with \"" ++ root_vertex.module.?.mod.name ++ "\"");
 
                 if(child.?.flags.any)
-                    vertex_recursive(child.?, init_order, init_order_index, root_vertex);
+                    vertexRecursive(child.?, init_order, init_order_index, root_vertex);
 
                 if(!child.?.flags.done)
-                    add_vertex_init(child.?, init_order, init_order_index);
+                    addVertexInit(child.?, init_order, init_order_index);
             }
         }
     }
-    add_vertex_init(current_vertex, init_order, init_order_index);
+    addVertexInit(current_vertex, init_order, init_order_index);
 }
 
-pub fn resolve_dependencies() [modules.saturn_modules.len]*const interfaces.module.ModuleDescription_T {
-    const max_childs = @typeInfo(@FieldType(types.Vertex_T, "childs")).array.len;
+pub fn resolveDependencies() [modules.saturn_modules.len]*const interfaces.module.ModuleDescription {
+    const max_childs = @typeInfo(@FieldType(types.Vertex, "childs")).array.len;
 
-    var graph_vertex_pool = [_]types.Vertex_T {
-        types.Vertex_T {
+    var graph_vertex_pool = [_]types.Vertex {
+        types.Vertex {
             .module = null,
-            .childs = [_]?*types.Vertex_T { null } ** max_childs,
+            .childs = [_]?*types.Vertex { null } ** max_childs,
             .flags = .{
                 .done = false,
                 .any = false,
@@ -71,28 +71,28 @@ pub fn resolve_dependencies() [modules.saturn_modules.len]*const interfaces.modu
     // montando grafo
     for(&graph_vertex_pool, 0..) |*vertex, j| {
         var i: usize = 0;
-        if(vertex.module.?.deps == null or vertex.module.?.deps.?.len == 0) continue;
-        if(vertex.module.?.deps.?.len > max_childs)
-            @compileError(vertex.module.?.name ++ ".deps.len > 16");
+        if(vertex.module.?.mod.deps == null or vertex.module.?.mod.deps.?.len == 0) continue;
+        if(vertex.module.?.mod.deps.?.len > max_childs)
+            @compileError("Modsys Error: " ++ vertex.module.?.mod.name ++ "deps.len > 16");
 
         graph_vertex_pool[j].flags.any = true;
 
-        for(vertex.module.?.deps.?) |dep| {
+        for(vertex.module.?.mod.deps.?) |dep| {
             vertex.childs[i] = r: {
                 for(&graph_vertex_pool) |*current_dep_vertex| {
-                    if(mem.eql(current_dep_vertex.module.?.name, dep, .{ .case = true } ))
+                    if(mem.eql(current_dep_vertex.module.?.mod.name, dep, .{ .case = true } ))
                         break :r current_dep_vertex;
                 }
-                @compileError("\"" ++ dep ++ "\" dependency of \"" ++ vertex.module.?.name ++ "\" does not exist");
+                @compileError("Modsys Error: \"" ++ dep ++ "\" dependency of \"" ++ vertex.module.?.mod.name ++ "\" does not exist");
             };
             i += 1;
         }
     }
 
-    var init_order: [modules.saturn_modules.len]*const interfaces.module.ModuleDescription_T = undefined;
+    var init_order: [modules.saturn_modules.len]*const interfaces.module.ModuleDescription = undefined;
     var init_order_index: usize = 0;
     for(&graph_vertex_pool) |*vertex| {
-        vertex_recursive(vertex, &init_order, &init_order_index, vertex);
+        vertexRecursive(vertex, &init_order, &init_order_index, vertex);
     }
     return init_order;
 }

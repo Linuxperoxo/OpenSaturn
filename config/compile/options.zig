@@ -5,9 +5,8 @@
 
 const types: type = @import("types.zig");
 
-const CodeMode_T: type = types.CodeMode_T;
-const OptimizeMode_T: type = types.OptimizeMode_T;
+const CodeMode: type = types.CodeMode;
+const OptimizeMode: type = types.OptimizeMode;
 
-pub const CodeMode: CodeMode_T = .Debug;
-pub const OptimizeMode: OptimizeMode_T = .Small;
-pub const CSupport: bool = true;
+pub const optimize_mode: OptimizeMode = .small;
+pub const c_support: bool = true;

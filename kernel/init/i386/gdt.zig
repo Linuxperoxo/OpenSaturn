@@ -133,61 +133,61 @@
 //     - É concatenado com SegLimitLow para formar o valor final
 //
 
-const arch: type = @import("root").code.arch;
+const arch: type = @import("root").__SaturnArchImpl__.arch;
 
 const section_text_loader = arch.sections.section_text_loader;
 const section_data_loader = arch.sections.section_data_loader;
 const section_data_persist = arch.sections.section_data_persist;
 
-const GDTEntry_T: type = packed struct {
-    SegLimitLow: u16,
-    BaseLow: u16,
-    BaseMid: u8,
-    Access: u8,
-    SegLimitHigh: u4,
-    Gran: u4,
-    BaseHigh: u8,
+const GDTEntry: type = packed struct {
+    seg_limit_low: u16,
+    base_low: u16,
+    base_mid: u8,
+    access: u8,
+    seg_limit_high: u4,
+    gran: u4,
+    base_high: u8,
 };
 
 // Forca alinhamento correto para a struct
-const GDTStruct_T: type = struct {
+const GDTStruct: type = struct {
     entries: u32 align(1),
     limit: u16 align(1),
 };
 
-const GDTSegments_T: type = enum(u8) {
+const GDTSegments: type = enum(u8) {
     kernelcode = 0x08,
     kerneldata = 0x10,
     usercode = 0x18,
     userdata = 0x20,
 };
 
-pub const gdt_entries = [_]GDTEntry_T {
-    create_gdt_entry_comptime(
+pub const gdt_entries = [_]GDTEntry {
+    createGdtEntryComptime(
         0x00,
         0x00,
         0x00,
         0x00,
     ),
-    create_gdt_entry_comptime(
+    createGdtEntryComptime(
         0x00,
         0xFFFF,
         0x0C,
         0x9A,
     ),
-    create_gdt_entry_comptime(
+    createGdtEntryComptime(
         0x00,
         0xFFFF,
         0x0C,
         0x92,
     ),
-    create_gdt_entry_comptime(
+    createGdtEntryComptime(
         0x00,
         0xFFFF,
         0x0C,
         0xEA,
     ),
-    create_gdt_entry_comptime(
+    createGdtEntryComptime(
         0x00,
         0xFFFF,
         0x0C,
@@ -200,9 +200,9 @@ pub const gdt_entries = [_]GDTEntry_T {
 
 pub var gdt_struct: [6]u8 align(4) = .{
     0
-} ** @sizeOf(GDTStruct_T);
+} ** @sizeOf(GDTStruct);
 
-pub fn gdt_config() linksection(section_text_loader) callconv(.naked) void {
+pub fn gdtConfig() linksection(section_text_loader) callconv(.naked) void {
     asm volatile(
         \\ movl $gdt_entries, %eax
         \\ movl $gdt_struct, %edi
@@ -219,9 +219,9 @@ pub fn gdt_config() linksection(section_text_loader) callconv(.naked) void {
         \\ 1:
         \\ ret
         :
-        :[kernel_code_seg] "i" (GDTSegments_T.kernelcode),
-         [kernel_data_seg] "i" (GDTSegments_T.kerneldata),
-         [_] "{bx}" (gdt_entries.len * @sizeOf(GDTEntry_T) - 1),
+        :[kernel_code_seg] "i" (GDTSegments.kernelcode),
+         [kernel_data_seg] "i" (GDTSegments.kerneldata),
+         [_] "{bx}" (gdt_entries.len * @sizeOf(GDTEntry) - 1),
         : .{
             .eax = true,
             .edi = true,
@@ -229,14 +229,14 @@ pub fn gdt_config() linksection(section_text_loader) callconv(.naked) void {
     );
 }
 
-fn create_gdt_entry_comptime(comptime base: u32, comptime limit: u32, comptime gran: u8, comptime access: u8) GDTEntry_T {
-    return GDTEntry_T {
-        .BaseLow = @intCast((base & 0xFFFF)),
-        .BaseMid = @intCast((base >> 16) & 0xFF),
-        .BaseHigh = @intCast((base >> 24) & 0xFF),
-        .SegLimitLow = @intCast(limit & 0xFFFF),
-        .SegLimitHigh = @intCast((limit >> 16) & 0xF),
-        .Access = access,
-        .Gran = @intCast(gran & 0x0F)
+fn createGdtEntryComptime(comptime base: u32, comptime limit: u32, comptime gran: u8, comptime access: u8) GDTEntry {
+    return GDTEntry {
+        .base_low = @intCast((base & 0xFFFF)),
+        .base_mid = @intCast((base >> 16) & 0xFF),
+        .base_high = @intCast((base >> 24) & 0xFF),
+        .seg_limit_low = @intCast(limit & 0xFFFF),
+        .seg_limit_high = @intCast((limit >> 16) & 0xF),
+        .access = access,
+        .gran = @intCast(gran & 0x0F)
     };
 }

@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo                  │
 // └─────────────────────────────────────────────────┘
 
-const lib: type = @import("root").lib;
+const fmt: type = @import("root").lib.kernel.meta.fmt;
 const events: type = @import("root").core.events;
 const csi: type = @import("csi.zig");
 
@@ -13,11 +13,11 @@ pub var csi_isr =  r: {
         isr[i] = &opaque {
             comptime {
                 // apenas para facilitar a busca no assembly
-                @export(&isr_handler, .{
-                    .name = ".i386.csi.isr" ++ lib.utils.fmt.intFromArray(i),
+                @export(&isrHandler, .{
+                    .name = &fmt.format(".i386.csi.isr{d}\n", .{ i }),
                 });
             }
-            pub fn isr_handler() callconv(.naked) void {
+            pub fn isrHandler() callconv(.naked) void {
                 // nao precisamos de cli e sti ja que
                 // usando o gate type 0xE aqui
                 asm volatile(
@@ -29,13 +29,13 @@ pub var csi_isr =  r: {
                     :[int] "i" (i)
                 );
             }
-        }.isr_handler;
+        }.isrHandler;
     }
     break :r isr;
 };
 
-pub fn csi_handler() callconv(.c) void {
-    events.send_event(&csi.csi_event, .{
+pub fn csiHandler() callconv(.c) void {
+    events.sendEvent(&csi.csi_event, .{
         .data = 0,
         // pegar o csi dessa maneira e muito mais legal
         // que apenas adicionar o parametro na funcao e

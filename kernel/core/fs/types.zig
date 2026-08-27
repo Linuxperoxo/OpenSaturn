@@ -4,79 +4,60 @@
 // └───────────────────────────────────────────────┘
 
 const vfs: type = @import("root").core.vfs;
-const c: type = @import("root").lib.utils.c;
-const list: type = @import("root").lib.utils.list;
+const hashtable: type = @import("root").lib.kernel.hash_table;
+const internal: type = @import("internal.zig");
+const allocator: type = @import("allocator.zig");
 
-pub const Fs_T: type = struct {
+pub const Fs: type = struct {
     name: []const u8,
-    mount: *const fn() anyerror!*const vfs.Superblock_T,
+    mount: *const fn(src: []const u8) anyerror!*const vfs.Superblock,
     umount: *const fn() anyerror!void,
-    flags: packed struct {
-        control: packed struct {
-            noumount: u1, // se recusa a desmontar
-            nomount: u1, // se recusa a montar
-            readonly: u1, // montagem apenas para leitura
-            anon: u1, // search_fs nunca vai retornar
-        },
-        internal: packed struct {
-            mounted: u1 = 0, // fs mountado?
-            registered: u1 = 0, // fs registrado?
-            // tentativa de registrar o mesmo fs, seja por nome, ou por ponteiro
-            collision: packed struct {
-                name: u1 = 0,
-                pointer: u1 = 0,
 
-                pub inline fn some(self: *@This()) bool {
-                    return c.c_bool(
-                        @as(usize, @intCast(
-                            (@as(u2, @intCast(self.name)) << 1) |
-                            (self.pointer)
-                        ))
-                    );
-                }
-            } = .{},
-            // operacoes negadas ao fs, caso readonly = 1 e alguem tente escrever no fs o write
-            // passa a ser 1, mesma coisa para todos os outros
-            fault: packed struct {
-                mount: u1 = 0,
-                umount: u1 = 0,
-                write: u1 = 0,
-
-                pub inline fn some(self: *@This()) bool {
-                    return c.c_bool(
-                        @as(usize, @intCast(
-                            (@as(u3, @intCast(self.mount)) << 2) |
-                            (@as(u2, @intCast(self.umount)) << 1) |
-                            (self.write)
-                        ))
-                    );
-                }
-            } = .{},
-        } = .{},
-    },
+    pub const regfs = internal.regfs;
+    pub const unregfs = internal.unregfs;
+    pub const updfs = internal.updfs;
 };
 
-pub const Collision_T: type = enum(u2) {
-    name = 0b01,
-    pointer = 0b10,
+pub const FsInfo: type = struct {
+    fs: *const Fs,
+    flags: FsControlFlags,
+
+    pub inline fn builder(fs: *const Fs, flags: FsControlFlags) @This() {
+        return @This() {
+            .fs = fs,
+            .flags = flags,
+        };
+    }
+
+    pub inline fn create(fs: *const Fs, flags: FsControlFlags) FsErr!*@This() {
+        const ptr: *@This() = @ptrCast(allocator.sba.allocator.alloc(@This(), 1) catch return FsErr.FsAllocatorFailed);
+        ptr.* = @This().builder(fs, flags);
+        return ptr;
+    }
+
+    pub inline fn destroy(self: *@This()) FsErr!void {
+        return allocator.sba.allocator.free(self)
+            catch FsErr.FsAllocatorFailed;
+    }
 };
 
-pub const FsRegister_T: type = struct {
-    fs: list.BuildList(*Fs_T),
-    flags: packed struct(u8) {
-        init: u1,
-        reserved: u7 = 0,
-    },
+pub const FsControlFlags: type = packed struct {
+    noumount: u1, // se recusa a desmontar
+    nomount: u1, // se recusa a montar
+    readonly: u1, // montagem apenas para leitura
+    anon: u1, // searchFs nunca vai retornar
 };
 
-pub const FsErr_T: type = error {
+pub const FsKernelRegister: type = hashtable.hashMap([]const u8, *FsInfo, null, null);
+
+pub const FsErr: type = error {
     MountFailed,
     UmountFailed,
     MountDenied,
     UmountDenied,
-    WriteDenied,
+    FsAllocatorFailed,
     FsRegisterFailed,
+    FsUnregisterFailed,
     NoNFound,
     FsCollision,
-    InitFailed,
 };
