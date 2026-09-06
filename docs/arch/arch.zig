@@ -238,10 +238,10 @@ pub fn entry() linksection(section_text_loader) callconv(.naked) noreturn {
         :[phys_stack] "i" (
             // aqui ela usa a configuracao padrao de enderecos de memoria do kernel, essa configuracao sim
             // e global
-            comptime (config.kernel.mem.phys.kernel_stack_base + config.kernel.options.kernel_stack_size)
+            comptime (config.kernel.mem.phys.kernel_stack + config.kernel.options.kernel_stack_size)
         ),
          [_] "{edi}" (
-            arch.linker.phys_address_opensaturn_data_start
+            arch.symbols.phys_opensaturn_data_start
         )
     );
 }

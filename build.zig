@@ -7,16 +7,7 @@ const std: type = @import("std");
 
 const arch: type = @import("config/arch/config.zig");
 const compile: type = @import("config/compile/config.zig");
-<<<<<<< HEAD
-const linkers = @import("linkers.zig") {};
-
-comptime {
-    if(!@hasField(@TypeOf(linkers), @tagName(arch.options.Target)))
-        @compileError("");
-}
-=======
-const saturn_linkers = @import("linkers/linkers.zig") {};
->>>>>>> 0.4.-
+const saturn_linkers = @import("linkers.zig") {};
 
 pub const target: std.Target.Cpu.Arch = switch(arch.options.target) {
     .i386 => .x86,
@@ -33,6 +24,9 @@ pub const optimize: std.builtin.OptimizeMode = switch(compile.options.optimize_m
 };
 
 pub fn build(b: *std.Build) void {
+    const debug = b.option(bool, "debug", "Build with debug information") orelse false;
+    const build_optimize: std.builtin.OptimizeMode = if(debug) .Debug else optimize;
+
     const saturn = b.addExecutable(.{
         .name = "sImage.elf",
         .root_module = b.addModule("kernel", .{
@@ -41,7 +35,7 @@ pub fn build(b: *std.Build) void {
                 .cpu_arch = target,
                 .os_tag = .freestanding,
             }),
-            .optimize = optimize,
+            .optimize = build_optimize,
             .stack_protector = false,
             .code_model = .default,
             .imports = &[_]std.Build.Module.Import {
@@ -51,7 +45,7 @@ pub fn build(b: *std.Build) void {
                         "saturn",
                         .{
                             .root_source_file = b.path("saturn.zig"),
-                            .optimize = optimize,
+                             .optimize = build_optimize,
                             .stack_protector = false,
                             .target = b.resolveTargetQuery(.{
                                 .cpu_arch = target,
@@ -87,11 +81,7 @@ pub fn build(b: *std.Build) void {
             " linker error"
         );
     };
-<<<<<<< HEAD
-    _ = file.write(@field(linkers, @tagName(arch.options.Target))) catch {
-=======
     _ = file.write(@field(saturn_linkers, @tagName(arch.options.target))) catch {
->>>>>>> 0.4.-
         @panic(
             @tagName(arch.options.target) ++
             " linker error"

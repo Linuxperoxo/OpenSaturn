@@ -21,6 +21,8 @@ const phys: type = config.kernel.mem.phys;
 const virtual: type = config.kernel.mem.virtual;
 
 comptime {
+    @setEvalBranchQuota(4096);
+
     if(!@hasDecl(arch_impl.arch, decls.whatIsDecl(.arch))) @compileError(
         "expected a declaration " ++ decls.whatIsDecl(.arch) ++ " for architecture " ++
         @tagName(config.arch.options.target)
@@ -44,7 +46,7 @@ comptime {
     if(@field(arch_impl.arch, decls.whatIsDecl(.arch)).symbols.segments == 1 ) asm(
         // phys addrs
         &fmt.format(".set {s}, {d}\n", .{ "kernel_mem_phys_base", phys.kernel_base }) ++
-        &fmt.format(".global {s}\n", .{ "kernel_mem_phys_address" }) ++
+        &fmt.format(".global {s}\n", .{ "kernel_mem_phys_base" }) ++
 
         &fmt.format(".set {s}, {d}\n", .{ "kernel_mem_phys_stack", phys.kernel_stack }) ++
         &fmt.format(".global {s}\n", .{ "kernel_mem_phys_stack" }) ++
@@ -53,7 +55,7 @@ comptime {
         &fmt.format(".global {s}\n", .{ "kernel_mem_phys_paged_memory" }) ++
 
         &fmt.format(".set {s}, {d}\n", .{ "kernel_mem_phys_mmio", phys.kernel_mmio }) ++
-        &fmt.format(".global {s}\n", .{ "kernel_mem_phys_paged_mmio" }) ++
+        &fmt.format(".global {s}\n", .{ "kernel_mem_phys_mmio" }) ++
 
         // virtual addrs
         &fmt.format(".set {s}, {d}\n", .{ "kernel_mem_virtual_base", virtual.kernel_text }) ++
