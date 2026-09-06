@@ -32,30 +32,30 @@
 typedef struct {
   u8 control;
   u16 internal;
-}__attribute__((packed)) ModFlags_T;
+}__attribute__((packed)) ModFlags;
 
 typedef union {
   void* filesystem;
-} ModPrivateUnion_T;
+} ModPrivateUnion;
 
-CREATE_TAG_UNION(ModPrivate_T, ModPrivateUnion_T)
+CREATE_TAG_UNION(ModPrivate, ModPrivateUnion)
 
 typedef struct {
-  slice_T name;
-  slice_T desc;
-  slice_T version;
-  slice_T author;
-  slice_T deps;
+  Slice name;
+  Slice desc;
+  Slice version;
+  Slice author;
+  Slice deps;
   u8 license;
   u8 type;
   i8 (*init)();
   i8 (*exit)();
-  ModPrivate_T private;
-  ModFlags_T flags;
-} Mod_T;
+  ModPrivate private;
+  ModFlags flags;
+} Mod;
 
-extern i8 inmod(Mod_T*);
-extern i8 rmmod(Mod_T*);
-extern Mod_T* srchmod(char*, int);
+extern i8 inmod(Mod*);
+extern i8 rmmod(Mod*);
+extern Mod* srchmod(char*, int);
 
 #endif // !MODULE_H

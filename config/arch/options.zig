@@ -3,6 +3,6 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const Target_T: type = @import("types.zig").Target_T;
+const Target: type = @import("types.zig").Target;
 
-pub const Target: Target_T = .i386;
+pub const target: Target = .i386;

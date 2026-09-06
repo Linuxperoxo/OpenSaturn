@@ -14,7 +14,7 @@
 // Como criar modulos para o saturn?
 //  Para cria um modulo, alem de usar as interfaces pelo lib/saturn/interfaces/interfaces.zig, voce vai precisar
 //  adicionar uma declaraçao "__SaturnModuleDescription__" no arquivo do seu modulo, ele deve ser do tipo
-//  ModuleDescription_T. Feito isso, voce deve adicionar o arquivo com essas declaraçoes dentro de __SaturnAllMods__
+//  ModuleDescription. Feito isso, voce deve adicionar o arquivo com essas declaraçoes dentro de __SaturnAllMods__
 //  usando o @import()
 
 // --- SATURN MODULES ---

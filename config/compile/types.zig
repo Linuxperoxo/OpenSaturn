@@ -3,11 +3,11 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const CodeMode_T: type = enum {
-    Debug,
-    Runtime,
+pub const CodeMode: type = enum {
+    debug,
+    runtime,
 };
-pub const OptimizeMode_T: type = enum {
-    Small,
-    Fast,
+pub const OptimizeMode: type = enum {
+    small,
+    fast,
 };

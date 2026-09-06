@@ -8,7 +8,7 @@ const tests: type = @import("root").interfaces.tests;
 
 // Saturn Runtime Tests Runner
 
-pub fn saturn_test_runner() void {
+pub fn saturnTestRunner() void {
     var ok: usize = 0;
     var fail: usize = 0;
 

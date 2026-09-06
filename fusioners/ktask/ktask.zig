@@ -7,11 +7,11 @@ const types: type = @import("types.zig");
 const sched: type = @import("sched.zig");
 const listener: type = @import("listener.zig");
 
-pub const KTask_T: type = types.KTask_T;
-pub const KTaskChild_T: type = types.KTaskChild_T;
-pub const KTaskPriority_T: type = types.KTaskPriority_T;
+pub const KTask: type = types.KTask;
+pub const KTaskChild: type = types.KTaskChild;
+pub const KTaskPriority: type = types.KTaskPriority;
 
-pub const sched_task = sched.sched_task;
+pub const schedTask = sched.schedTask;
 
-pub const ktask_enable = listener.ktask_enable;
-pub const ktask_disable = listener.ktask_disable;
+pub const ktaskEnable = listener.ktaskEnable;
+pub const ktaskDisable = listener.ktaskDisable;

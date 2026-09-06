@@ -1,9 +1,9 @@
 const interfaces: type = @import("root").interfaces;
 
-const ModuleDescription_T: type = interfaces.module.ModuleDescription_T;
-const ModuleDescriptionTarget_T: type = interfaces.module.ModuleDescriptionTarget_T;
+const ModuleDescription: type = interfaces.module.ModuleDescription;
+const ModuleDescriptionTarget: type = interfaces.module.ModuleDescriptionTarget;
 
-pub const __SaturnModuleDescription__: ModuleDescription_T = .{
+pub const __SaturnModuleDescription__: ModuleDescription = .{
     .name = "ke_m_rootfs",
     .load = .linkable,
     .init = &init,
@@ -17,7 +17,7 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
             },
         }
     },
-    .arch = &[_]ModuleDescriptionTarget_T {
+    .arch = &[_]ModuleDescriptionTarget {
         .i386,
         .amd64,
         .arm,
@@ -37,8 +37,8 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     },
 };
 
-//extern fn c_init() void;
+//extern fn cInit() void;
 
 fn init() anyerror!void {
-//    c_init();
+//    cInit();
 }

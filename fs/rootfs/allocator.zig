@@ -5,15 +5,15 @@
 
 const types: type = @import("types.zig");
 
-const buildByteAllocator = @import("root").lib.memory.sba.buildByteAllocator;
+const buildByteAllocator = @import("root").lib.kernel.alloc.sba.buildByteAllocator;
 
 pub const sba: type = struct {
     pub var allocator = buildByteAllocator(null, .{
         .resize = true,
     }) {};
 
-    pub fn alloc_one(comptime T: type) types.RootfsErr_T!*T {
-        return &(allocator.alloc(T, 1)
-            catch return types.RootfsErr_T.AllocatorFailed)[0];
+    pub fn allocOne(comptime t: type) types.RootfsErr!*t {
+        return &(allocator.alloc(t, 1)
+            catch return types.RootfsErr.AllocatorFailed)[0];
     }
 };

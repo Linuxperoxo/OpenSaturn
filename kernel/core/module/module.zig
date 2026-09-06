@@ -3,14 +3,14 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const Mod_T: type = @import("types.zig").Mod_T;
-pub const ModControlFlags_T: type = @import("types.zig").ModControlFlags_T;
-pub const ModType_T: type = @import("types.zig").ModType_T;
-pub const ModErr_T: type = @import("types.zig").ModErr_T;
-pub const ModuleDescriptionTarget_T: type =  @import("types.zig").ModuleDescriptionTarget_T;
-pub const ModuleDescription_T: type = @import("types.zig").ModuleDescription_T;
-pub const ModuleDescriptionLibMine_T: type = @import("types.zig").ModuleDescriptionLibMine_T;
-pub const ModuleDescriptionLibOut_T: type = @import("types.zig").ModuleDescriptionLibOut_T;
+pub const Mod: type = @import("types.zig").Mod;
+pub const ModControlFlags: type = @import("types.zig").ModControlFlags;
+pub const ModType: type = @import("types.zig").ModType;
+pub const ModErr: type = @import("types.zig").ModErr;
+pub const ModuleDescriptionTarget: type =  @import("types.zig").ModuleDescriptionTarget;
+pub const ModuleDescription: type = @import("types.zig").ModuleDescription;
+pub const ModuleDescriptionLibMine: type = @import("types.zig").ModuleDescriptionLibMine;
+pub const ModuleDescriptionLibOut: type = @import("types.zig").ModuleDescriptionLibOut;
 
 pub const initmod = @import("extern.zig").initmod;
 pub const killmod = @import("extern.zig").killmod;

@@ -12,7 +12,7 @@ const events: type = @import("root").interfaces.events;
 
 // aqui devemos deixar como var, ja que que ele e modificado
 // pelo gerenciador de eventos
-var my_listener: events.EventListener_T = .{
+var my_listener: events.EventListener = .{
     // funcao chamada cada vez que o evento acontecer
     .handler = &handler,
     // como no futuro vamos poder ter mais de uma interface de
@@ -31,10 +31,10 @@ var my_listener: events.EventListener_T = .{
     },
 };
 
-fn handler(out: events.EventOut_T) ?events.EventInput_T {
+fn handler(out: events.EventOut) ?events.EventInput {
     // caso o evento aceite return vindo do listener,
     // voce pode retornar algo assim
-    return events.EventInput_T {
+    return events.EventInput {
         .data = 10,
         .flags = 0b0001,
         .sender = 0, // quem esta mandando

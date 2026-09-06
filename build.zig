@@ -7,14 +7,18 @@ const std: type = @import("std");
 
 const arch: type = @import("config/arch/config.zig");
 const compile: type = @import("config/compile/config.zig");
+<<<<<<< HEAD
 const linkers = @import("linkers.zig") {};
 
 comptime {
     if(!@hasField(@TypeOf(linkers), @tagName(arch.options.Target)))
         @compileError("");
 }
+=======
+const saturn_linkers = @import("linkers/linkers.zig") {};
+>>>>>>> 0.4.-
 
-pub const target: std.Target.Cpu.Arch = switch(arch.options.Target) {
+pub const target: std.Target.Cpu.Arch = switch(arch.options.target) {
     .i386 => .x86,
     .amd64 => .x86_64,
     .arm => .arm,
@@ -23,9 +27,9 @@ pub const target: std.Target.Cpu.Arch = switch(arch.options.Target) {
     .riscv64 => .riscv,
 };
 
-pub const optimize: std.builtin.OptimizeMode = switch(compile.options.OptimizeMode) {
-    .Small => .ReleaseSmall,
-    .Fast => .ReleaseFast,
+pub const optimize: std.builtin.OptimizeMode = switch(compile.options.optimize_mode) {
+    .small => .ReleaseSmall,
+    .fast => .ReleaseFast,
 };
 
 pub fn build(b: *std.Build) void {
@@ -68,10 +72,10 @@ pub fn build(b: *std.Build) void {
     const cache_dir = b.cache_root;
     const path = fs.path.join(allocator, &.{
         cache_dir.path.?,
-        @tagName(arch.options.Target) ++ "-linker.ld",
+        @tagName(arch.options.target) ++ "-linker.ld",
     }) catch {
         @panic(
-            @tagName(arch.options.Target) ++
+            @tagName(arch.options.target) ++
             " linker error"
         );
     };
@@ -79,13 +83,17 @@ pub fn build(b: *std.Build) void {
         .truncate = true,
     }) catch {
         @panic(
-            @tagName(arch.options.Target) ++
+            @tagName(arch.options.target) ++
             " linker error"
         );
     };
+<<<<<<< HEAD
     _ = file.write(@field(linkers, @tagName(arch.options.Target))) catch {
+=======
+    _ = file.write(@field(saturn_linkers, @tagName(arch.options.target))) catch {
+>>>>>>> 0.4.-
         @panic(
-            @tagName(arch.options.Target) ++
+            @tagName(arch.options.target) ++
             " linker error"
         );
     };
@@ -96,4 +104,3 @@ pub fn build(b: *std.Build) void {
     saturn_step.dependOn(&saturn.step); // Compiler
     saturn_step.dependOn(&saturn_install.step); // Install binary
 }
-

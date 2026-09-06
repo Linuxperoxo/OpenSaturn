@@ -6,14 +6,14 @@
 const fusium: type = @import("root").interfaces.fusium;
 const listener: type = @import("listener.zig");
 
-pub const __SaturnFusiumDescription__: fusium.FusiumDescription_T = .{
+pub const __SaturnFusiumDescription__: fusium.FusiumDescription = .{
     .name = "ktask",
     .author = "Linuxperoxo",
     .description = "General Purpose Ktask Implementation For OpenSaturn",
     .order = .after,
     .fusioner = @import("ktask.zig"),
-    .init = &listener.ktask_install_listener,
-    .arch = &[_]fusium.FusiumDescription_T.Target_T {
+    .init = &listener.ktaskInstallListener,
+    .arch = &[_]fusium.FusiumDescription.Target {
         .i386,
         .amd64,
         .arm,

@@ -41,7 +41,7 @@ pub const sections: type = @import("sections.zig");
 
 // assim como os modulos, o nome precisa ser exatamente assim, usando o mesmo
 // tipo, tudo isso e verificado durante a compilacoa
-pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
+pub const __SaturnArchDescription__: interfaces.arch.ArchDescription = .{
     // caso .usable = false, voce esta falando para o kernel que sua arquitetura
     // ainda nao esta pronta para ser usada, qualquer tentativa de compilar com
     // ela ira ocorrer um erro
@@ -83,21 +83,21 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
     .interrupts = .{
         .maintainer = "Linuxperoxo",
         .label = ".i386.interrupts",
-        .entry = &interrupts.idt_init,
+        .entry = &interrupts.idtInit,
     },
     // * interrupts: aqui e como a arquitetura configura e gerencia a memoria
     .mm = .{
         .maintainer = "Linuxperoxo",
         .label = ".i386.mm",
-        .entry = &mm.mmu_init,
+        .entry = &mm.mmuInit,
     },
     // * physio: detalhes do gerenciamento de physio, em versoes futuras provavelmente
     // sera promovido a modulo. Para obter mais detalhes veja kernel/physio/README
     .physio = .{
         .maintainer = "Linuxperoxo",
         .label = ".i386.physio",
-        .entry = &physio.physio_init,
-        .sync = &physio.physio_sync,
+        .entry = &physio.physioInit,
+        .sync = &physio.physioSync,
     },
     .symbols = .{
         // exporta symbols de segmento do kernel, eles ficam
@@ -109,12 +109,12 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
     // aqui temos o .extra e .data, eles sao usados para a arquitetura usar o @export
     // em certas coisas, como seus detalhes de ISA, isso evita ficar colocando @export
     // em varios arquivos diferentes, desse jeito fica tudo em um unico lugar
-    .extra = &[_]interfaces.arch.ArchDescription_T.Extra_T {
+    .extra = &[_]interfaces.arch.ArchDescription.Extra {
         .{
             .maintainer = "Linuxperoxo",
             .label = ".i386.gdt",
             .entry = .{
-                .c = &physio.physio_init,
+                .c = &physio.physioInit,
                 // ou .naked
             },
         },
@@ -127,7 +127,7 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
     // comptime que nunca será executado, isso provavelmente vai dar erro
     // de symbol not found quando você tentar usar no assembly. Com esses 2
     // fields a arquitetura evita usar em 100% dos casos o @export diretamente
-    .data = &[_]interfaces.arch.ArchDescription_T.Data_T {
+    .data = &[_]interfaces.arch.ArchDescription.Data {
         .{
             .label = "gdt_struct",
             .section = sections.section_data_persist,
@@ -152,13 +152,13 @@ pub const __SaturnArchDescription__: interfaces.arch.ArchDescription_T = .{
     // outra novidade da 0.2.*. Agora a arquitetura pode forcar
     // um modulo ser habilitado e desabilitado, esse modulo precisa
     // realmente existir e ser suportado pela arquitetura
-    .overrider = &[_]interfaces.arch.ArchDescription_T.Overrider_T {
+    .overrider = &[_]interfaces.arch.ArchDescription.Overrider {
         // esse overrider e muito bom ja que tira a necessidade de alterar
         // diretamente o menuconfig que e global.
         // junto do overrider, temos 2 novas configuracoes config.module
         //
-        // * ForceModuleArchOverrider: isso realmente habilita o overrider
-        // * IgnoreOverriderIfNoExist: caso seja true, so ignora se um modulo
+        // * force_module_arch_overrider: isso realmente habilita o overrider
+        // * ignore_overrider_if_no_exist: caso seja true, so ignora se um modulo
         // nao existe, mas te tentando ser substituido, caso seja false, isso
         // vai causar um erro de comptime
         .{
@@ -181,7 +181,7 @@ const section_data_persist = arch.sections.section_data_persist;
 
 comptime {
     const aux: type = opaque {
-        pub fn make_asm_set(comptime name: []const u8, comptime value: u32) []const u8 {
+        pub fn makeAsmSet(comptime name: []const u8, comptime value: u32) []const u8 {
             return ".set " ++ name ++ ", " ++ kernel.utils.fmt.intFromArray(value) ++ "\n";
         }
     };
@@ -191,10 +191,10 @@ comptime {
     // e usar livremente aqui, essa configuracao iria ficar local aqui, mas pretendo fazer uma config global
     // para a arquitetura, assim todos os lugares que usam essa arquitetura poderiam se moldar
     asm(
-        aux.make_asm_set("AtlasLoadDest", atlas.atlas_load_dest) ++
-        aux.make_asm_set("AtlasVMode", atlas.atlas_vmode) ++
+        aux.makeAsmSet("AtlasLoadDest", atlas.atlas_load_dest) ++
+        aux.makeAsmSet("AtlasVMode", atlas.atlas_vmode) ++
 
-        aux.make_asm_set("AtlasFlags", atlas.atlas_flags) ++
+        aux.makeAsmSet("AtlasFlags", atlas.atlas_flags) ++
         \\  .set AtlasMagic, 0xAB00
         \\  .weak AtlasImgSize
         \\  .section .opensaturn.data.atlas.header,"a",@progbits
@@ -252,7 +252,7 @@ pub fn entry() linksection(section_text_loader) callconv(.naked) noreturn {
 
 // basta colocar sua nova arquitetura, digamos que seja i386
 
-pub const Target_T: type = enum {
+pub const Target: type = enum {
     i386, // novo target
     amd64,
     arm,
@@ -265,9 +265,9 @@ pub const Target_T: type = enum {
 
 const ar: type = @import("root").ar;
 
-pub const __SaturnTargets__ = [_]ar.types.TargetCode_T {
+pub const __SaturnTargets__ = [_]ar.types.TargetCode {
     .{
-        .target = .i386, // Target_T da sua arquitetura
+        .target = .i386, // Target da sua arquitetura
         .arch = @import("kernel/arch/i386/i386.zig"),
         .entry = @import("kernel/entries/i386/entry.zig"),
         .init = @import("kernel/init/i386/init.zig"),

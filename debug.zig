@@ -7,9 +7,9 @@ comptime {
     @compileError("File Not Working");
 }
 
-pub const saturnArchInfos: type = @import("root").arch;
+pub const saturn_arch_infos: type = @import("root").arch;
 
-pub const RegDebug_x86_64: type = enum(u2) {
+pub const RegDebugX8664: type = enum(u2) {
     rax,
     rcx,
     rdx,
@@ -40,22 +40,22 @@ const ArchBreakPoint: type = struct {
                 ebx,
             };
 
-            const DebugAsm = "jmp .";
+            const debug_asm = "jmp .";
 
-            pub inline fn breakpoint(A: anytype, comptime R: Regs) void {
-                switch(@typeInfo(@TypeOf(A))) {
-                    .@"struct" => |S| {
-                        if(S.fields.len == 0) {
-                            asm volatile(DebugAsm :::);
+            pub inline fn breakpoint(a: anytype, comptime r: Regs) void {
+                switch(@typeInfo(@TypeOf(a))) {
+                    .@"struct" => |struct_info| {
+                        if(struct_info.fields.len == 0) {
+                            asm volatile (debug_asm);
                         }
                     },
                     else => {},
                 }
-                switch(R) {
-                    .eax => asm volatile(DebugAsm ::[_] "{eax}" (A):),
-                    .ebx => asm volatile(DebugAsm ::[_] "{ebx}" (A):),
-                    .ecx => asm volatile(DebugAsm ::[_] "{ecx}" (A):),
-                    .edx => asm volatile(DebugAsm ::[_] "{edx}" (A):),
+                switch(r) {
+                    .eax => asm volatile(debug_asm ::[_] "{eax}" (a):),
+                    .ebx => asm volatile(debug_asm ::[_] "{ebx}" (a):),
+                    .ecx => asm volatile(debug_asm ::[_] "{ecx}" (a):),
+                    .edx => asm volatile(debug_asm ::[_] "{edx}" (a):),
                 }
             }
         };
@@ -92,8 +92,8 @@ const ArchBreakPoint: type = struct {
         };
     };
 
-    pub fn Spawn(comptime A: Archs) type {
-        return switch(A) {
+    pub fn spawn(comptime a: Archs) type {
+        return switch(a) {
             .x86 => ArchBreakPoint.ArchsTypes.x86,
             .x86_64 => ArchBreakPoint.ArchsTypes.x86_64,
             .arm => ArchBreakPoint.ArchsTypes.arm,
@@ -102,17 +102,17 @@ const ArchBreakPoint: type = struct {
 };
 
 pub const breakpoint = init: {
-    if(saturnArchInfos.__SaturnCodeModel__ != .Debug)
+    if(saturn_arch_infos.__SaturnCodeModel__ != .Debug)
         break :init notbreakpoint;
-    const archType = switch(saturnArchInfos.__SaturnTarget__) {
-        .x86 => ArchBreakPoint.Spawn(.x86),
-        .x86_64 => ArchBreakPoint.Spawn(.x86_64),
-        .arm => ArchBreakPoint.Spawn(.arm),
+    const arch_type = switch(saturn_arch_infos.__SaturnTarget__) {
+        .x86 => ArchBreakPoint.spawn(.x86),
+        .x86_64 => ArchBreakPoint.spawn(.x86_64),
+        .arm => ArchBreakPoint.spawn(.arm),
         else => @compileError("Attempt to use debug mode in an architecture that does not support debug"),
     };
-    if(!@hasDecl(archType, "breakpoint"))
+    if(!@hasDecl(arch_type, "breakpoint"))
         @compileError("Attempt to use debug mode in an architecture that does not support debug");
-    break :init archType.breakpoint;
+    break :init arch_type.breakpoint;
 };
 
 fn notbreakpoint(_: anytype, _: anytype) void {

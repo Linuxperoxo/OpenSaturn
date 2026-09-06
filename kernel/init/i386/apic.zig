@@ -6,7 +6,7 @@
 pub const lapic: type = @import("lapic.zig");
 pub const iopic: type = @import("ioapic.zig");
 
-pub fn apic_config() void {
+pub fn apicConfig() void {
     @call(.always_inline, &lapic.enableLAPIC, .{});
 
     // Usamos primeiro o assert para entrar no reset junto do LevelTriggered. Depois usamos o Deassert para
@@ -19,31 +19,31 @@ pub fn apic_config() void {
     // ignorado, e o comando simplesmente não vai funcionar
     @call(.always_inline, &lapic.sendIPI, .{
         lapic.ICRLow {
-            .IDTEntry = 0,
-            .DeliveryMode = .Init,
-            .DestMode = .Physical,
-            .Level = .Assert,
-            .TriggerMode = .LevelTriggered,
-            .DestinationShorthand = .ALLExceptCurrent,
+            .idt_entry = 0,
+            .delivery_mode = .init,
+            .dest_mode = .physical,
+            .level = .assert,
+            .trigger_mode = .level_triggered,
+            .destination_shorthand = .all_except_current,
         },
 
         lapic.ICRHigh {
-            .LAPICid = 1,
+            .lapic_id = 1,
         }
     });
 
     @call(.always_inline, &lapic.sendIPI, .{
         lapic.ICRLow {
-            .IDTEntry = 0,
-            .DeliveryMode = .Init,
-            .DestMode = .Physical,
-            .Level = .Deassert,
-            .TriggerMode = .LevelTriggered,
-            .DestinationShorthand = .ALLExceptCurrent,
+            .idt_entry = 0,
+            .delivery_mode = .init,
+            .dest_mode = .physical,
+            .level = .deassert,
+            .trigger_mode = .level_triggered,
+            .destination_shorthand = .all_except_current,
         },
 
         lapic.ICRHigh {
-            .LAPICid = 1,
+        .lapic_id = 1,
         }
     });
 }

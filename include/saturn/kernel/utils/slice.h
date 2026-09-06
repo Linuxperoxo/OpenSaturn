@@ -17,6 +17,6 @@
 typedef struct {
   void* ptr;
   usize len;
-} slice_T;
+} Slice;
 
 #endif // SLICE_H

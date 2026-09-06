@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo                 │
 // └────────────────────────────────────────────────┘
 
-pub const supervisor_T: type = @import("types.zig").supervisor_T;
+pub const Supervisor: type = @import("types.zig").Supervisor;
 
-pub const supervisorIsrTable = @import("management.zig").supervisorIsrTable;
-pub const supervisorHandlerPerIsr = @import("management.zig").supervisorHandlerPerIsr;
+pub const supervisor_isr_table = @import("management.zig").supervisorIsrTable;
+pub const supervisor_handler_per_isr = @import("management.zig").supervisorHandlerPerIsr;

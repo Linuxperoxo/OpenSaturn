@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const VerboseMode: bool = true;
-pub const MultiBootScreen: bool = true;
-pub const SaturnLogo: bool = true;
-pub const RecoveryModeEnable: bool = true;
+pub const verbose_mode: bool = true;
+pub const multi_boot_screen: bool = true;
+pub const saturn_logo: bool = true;
+pub const recovery_mode_enable: bool = true;

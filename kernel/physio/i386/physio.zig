@@ -11,15 +11,15 @@ const sync: type = @import("sync.zig");
 const listeners: type = @import("listeners.zig");
 const waiting: type = @import("waiting.zig");
 
-pub const PhysIo_T: type = types.PhysIo_T;
-pub const PhysIoErr_T: type = types.PhysIo_T;
-pub const PhysIoClass_T: type = types.PhysIoClass_T;
-pub const PhysIoVendor_T: type = types.PhysIoVendor_T;
+pub const PhysIo: type = types.PhysIo;
+pub const PhysIoErr: type = types.PhysIoErr;
+pub const PhysIoClass: type = types.PhysIoClass;
+pub const PhysIoVendor: type = types.PhysIoVendor;
 
-pub const physio_init = init.physio_init;
-pub const physio_sync = sync.physio_sync;
-pub const physio_search = tree.physio_search;
-pub const physio_listen = listeners.physio_listen;
-pub const physio_listen_drop = listeners.physio_listen_drop;
-pub const physio_wait_by = waiting.physio_wait_by;
-pub const physio_wait_drop = waiting.physio_wait_drop;
+pub const physioInit = init.physioInit;
+pub const physioSync = sync.physioSync;
+pub const physioSearch = tree.physioSearch;
+pub const physioListen = listeners.physioListen;
+pub const physioListenDrop = listeners.physioListenDrop;
+pub const physioWaitBy = waiting.physioWaitBy;
+pub const physioWaitDrop = waiting.physioWaitDrop;

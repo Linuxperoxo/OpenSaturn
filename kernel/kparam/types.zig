@@ -3,9 +3,9 @@
 // │            Author: Linuxperoxo              │
 // └─────────────────────────────────────────────┘
 
-const hashtable: type = @import("root").lib.utils.hashtable;
+const hashtable: type = @import("root").lib.kernel.hash_table;
 
-pub const KParamErr_T: type = error {
+pub const KParamErr: type = error {
     SysParamNotFound,
     AllocatorInternalError,
     ParserSyntaxError,
@@ -14,19 +14,19 @@ pub const KParamErr_T: type = error {
     ParserMissingValue,
 };
 
-pub const Params_T: type = hashtable.buildHashTable(
+pub const Params: type = hashtable.hashMap(
     []const u8,
-    Value_T,
+    Value,
     8,
     null
 );
 
-pub const Value_T: type = enum(u1) {
+pub const Value: type = enum(u1) {
     yes = 1,
     no = 0,
 };
 
-pub const Param_T: type = struct {
+pub const Param: type = struct {
     param: []const u8,
-    value: Value_T,
+    value: Value,
 };

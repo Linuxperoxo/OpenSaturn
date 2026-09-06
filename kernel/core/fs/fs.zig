@@ -5,7 +5,7 @@
 
 const types: type = @import("types.zig");
 
-pub const Fs_T: type = types.Fs_T;
-pub const FsErr_T: type = types.FsErr_T;
+pub const Fs: type = types.Fs;
+pub const FsErr: type = types.FsErr;
 
 pub const schfs = @import("extern.zig").schfs;

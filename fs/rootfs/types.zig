@@ -4,21 +4,21 @@
 // └──────────────────────────────────────────────┘
 
 const interfaces: type = @import("root").interfaces;
-const list: type = @import("root").lib.utils.list;
+const list: type = @import("root").lib.kernel.linked_list;
 
-const Dentry_T: type = interfaces.vfs.Dentry_T;
-const Superblock_T: type = interfaces.vfs.Superblock_T;
-const Inode_T: type = interfaces.vfs.Inode_T;
+const Dentry: type = interfaces.vfs.Dentry;
+const Superblock: type = interfaces.vfs.Superblock;
+const Inode: type = interfaces.vfs.Inode;
 
-pub const list_T: type = list.BuildList(*RootfsDentry_T);
-pub const listErr_T: type = list_T.ListErr_T;
+pub const List: type = list.buildList(*RootfsDentry);
+pub const ListErr: type = List.ListErr;
 
-pub const RootfsDentry_T: type = struct {
-    dentry: ?*Dentry_T,
-    childs: ?*list_T,
+pub const RootfsDentry: type = struct {
+    dentry: ?*Dentry,
+    childs: ?*List,
 };
 
-pub const RootfsErr_T: type = error {
+pub const RootfsErr: type = error {
     NonFound,
     DirectoryWithChilds,
     IteratorInternalError,
@@ -28,8 +28,7 @@ pub const RootfsErr_T: type = error {
     ListOperationFailed,
 };
 
-pub const RootfsPrivate_T: type = struct {
-    parent: ?*RootfsDentry_T,
-    self: *RootfsDentry_T,
+pub const RootfsPrivate: type = struct {
+    parent: ?*RootfsDentry,
+    self: *RootfsDentry,
 };
-

@@ -5,7 +5,7 @@
 
 const lib: type = @import("root").lib;
 
-pub fn ret_export_entry(comptime lhs: anytype, comptime field: []const u8) *anyopaque {
+pub fn retExportEntry(comptime lhs: anytype, comptime field: []const u8) *anyopaque {
     const field_access = @field(lhs, field);
     return @constCast(switch(@typeInfo(@TypeOf(field_access))) {
         .optional => field_access.?.entry,
@@ -14,7 +14,7 @@ pub fn ret_export_entry(comptime lhs: anytype, comptime field: []const u8) *anyo
     });
 }
 
-pub fn ret_export_label(comptime lhs: anytype, comptime field: []const u8) []const u8 {
+pub fn retExportLabel(comptime lhs: anytype, comptime field: []const u8) []const u8 {
     const field_access = @field(lhs, field);
     return switch(@typeInfo(@TypeOf(field_access))) {
         .optional => field_access.?.label,
@@ -23,7 +23,7 @@ pub fn ret_export_label(comptime lhs: anytype, comptime field: []const u8) []con
     };
 }
 
-pub fn extract_opt_child(comptime container: type) type {
+pub fn extractOptChild(comptime container: type) type {
     return switch(@typeInfo(container)) {
         .optional => |opt| opt.child,
         else => container,

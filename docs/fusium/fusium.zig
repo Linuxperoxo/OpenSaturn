@@ -13,7 +13,7 @@
 
 const fusium: type = @import("root").interfaces.fusium;
 const main: type = @import("main.zig"); // core code não hardened
-const hardened: ?type = fusium.fetch_fusioner("hardened/vfs"); // fusioner code
+const hardened: ?type = fusium.fetchFusioner("hardened/vfs"); // fusioner code
 // caso o fusioner não esteja adicionado, retorna null, mas depende da config do fusium
 const impl: type = hardened orelse main;
 
@@ -47,7 +47,7 @@ pub const touch = impl.touch;
 const fusium: type = @import("root").interfaces.fusium;
 
 // assim como os módulos, precisamos adicionar uma decl, para fusium usamos __SaturnFusiumDescription__
-pub const __SaturnFusiumDescription__: fusium.FusiumDescription_T = .{
+pub const __SaturnFusiumDescription__: fusium.FusiumDescription = .{
     .name = "my_fusioner", // nome do fusioner
     // header informativo
     .author = "Linuxperoxo",
@@ -73,7 +73,7 @@ pub const __SaturnFusiumDescription__: fusium.FusiumDescription_T = .{
     // .after: chama o init após todos os módulos serem carregados
     .order = .after, // não tem impacto nenhum quando init == null
     // arquiteturas que o fusioner suporta
-    .arch = &[_]fusium.FusiumDescription_T.Target_T {
+    .arch = &[_]fusium.FusiumDescription.Target {
         .i386,
         .amd64,
         .arm,

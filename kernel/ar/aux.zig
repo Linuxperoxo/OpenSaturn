@@ -5,8 +5,8 @@
 
 const config: type = @import("root").config;
 
-fn target_null_field(comptime field: []const u8) noreturn {
+fn targetNullField(comptime field: []const u8) noreturn {
     @compileError(
-        "\"" ++ @tagName(config.arch.options.Target) ++ "\" architecture has no implementation for \"" ++ field ++ "\""
+        "\"" ++ @tagName(config.arch.options.target) ++ "\" architecture has no implementation for \"" ++ field ++ "\""
     );
 }

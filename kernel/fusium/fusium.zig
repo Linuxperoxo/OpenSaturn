@@ -6,7 +6,7 @@
 const types: type = @import("types.zig");
 const fetch: type = @import("fetch.zig");
 
-pub const FusiumDescription_T: type = types.FusiumDescription_T;
-pub const FusiumDescriptionTarget_T: type = types.FusiumDescriptionTarget_T;
+pub const FusiumDescription: type = types.FusiumDescription;
+pub const FusiumDescriptionTarget: type = types.FusiumDescriptionTarget;
 
-pub const fetch_fusioner = fetch.fetch_fusioner;
+pub const fetchFusioner = fetch.fetchFusioner;

@@ -1,0 +1,86 @@
+// ┌──────────────────────────────────────────────┐
+// │  (c) 2025 Linuxperoxo  •  FILE: mem.zig      │
+// │            Author: Linuxperoxo               │
+// └──────────────────────────────────────────────┘
+
+pub fn eql(noalias b0: []const u8, noalias b1: []const u8, comptime rule: struct {
+    len: bool = true,
+    case: bool = false,
+}) bool {
+    return r: {
+        if (comptime rule.len) {
+            if (b0.len != b1.len) {
+                return false;
+            }
+        }
+        const end: usize = if (b0.len > b1.len) b1.len else b0.len;
+        for (0..end) |i| {
+            if ((b0[i] & if (!rule.case) (~(@as(u8, @intCast(0x20)))) else 0xFF) !=
+                (b1[i] & if (!rule.case) (~(@as(u8, @intCast(0x20)))) else 0xFF))
+            {
+                break :r false;
+            }
+        }
+        break :r true;
+    };
+}
+
+pub fn zeroeMem(lhs: anytype) if (@typeInfo(@TypeOf(lhs)) == .pointer) void else @TypeOf(lhs) {
+    switch (@typeInfo(@TypeOf(lhs))) {
+        .pointer => |ptr| {
+            switch (ptr.size) {
+                .one, .c => {
+                    lhs.* = zero(lhs.*);
+                },
+
+                .slice => {
+                    for (0..lhs.len) |i| {
+                        lhs[i] = zero(lhs[i]);
+                    }
+                },
+
+                .many => @compileError("is not possible to initialize a [*], use slice!"),
+            }
+        },
+
+        .@"struct" => |str| {
+            var zero_struct = lhs;
+            inline for (str.fields) |field| {
+                @field(zero_struct, field.name) = zero(@field(zero_struct, field.name));
+            }
+            return zero_struct;
+        },
+
+        .int => return 0,
+
+        .optional => return null,
+
+        else => @compileError("type \"" ++ @typeName(@TypeOf(lhs)) ++ "\" not supported!"),
+    }
+}
+
+pub const zero = zeroeType;
+
+pub fn zeroeType(comptime t: type) t {
+    @setEvalBranchQuota(4294967295);
+    switch (@typeInfo(t)) {
+        .int, .float => return @as(t, 0),
+        .pointer => |info| if (info.is_allowzero) return @intFromPtr(0) else return undefined,
+        .null, .optional => return null,
+        .array => |info| {
+            var array: t = undefined;
+            for (0..info.len) |i| {
+                array[i] = comptime zero(info.child);
+            }
+        },
+        .@"struct" => |info| {
+            var @"struct": t = undefined;
+            for (info.fields) |field| {
+                @field(@"struct", field.name) = comptime zero(field.type);
+            }
+            return @"struct";
+        },
+        else => {},
+    }
+    return undefined;
+}

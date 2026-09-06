@@ -8,20 +8,20 @@ const allocator: type = @import("allocator.zig");
 const devices: type = @import("root").interfaces.devices;
 const aux: type = @import("aux.zig");
 
-pub inline fn tree_sync(dev_list: *types.DevfsList_T) types.DevfsErr_T!void {
-    aux.check_init(dev_list) catch
-        return types.DevfsErr_T.AllocatorFailed;
+pub inline fn treeSync(dev_list: *types.DevfsList) types.DevfsErr!void {
+    aux.checkInit(dev_list) catch
+        return types.DevfsErr.AllocatorFailed;
 
-    for(0..(~@as(devices.Major_T, 0))) |major| {
-        if(!devices.valid_major(major))
+    for(0..(~@as(devices.Major, 0))) |major| {
+        if(!devices.isAValidMajor(major))
             continue;
-        for(0..(~@as(devices.Minor_T, 0))) |minor| {
-            if(!devices.valid_minor(major, minor))
+        for(0..(~@as(devices.Minor, 0))) |minor| {
+            if(!devices.isAValidMinor(major, minor))
                 continue;
 
             const device_dentry = 
 
-            dev_list.push_in_list(&allocator.sba.allocator, data);
+            dev_list.pushInList(&allocator.sba.allocator, data);
         }
     }
 }

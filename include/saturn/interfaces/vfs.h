@@ -8,7 +8,7 @@
 
 #include <saturn/kernel/utils/int.h>
 
-typedef u16 uid_T;
-typedef u32 gid_T;
+typedef u16 Uid;
+typedef u32 Gid;
 
 #endif // !FS_H

@@ -8,32 +8,32 @@ const types: type = @import("types.zig");
 const allocator: type = @import("allocator.zig");
 const dfs: type = @import("fs.zig");
 const devices: type = @import("root").interfaces.devices;
-const fmt: type = @import("root").lib.utils.fmt;
+const fmt: type = @import("root").lib.kernel.fmt;
 
-pub inline fn check_init(dev_list: *types.DevfsList_T) types.DevfsListErr_T!void {
-    if(!dev_list.is_initialized())
+pub inline fn checkInit(dev_list: *types.DevfsList) types.DevfsListErr!void {
+    if(!dev_list.isInitialized())
         try dev_list.init(&allocator.sba.allocator);
 }
 
-pub inline fn dentry_device_info(dentry: *vfs.Dentry_T) types.DevfsErr_T!*const types.DevfsPrivate_T {
+pub inline fn dentryDeviceInfo(dentry: *vfs.Dentry) types.DevfsErr!*const types.DevfsPrivate {
     if(dentry.d_private == null)
-        return types.DevfsErr_T.CorruptDentry;
+        return types.DevfsErr.CorruptDentry;
     return @ptrCast(@alignCast(dentry.d_private.?));
 }
 
 var inode_count: usize = 0;
-pub inline fn new_dentry_device(major: devices.Major_T, minor: devices.Minor_T, uid: vfs.uid_T, gid: vfs.gid_T, mode: vfs.mode_T) anyerror!*vfs.Dentry_T {
-    const new_dentry: *vfs.Dentry_T = &(try allocator.sba.allocator.alloc(vfs.Dentry_T, 1))[0];
+pub inline fn newDentryDevice(major: devices.Major, minor: devices.Minor, uid: vfs.Uid, gid: vfs.Gid, mode: vfs.Mode) anyerror!*vfs.Dentry {
+    const new_dentry: *vfs.Dentry = &(try allocator.sba.allocator.alloc(vfs.Dentry, 1))[0];
     errdefer allocator.sba.allocator.free(new_dentry) catch unreachable;
 
-    const new_device_node: *types.DevfsPrivate_T = &(try allocator.sba.allocator.alloc(types.DevfsPrivate_T, 1))[0];
+    const new_device_node: *types.DevfsPrivate = &(try allocator.sba.allocator.alloc(types.DevfsPrivate, 1))[0];
     errdefer allocator.sba.allocator.free(new_device_node) catch unreachable;
 
-    const new_device_inode: *vfs.Inode_T = &(try allocator.sba.allocator.alloc(vfs.Inode_T, 1))[0];
+    const new_device_inode: *vfs.Inode = &(try allocator.sba.allocator.alloc(vfs.Inode, 1))[0];
     errdefer allocator.sba.allocator.free(new_device_inode) catch unreachable;
 
     const new_device_name: []u8 = try fmt.format(&allocator.sba.allocator, "{s}{d}", .{
-        devices.dev_info(major, .name) catch unreachable,
+        devices.deviceInfo(major, .name) catch unreachable,
         minor,
     });
 

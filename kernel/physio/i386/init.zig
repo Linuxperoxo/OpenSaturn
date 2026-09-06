@@ -5,6 +5,6 @@
 
 const scan: type = @import("scan.zig");
 
-pub noinline fn physio_init() callconv(.c) void {
-    @call(.always_inline, scan.physio_scan, .{});
+pub noinline fn physioInit() callconv(.c) void {
+    @call(.always_inline, scan.physioScan, .{});
 }

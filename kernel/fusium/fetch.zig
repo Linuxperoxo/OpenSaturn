@@ -12,35 +12,35 @@ const interfeces: type = @import("root").interfaces;
 const config: type = @import("root").config;
 const core: type = @import("core.zig");
 
-pub fn fetch_fusioner(comptime f_name: []const u8) ?type {
-    if(!config.fusium.options.FusiumEnable) {
-        return if(!config.fusium.options.FetchErrorIfFusiumDisable) null else
+pub fn fetchFusioner(comptime f_name: []const u8) ?type {
+    if(!config.fusium.options.fusium_enable) {
+        return if(!config.fusium.options.fetch_error_if_fusium_disable) null else
         @compileError(
-            "fusioum: fetch_fusioner() is not allowed since fusion is disabled"
+            "fusioum: fetchFusioner() is not allowed since fusion is disabled"
         );
     }
     for(core.fusioners_verified) |fusioner_info| {
         if(mem.eql(f_name, fusioner_info.name, .{ .case = true })) {
-            check_blocked(&fusioner_info);
-            supported_arch(&fusioner_info) catch return null;
+            checkBlocked(&fusioner_info);
+            supportedArch(&fusioner_info) catch return null;
             return fusioner_info.fusioner;
         }
     }
     @compileError("fusioum: fusioner \"" ++ f_name ++ "\" does not exist or is disable in menuconfig/overrider");
 }
 
-fn supported_arch(comptime fusioner: *const types.FusiumDescription_T) anyerror!void {
+fn supportedArch(comptime fusioner: *const types.FusiumDescription) anyerror!void {
     for(fusioner.arch) |supported| {
-        if(supported == config.arch.options.Target) return;
+        if(supported == config.arch.options.target) return;
     }
-    return if(config.fusium.options.IgnoreArchNotSupported) error.IgnoreThis else
+    return if(config.fusium.options.ignore_arch_not_supported) error.IgnoreThis else
         @compileError(
             ""
         );
 }
 
-fn check_blocked(comptime fusioner: *const types.FusiumDescription_T) void {
-    if(fusioner.flags.blocked == 1 and !config.fusium.options.IgnoreBlockedFlag) @compileError(
+fn checkBlocked(comptime fusioner: *const types.FusiumDescription) void {
+    if(fusioner.flags.blocked == 1 and !config.fusium.options.ignore_blocked_flag) @compileError(
         "fusium: fusioner \"" ++ fusioner.name ++ "\" is blocked!"
     );
 }

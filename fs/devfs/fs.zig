@@ -8,13 +8,13 @@ const vfs: type = @import("root").interfaces.vfs;
 const ops: type = @import("ops.zig");
 const types: type = @import("types.zig");
 
-pub var devfs: fs.Fs_T = .{
+pub var devfs: fs.Fs = .{
     .name = "devfs",
-    .mount = ops.devfs_mount,
-    .umount = ops.devfs_umount,
+    .mount = ops.devfsMount,
+    .umount = ops.devfsUmount,
 };
 
-pub var devfs_superblock: vfs.Superblock_T = .{
+pub var devfs_superblock: vfs.Superblock = .{
     .magic = 0x703,
     .block_size = 0,
     .total_blocks = 0,
@@ -26,7 +26,7 @@ pub var devfs_superblock: vfs.Superblock_T = .{
     .fs = &devfs,
 };
 
-pub var devfs_ops: vfs.InodeOp_T = .{
+pub var devfs_ops: vfs.InodeOp = .{
     .write = ops.write,
     .read = ops.read,
     .chmod = ops.chmod,

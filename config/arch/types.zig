@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const Target_T: type = enum {
+pub const Target: type = enum {
     i386,
     amd64,
     arm,

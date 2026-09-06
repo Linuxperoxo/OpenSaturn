@@ -7,15 +7,15 @@ const vfs: type = @import("root").interfaces.vfs;
 
 current: usize = 0,
 
-pub inline fn inode_gen(
+pub inline fn inodeGen(
     self: *@This(),
     allocator: anytype,
-    itype: vfs.FileType_T,
-    uid: vfs.uid_T,
-    gid: vfs.gid_T,
-    mode: vfs.mode_T,
-) anyerror!*vfs.Inode_T {
-    const inode: *vfs.Inode_T = &(try allocator.alloc(vfs.Inode_T, 1))[0];
+    itype: vfs.FileType,
+    uid: vfs.Uid,
+    gid: vfs.Gid,
+    mode: vfs.Mode,
+) anyerror!*vfs.Inode {
+    const inode: *vfs.Inode = &(try allocator.alloc(vfs.Inode, 1))[0];
     inode.* = .{
         .inode = self.current,
         .type = itype,

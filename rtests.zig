@@ -6,6 +6,6 @@
 const tests: type = @import("root").interfaces.tests;
 
 /// --- SATURN RUNTIME TESTS ---
-pub const __SaturnRTests__ = [_]tests.TestSuite_T {
+pub const __SaturnRTests__ = [_]tests.TestSuite {
     // Tests Location!
 };

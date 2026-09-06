@@ -4,11 +4,11 @@
 // └──────────────────────────────────────────────┘
 
 // Funçao handler para os syscalls
-pub const syscall_handler: fn(syscallParam) u32 = @extern(fn(syscallParam) u32, .{
+pub const syscallHandler: fn(SyscallParam) u32 = @extern(fn(SyscallParam) u32, .{
     .name = "syscall_handler"
 });
 
-const syscallParam: type = packed struct {
+const SyscallParam: type = packed struct {
     @"eax": u32, // Syscall a ser executado
     // Parametros
     @"ecx": u32,

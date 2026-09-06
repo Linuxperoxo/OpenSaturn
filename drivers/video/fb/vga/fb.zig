@@ -8,9 +8,9 @@ const module: type = @import("root").interfaces.module;
 const device: type = @import("device.zig");
 const ops: type = @import("ops.zig");
 const vfs: type = @import("root").interfaces.vfs;
-const devfs: type = __SaturnModuleDescription__.request_lib("devfs-operations").?;
+const devfs: type = __SaturnModuleDescription__.requestLib("devfs-operations").?;
 
-pub const __SaturnModuleDescription__: module.ModuleDescription_T = .{
+pub const __SaturnModuleDescription__: module.ModuleDescription = .{
     .mod = &vga_fb,
     .load = .linkable,
     .insf = .{
@@ -19,12 +19,12 @@ pub const __SaturnModuleDescription__: module.ModuleDescription_T = .{
         .exit = 1,
         .remove = 0,
     },
-    .arch = &[_]module.ModuleDescriptionTarget_T {
+    .arch = &[_]module.ModuleDescriptionTarget {
         .i386,
     },
     .libs = .{
-        .outside = &[_]module.ModuleDescriptionLibOut_T {
-            module.ModuleDescriptionLibOut_T {
+        .outside = &[_]module.ModuleDescriptionLibOut {
+            module.ModuleDescriptionLibOut {
                 .mod = "ke_m_devfs",
                 .lib = "devfs-operations",
                 .version = .{
@@ -38,7 +38,7 @@ pub const __SaturnModuleDescription__: module.ModuleDescription_T = .{
     },
 };
 
-const vga_fb: module.Mod_T = .{
+const vga_fb: module.Mod = .{
     .name = "ke_m_fb",
     .desc = "Core Kernel VGA Framebuffer",
     .author = "Linuxperoxo",
@@ -46,24 +46,24 @@ const vga_fb: module.Mod_T = .{
     .deps = &[_][]const u8 {
         "ke_m_devfs"
     },
-    .license = .GPL2_only,
+    .license = .gpl2_only,
     .type = .driver,
     .init = &init,
     .exit = &exit,
 };
 
-var major: devices.Major_T = undefined;
+var major: devices.Major = undefined;
 
 fn init() anyerror!void {
-    major = try devices.next_major();
-    try devices.dev_add(major, &device.fb_device);
+    major = try devices.nextMajorForDevice();
+    try devices.addDevice(major, &device.fb_device);
 
-    errdefer devices.dev_rm(major, &device.fb_device) catch unreachable;
-    try ops.set_video_physio();
+    errdefer devices.rmDevice(major, &device.fb_device) catch unreachable;
+    try ops.setVideoPhysio();
 
-    try devfs.create_device_node(major, 0, 0, 0, vfs.mode_T {
-        .owner = vfs.R | vfs.W,
-        .group = vfs.R | vfs.W,
+    try devfs.createDeviceNode(major, 0, 0, 0, vfs.Mode {
+        .owner = vfs.r | vfs.w,
+        .group = vfs.r | vfs.w,
         .other = 0,
     });
 }
@@ -72,7 +72,7 @@ fn exit() anyerror!void {
     errdefer {
         // klog()
     }
-    try devices.dev_rm(major, &device.fb_device);
-    ops.unset_video_physio();
+    try devices.rmDevice(major, &device.fb_device);
+    ops.unsetVideoPhysio();
     try vga_fb.rmmod();
 }

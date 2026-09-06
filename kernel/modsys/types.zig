@@ -5,9 +5,9 @@
 
 const interfaces: type = @import("root").interfaces;
 
-pub const Vertex_T: type = struct {
-    module: ?*const interfaces.module.ModuleDescription_T,
-    childs: [16]?*Vertex_T,
+pub const Vertex: type = struct {
+    module: ?*const interfaces.module.ModuleDescription,
+    childs: [16]?*Vertex,
     flags: struct {
         done: bool,
         any: bool,

@@ -12,7 +12,7 @@
 const events: type = @import("root").interfaces.events;
 const config: type = @import("root").config.kernel;
 
-var my_events: events.Event_T = .{
+var my_events: events.Event = .{
     // caso voce esteja fazendo um evento
     // que tem um padrao usado pelo kernel,
     // voce pode dessa maneira para deixar
@@ -29,15 +29,15 @@ var my_events: events.Event_T = .{
     .listener_out = null,
     .flags = .{
         .control = .{
-            .active = 1, // caso 0, nao e possivel chamar send_event() nem adicionar listener
+            .active = 1, // caso 0, nao e possivel chamar sendEvent() nem adicionar listener
             .block = 0, // recusa novos listeners
         },
     },
 };
 
-fn event_sender() void {
+fn eventSender() void {
     // mandando eventos
-    events.send_event(my_events, .{
+    events.sendEvent(my_events, .{
         .event = 0,
         .data = 10,
         .flags = 0b1000,

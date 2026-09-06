@@ -4,35 +4,35 @@
 
 // a primeira coisa que você deve fazer é descrever seu
 // módulo, você pode fazer isso declarando __SaturnModuleDescription__,
-// ele deve ser do tipo ModuleDescription_T, você pode olhar essa struct
+// ele deve ser do tipo ModuleDescription, você pode olhar essa struct
 // em lib/saturn/kernel/interfaces/modules.zig
 
 // seu modulo runtime fica asim
-const Mod_T: type = @import("root").interfaces.module.Mod_T;
-// voce pode pegar o ModuleDescription_T assim:
-const ModuleDescription_T: type = @import("root").interfaces.module.ModuleDescription_T;
-// agora voce pode pegar o ModuleDescriptionTarget_T assim:
-const ModuleDescriptionTarget_T: type = @import("root").interfaces.module.ModuleDescriptionTarget_T;
+const Mod: type = @import("root").interfaces.module.Mod;
+// voce pode pegar o ModuleDescription assim:
+const ModuleDescription: type = @import("root").interfaces.module.ModuleDescription;
+// agora voce pode pegar o ModuleDescriptionTarget assim:
+const ModuleDescriptionTarget: type = @import("root").interfaces.module.ModuleDescriptionTarget;
 // e para error de modulo:
-const ModErr_T: type = @import("root").interfaces.module.ModErr_T;
+const ModErr: type = @import("root").interfaces.module.ModErr;
 // para implementacao de libs
-const ModuleDescriptionLibMine_T: type = @import("root").interfaces.module.ModuleDescriptionLibMine_T;
-const ModuleDescriptionLibOut_T: type = @import("root").interfaces.module.ModuleDescriptionLibOut_T;
+const ModuleDescriptionLibMine: type = @import("root").interfaces.module.ModuleDescriptionLibMine;
+const ModuleDescriptionLibOut: type = @import("root").interfaces.module.ModuleDescriptionLibOut;
 
 // tipos para modulo fs
-const Fs_T: type = @import("root").interfaces.fs.Fs_T;
-const FsErr_T: type = @import("root").interfaces.fs.FsErr_T;
-const Superblock_T: type = @import("root").core.vfs.interfaces.Superblock_T;
+const Fs: type = @import("root").interfaces.fs.Fs;
+const FsErr: type = @import("root").interfaces.fs.FsErr;
+const Superblock: type = @import("root").core.vfs.interfaces.Superblock;
 
-// ModuleDescriptionTarget_T serve para informar o sistema de modulos do kernel
+// ModuleDescriptionTarget serve para informar o sistema de modulos do kernel
 // quais arquiteturas seu modulo suporta
 
 // __SaturnModuleDescription__ e usado somente na compilacao, voce
 // literalmente descreve como se modulo vai ser inicializado e montado
-// no comptime, o modulo usando em runtime vai usar o tipo Mod_T
+// no comptime, o modulo usando em runtime vai usar o tipo Mod
 
 // o sistema de modulos exige que o nome seja extamente __SaturnModuleDescription__
-pub const __SaturnModuleDescription__: ModuleDescription_T = .{
+pub const __SaturnModuleDescription__: ModuleDescription = .{
     // aqui e o nome do seu modulo, esse nome sera usado mais tarde. Evite espacos,
     // de um nome como se estivesse declarando uma variavel
     .name = "my_fs",
@@ -73,7 +73,7 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     // aqui voce descreve quais arquiteturas tem suporte ao seu modulo, nao se preocupe com
     // arquiteturas nao suportadas, seu modulo nem sera carregado para elas, o sistema de modulos
     // se encarrega dessa preocupacao
-    .arch = &[_]ModuleDescriptionTarget_T {
+    .arch = &[_]ModuleDescriptionTarget {
         .i386,
         .amd64,
         .arm,
@@ -98,7 +98,7 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
     // ao Zig, obrigado por isso, Zig :^).
     .libs = .{
         // mines sao as libs que voce como modulo implementa para outros modulos, voce pode ter varias libs aqui
-        .mines = &[_]ModuleDescriptionLibMine_T {
+        .mines = &[_]ModuleDescriptionLibMine {
             .{
                 .name = "my_super_lib0", // os outros modulos vao procurar por esse nome
                 .current = 0, // indice da version current
@@ -114,7 +114,7 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
                     "mod1",
                     "mod2",
                 },
-                .versions = &[_]ModuleDescriptionLibMine_T.Version_T {
+                .versions = &[_]ModuleDescriptionLibMine.Version {
                     .{
                         .lib = @import("my_super_lib0_0.1.0.zig"), // aqui voce pode usar o @import ou montar uma struct {}
                         .tag = "0.1.0", // versao da lib
@@ -139,7 +139,7 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
                     "mod3",
                     "mod4",
                 },
-                .versions = &[_]ModuleDescriptionLibMine_T.Version_T {
+                .versions = &[_]ModuleDescriptionLibMine.Version {
                     .{
                         .lib = @import("my_super_lib1_0.1.0.zig"), // aqui voce pode usar o @import ou montar uma struct {}
                         .tag = "0.1.0", // versao da lib
@@ -155,9 +155,9 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
             },
         },
         // outside sao as libs que voce pode pegar de outros modulos
-        .outside = &[_]ModuleDescriptionLibOut_T {
+        .outside = &[_]ModuleDescriptionLibOut {
             .{
-                .mod = "outside_module", // nome do modulo (ModuleDescription_T.name)
+                .mod = "outside_module", // nome do modulo (ModuleDescription.name)
                 .lib = "outside_super_lib0", // nome da lib, voce pode ver o mines do modulo e ver qual o nome da lib
                 // uma coisa bem interessante e a possibilitade
                 // de escolher a versao da lib
@@ -186,12 +186,12 @@ pub const __SaturnModuleDescription__: ModuleDescription_T = .{
 const outside_libs = r: {
     // * outsides: possui um [_]?type
     // * some_fault: se algum indice de outsides e null some_fault == true
-    const outsides, const some_fault = __SaturnModuleDescription__.request_all(); // obtem todas as libs em outside
-    // * para obter apenas uma lib especifica do outisde use "__SaturnModuleDescription__.request_lib("outside_super_lib0");"
-    // * para obter varias libs mas especificando use "__SaturnModuleDescription__.request_libs(&[_][]const u8 { "outside_super_lib0", "outside_super_lib1" })"
+    const outsides, const some_fault = __SaturnModuleDescription__.requestAll(); // obtem todas as libs em outside
+    // * para obter apenas uma lib especifica do outisde use "__SaturnModuleDescription__.requestLib("outside_super_lib0");"
+    // * para obter varias libs mas especificando use "__SaturnModuleDescription__.requestLibs(&[_][]const u8 { "outside_super_lib0", "outside_super_lib1" })"
     // mesmo índice de __SaturnModuleDescription__.outside. Dificilmente alguma lib vai falhar, só
     // ocorre erro caso o módulo não seja encontrado, ou o módulo seja encontrado, mas a lib não.
-    if(some_fault) __SaturnModuleDescription__.abort_compile("outside_super_lib2 failed to be fetched!");
+    if(some_fault) __SaturnModuleDescription__.abortCompile("outside_super_lib2 failed to be fetched!");
     break :r .{
         .slib0 = outsides[0].?,
         .slib1 = outsides[1].?,
@@ -199,7 +199,7 @@ const outside_libs = r: {
     };
 };
 
-const my_module: *const Mod_T = &Mod_T {
+const my_module: *const Mod = &Mod {
     // aqui e o nome que vai aparecer no lsmod
     .name = "my_fs",
     // aqui e apenas um header com informacoes
@@ -212,27 +212,27 @@ const my_module: *const Mod_T = &Mod_T {
     },
     // tambem apenas para informacao
     .license = .{
-        .know = .GPL2_only,
+        .know = .gpl2_only,
         // ou .other = "{license}"
     },
     .type = .filesystem,
     // funcao chamada na inicializacao do modulo
     .init = &init,
-    // esse after nao e garantido ser chamado caso o init de Mot_T falhe, diferentemente do after
-    // do ModuleDescription_T, quem sempre sera chamado, mesmo que o init de ModuleDescription_T falhe
+    // esse after nao e garantido ser chamado caso o init de Mot falhe, diferentemente do after
+    // do ModuleDescription, quem sempre sera chamado, mesmo que o init de ModuleDescription falhe
     .after = null,
     // funcao chamada no exit do modulo
     .exit = &exit,
     // aqui o private pode ser diferentes tipos, vai depender justamente
     // do tipo de modulo que voce esta fazendo, caso fosse um driver iria
     // usar interfaces.drivers
-    .private = @constCast(&Fs_T {
+    .private = @constCast(&Fs {
         // para saber o que cada field desse faz, voce deve olhar
         // lib/saturn/interfaces/fs.zig
         .name = "my_fs",
         .flags = .R,
-        .mount = myfs_mount,
-        .unmount = myfs_umount,
+        .mount = myfsMount,
+        .unmount = myfsUmount,
     }),
     // voce tambem pode ver sobre as flags em kernel/core/module/types.zig
     .flags = .{
@@ -281,7 +281,7 @@ const my_module: *const Mod_T = &Mod_T {
 // e oficial, seu modulo esta pronto para funcionar no OpenSaturn, agora fica
 // por sua conta criar a implementacao do seu modulo :^)
 
-fn init() ModErr_T!void {
+fn init() ModErr!void {
     // sempre opte por chamar inmod, nunca chame diretamente o handler do seu modulo, o inmod
     // ja e responsavel por resolver o tipo do modulo e chamar o handler correto
     @call(.never_inline, &@import("root").interfaces.module.inmod, .{
@@ -289,18 +289,18 @@ fn init() ModErr_T!void {
     }) catch |err| return err;
 }
 
-fn after() ModErr_T!void {
+fn after() ModErr!void {
 
 }
 
-fn exit() ModErr_T!void {
+fn exit() ModErr!void {
 
 }
 
-pub fn myfs_mount() FsErr_T!Superblock_T {
-    return FsErr_T.AllocInternal;
+pub fn myfsMount() FsErr!Superblock {
+    return FsErr.AllocInternal;
 }
 
-pub fn myfs_umount() FsErr_T!void {
+pub fn myfsUmount() FsErr!void {
 
 }
