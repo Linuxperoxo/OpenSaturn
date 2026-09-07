@@ -30,12 +30,8 @@ pub fn BuddyAllocator(
 
             return .{
                 .orders = orders,
-                .next_block = [_]?usize {
-                    null
-                } ** max_index,
-                .allocated_order = [_]?usize {
-                    null
-                } ** max_index,
+                .next_block = [_]?usize{null} ** max_index,
+                .allocated_order = [_]?usize{null} ** max_index,
             };
         }
 
@@ -82,6 +78,81 @@ pub fn BuddyAllocator(
             }
 
             return null;
+        }
+
+        pub fn allocAt(
+            self: *Buddy,
+            requested_index: usize,
+            requested_order: usize,
+        ) ?Block {
+            if (requested_order > max_order or requested_index >= max_index)
+                return null;
+
+            const requested_size: usize = @as(usize, 1) << @intCast(requested_order);
+            if (requested_index % requested_size != 0)
+                return null;
+
+            var current_order: usize = requested_order;
+            var block_index: usize = requested_index;
+            var block_found: bool = false;
+
+            while (current_order <= max_order) : (current_order += 1) {
+                const layer: *OrderLayer = &self.orders[current_order];
+                const candidate_size: usize = @as(usize, 1) << @intCast(current_order);
+
+                var previous_index: ?usize = null;
+                var current_index: ?usize = layer.first_index;
+
+                while (current_index) |index| {
+                    if (requested_index >= index and requested_index < index + candidate_size) {
+                        const next_index: ?usize = self.next_block[index];
+
+                        if (previous_index) |previous| {
+                            self.next_block[previous] = next_index;
+                        } else {
+                            layer.first_index = next_index;
+                        }
+
+                        self.next_block[index] = null;
+                        layer.count -= 1;
+                        block_index = index;
+                        block_found = true;
+                        break;
+                    }
+
+                    previous_index = index;
+                    current_index = self.next_block[index];
+                }
+
+                if (block_found)
+                    break;
+            }
+
+            if (!block_found)
+                return null;
+
+            while (current_order > requested_order) {
+                current_order -= 1;
+
+                const half_size: usize = @as(usize, 1) << @intCast(current_order);
+                const right_index: usize = block_index + half_size;
+                const target_is_right: bool = requested_index >= right_index;
+                const free_index: usize = if (target_is_right) block_index else right_index;
+
+                const layer: *OrderLayer = &self.orders[current_order];
+                self.next_block[free_index] = layer.first_index;
+                layer.first_index = free_index;
+                layer.count += 1;
+
+                block_index = if (target_is_right) right_index else block_index;
+            }
+
+            self.allocated_order[block_index] = requested_order;
+
+            return .{
+                .first_index = block_index,
+                .order = requested_order,
+            };
         }
 
         pub fn free(self: *Buddy, block: Block) void {
