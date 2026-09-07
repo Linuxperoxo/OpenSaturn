@@ -1,4 +1,5 @@
-const mmu: type = @import("mmu.zig");
+const PageMapper: type = @import("PageMapper.zig");
+const PhysMemory: type = @import("PhysMemory.zig");
 
 pub const AllocPage: type = struct {
     virtual: []u8,
