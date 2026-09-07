@@ -1,3 +1,9 @@
+// ┌───────────────────────────────────────────┐
+// │  (c) 2026 Linuxperoxo  •  FILE: mm.zig    │
+// │            Author: Linuxperoxo            │
+// └───────────────────────────────────────────┘
+
+
 const PageMapper: type = @import("PageMapper.zig");
 const PhysMemory: type = @import("PhysMemory.zig");
 

@@ -1,3 +1,8 @@
+// ┌─────────────────────────────────────────────────┐
+// │  (c) 2026 Linuxperoxo  •  FILE: PhysMemory.zig  │
+// │            Author: Linuxperoxo                  │
+// └─────────────────────────────────────────────────┘
+
 const arch: type = @import("root").__SaturnArchImpl__.arch;
 const buddy: type = @import("root").lib.kernel.alloc.buddy;
 

@@ -1,3 +1,8 @@
+// ┌──────────────────────────────────────────────┐
+// │  (c) 2026 Linuxperoxo  •  FILE: buddy.zig    │
+// │            Author: Linuxperoxo               │
+// └──────────────────────────────────────────────┘
+
 pub fn BuddyAllocator(
     comptime max_order: usize,
 ) type {

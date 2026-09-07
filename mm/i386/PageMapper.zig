@@ -1,4 +1,10 @@
+// ┌─────────────────────────────────────────────────┐
+// │  (c) 2026 Linuxperoxo  •  FILE: PageMapper.zig  │
+// │            Author: Linuxperoxo                  │
+// └─────────────────────────────────────────────────┘
+
 const PageMapper: type = @This();
+const PhysMemory: type = @import("PhysMemory.zig");
 
 pub const entries_per_table: comptime_int = 1024;
 pub const page_size_shift: comptime_int = 12;
@@ -42,6 +48,7 @@ pub const PageTables: type = [entries_per_table]*PageTable;
 
 page_dirs: *PageDirectory,
 page_tables: *PageTables,
+phys_memory: *PhysMemory,
 
 inline fn indexForVirtualAddrs(addrs: u32) struct { u10, u10 } {
     return .{
@@ -53,10 +60,12 @@ inline fn indexForVirtualAddrs(addrs: u32) struct { u10, u10 } {
 pub inline fn init(
     page_dirs: *PageDirectory,
     page_tables: *PageTables,
+    phys_memory: *PhysMemory,
 ) PageMapper {
     var page_directory: PageMapper = .{
         .page_dirs = page_dirs,
         .page_tables = page_tables,
+        .phys_memory = phys_memory,
     };
 
     for (0..entries_per_table) |i| {
