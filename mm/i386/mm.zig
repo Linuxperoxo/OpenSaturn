@@ -1,18 +1,22 @@
-// ┌──────────────────────────────────────────────┐
-// │  (c) 2025 Linuxperoxo  •  FILE: mm.zig       │
-// │            Author: Linuxperoxo               │
-// └──────────────────────────────────────────────┘
+// ┌───────────────────────────────────────────┐
+// │  (c) 2026 Linuxperoxo  •  FILE: mm.zig    │
+// │            Author: Linuxperoxo            │
+// └───────────────────────────────────────────┘
 
-const mmu: type = @import("mmu.zig");
-const page: type = @import("page.zig");
-const types: type = @import("types.zig");
 
-pub const AllocPage: type = types.AllocPage;
-pub const AllocPageErr: type = types.AllocPageErr;
+const PageMapper: type = @import("PageMapper.zig");
+const PhysMemory: type = @import("PhysMemory.zig");
 
-pub const mmuInit = mmu.mmuInit;
-pub const allocPage = page.allocPage;
-pub const allocPages = page.allocPages;
-pub const allocZeroedPage = page.allocZeroedPage;
-pub const freePage = page.freePage;
-pub const freePages = page.freePages;
+pub const AllocPage: type = struct {
+    virtual: []u8,
+};
+
+pub const mmuInit = mmu.init;
+
+pub fn allocPage() error{SomeError}!AllocPage {
+    return error.SomeError;
+}
+
+pub fn freePage(_: *AllocPage) error{SomeError}!void {
+    return error.SomeError;
+}

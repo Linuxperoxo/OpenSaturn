@@ -3,6 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
+pub const use_atlas_bootloader: bool = false;
 pub const verbose_mode: bool = true;
 pub const multi_boot_screen: bool = true;
 pub const saturn_logo: bool = true;

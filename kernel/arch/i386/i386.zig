@@ -13,7 +13,7 @@ const physio: type = root.__SaturnArchImpl__.physio;
 
 const interfaces: type = root.interfaces;
 
-pub const linker: type = @import("linker.zig");
+pub const symbols: type = @import("symbols.zig");
 pub const sections: type = @import("sections.zig");
 pub const allocators: type = @import("allocators.zig");
 

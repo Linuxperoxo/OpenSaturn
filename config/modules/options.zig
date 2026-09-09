@@ -29,6 +29,7 @@
 //
 // * ignore_module_collision: Ignora modulos repetidos, caso contrario, ocorre um erro em comptime
 
+pub const modules_enable: bool = false;
 pub const use_menuconfig_as_ref: bool = true;
 pub const ignore_module_with_arch_not_supported: bool = true;
 pub const allow_dynamic_modules_load: bool = true; // TODO:
