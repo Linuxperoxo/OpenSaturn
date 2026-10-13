@@ -8,3 +8,4 @@
 
 pub const soa: type = @import("alloc/soa.zig");
 pub const sba: type = @import("alloc/sba.zig");
+pub const buddy: type = @import("alloc/buddy.zig");

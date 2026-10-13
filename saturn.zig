@@ -59,6 +59,7 @@ pub const lib: type = struct {
 };
 
 pub const config: type = struct {
+    pub const boot: type = @import("config/boot/config.zig");
     pub const modules: type = @import("config/modules/config.zig");
     pub const arch: type = @import("config/arch/config.zig");
     pub const compile: type = @import("config/compile/config.zig");

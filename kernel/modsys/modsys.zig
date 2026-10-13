@@ -3,25 +3,24 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
+const config: type = @import("root").config;
 const interfaces: type = @import("root").interfaces;
 const deps: type = @import("deps.zig");
 
 pub fn saturnModulesLoader() void {
+    if(!config.modules.options.modules_enable)
+        return;
+
     inline for(comptime deps.resolveDependencies()) |module| {
         skip: {
             switch(comptime module.load) {
                 .dynamic, .unlinkable => break :skip {},
+
                 .linkable => {
                     module.mod.insmod(module.insf) catch |err| {
-                        const some: []const u8 = @errorName(err);
-                        asm volatile(
-                            \\ jmp .
-                            \\ xorl %edx, %edx
-                            :
-                            :[_] "{eax}" (some.ptr),
-                             [_] "{ecx}" (module.mod.name.ptr)
-                        );
                         switch(err) {
+                            interfaces.module.ModErr.ObsoleteDependency,
+
                             interfaces.module.ModErr.InitFailed => {
                                 // klog()
                                 module.mod.rmmod() catch {
@@ -29,13 +28,13 @@ pub fn saturnModulesLoader() void {
                                 };
                             },
 
-                            interfaces.module.ModErr.ObsoleteDependency,
                             interfaces.module.ModErr.OperationFailed => {
                                 // klog()
                             },
 
                             else => unreachable,
                         }
+
                         if(module.panic) {
                             // panic();
                             //unreachable;
