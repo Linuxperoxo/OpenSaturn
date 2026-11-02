@@ -3,4 +3,5 @@
 // │            Author: Linuxperoxo                 │
 // └────────────────────────────────────────────────┘
 
-pub const test_suite_enable: bool = true;
+pub const runtimeTestEnable: bool = false;
+pub const comptimeTestEnable: bool = true;

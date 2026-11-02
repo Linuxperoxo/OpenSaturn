@@ -17,12 +17,14 @@ pub const modules: type = saturn.modules;
 pub const decls: type = saturn.decls;
 pub const fusioners: type = saturn.fusioners;
 pub const codes: type = saturn.codes;
-pub const rtests: type = saturn.rtests;
-pub const srtr: type = saturn.srtr;
+pub const tests: type = saturn.tests;
+pub const testing: type = saturn.testing;
+
 pub const kparam: type = opaque {
     pub const paramsSearch = saturn.kparam.paramsSearch;
     const paramsLoader = saturn.kparam.paramsLoader;
 };
+
 pub const modsys: type = opaque {
     pub const modules: type = saturn.modsys.modules;
     pub const smll: type = saturn.modsys.smll;
@@ -94,9 +96,7 @@ fn saturnMain(kparams: *const packed struct { ptr: [*]const u8, len: usize }) ca
     @call(.always_inline, modsys.core.saturnModulesLoader, .{});
     @call(.always_inline, fusium.saturnFusiumLoader, .{ .after });
 
-    // Executa testes na inicializacao do kernel
-    if(comptime config.kernel.test_suite.test_suite_enable)
-        @call(.always_inline, srtr.saturnTestRunner, .{});
+    @call(.compile_time, testing.@"comptime".execComptimeTests, .{});
 
     @call(.always_inline, opaque { pub fn trap() noreturn { while(true) {} } }.trap, .{}); // noreturn fn
 }
