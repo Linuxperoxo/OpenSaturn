@@ -29,7 +29,6 @@ pub fn BuddyAllocator(comptime order: usize) type {
         pub inline fn init() Buddy {
             var buddy: Buddy = .{
                 .blocks = undefined,
-
                 .free_blocks = [_]?*Block {
                     null
                 } ** max_order,
@@ -94,17 +93,142 @@ pub fn BuddyAllocator(comptime order: usize) type {
             return null;
         }
 
-        pub fn free(self: *Buddy, allocation: Allocation) void {
-            _ = self;
+        pub fn allocAt(self: *Buddy, start_index: usize, alloc_order: usize) ?Allocation {
+            if (alloc_order > order or start_index >= total_elems)
+                return null;
 
-            if(allocation.order > max_order)
+            const block_size: usize = @as(usize, 1) << @as(u6, @intCast(alloc_order));
+
+            if (start_index % block_size != 0 or block_size > total_elems - start_index)
+                return null;
+
+            var found_order: ?usize = null;
+            var parent_order: usize = alloc_order;
+
+            while (parent_order <= order) : (parent_order += 1) {
+                const parent_size: usize = @as(usize, 1) << @as(u6, @intCast(parent_order));
+                const parent_start: usize = start_index & ~(parent_size - 1);
+
+                var previous_block: ?*Block = null;
+                var current_block: ?*Block = self.free_blocks[parent_order];
+
+                while (current_block) |block| {
+                    if (block.start_index == parent_start) {
+                        if (previous_block) |previous| {
+                            previous.next = block.next;
+                        } else {
+                            self.free_blocks[parent_order] = block.next;
+                        }
+
+                        found_order = parent_order;
+                        break;
+                    }
+
+                    previous_block = block;
+                    current_block = block.next;
+                }
+
+                if (found_order != null)
+                    break;
+            }
+
+            if (found_order == null)
+                return null;
+
+            var current_start: usize = start_index & ~((@as(usize, 1) << @as(u6, @intCast(parent_order))) - 1);
+
+            while (parent_order > alloc_order) {
+                parent_order -= 1;
+
+                const half_size: usize = @as(usize, 1) << @as(u6, @intCast(parent_order));
+                const right_start: usize = current_start + half_size;
+                const target_is_left: bool = start_index < right_start;
+                const sibling_start: usize = if (target_is_left) right_start else current_start;
+                const old_head: ?*Block = self.free_blocks[parent_order];
+
+                self.blocks[sibling_start] = .{
+                    .start_index = sibling_start,
+                    .next = old_head,
+                };
+                self.free_blocks[parent_order] = &self.blocks[sibling_start];
+
+                if (!target_is_left)
+                    current_start = right_start;
+            }
+
+            return .{
+                .initial = start_index,
+                .size = block_size,
+                .order = alloc_order,
+            };
+        }
+
+        pub fn free(self: *Buddy, allocation: Allocation) void {
+            if (allocation.order > order)
                 return;
 
+            const block_size: usize = @as(usize, 1) << @as(u6, @intCast(allocation.order));
+
+            if (allocation.size != block_size or allocation.initial >= total_elems or
+                allocation.initial % block_size != 0 or block_size > total_elems - allocation.initial)
+            {
+                return;
+            }
+
+            var check_order: usize = allocation.order;
+
+            while (check_order <= order) : (check_order += 1) {
+                const check_size: usize = @as(usize, 1) << @as(u6, @intCast(check_order));
+                const check_start: usize = allocation.initial & ~(check_size - 1);
+                var current_block: ?*Block = self.free_blocks[check_order];
+
+                while (current_block) |block| {
+                    if (block.start_index == check_start)
+                        return;
+
+                    current_block = block.next;
+                }
+            }
+
+            var current_index: usize = allocation.initial;
             var current_order: usize = allocation.order;
 
-            while(current_order <= order) : (current_order += 1) {
+            while (current_order < order) {
+                const current_size: usize = @as(usize, 1) << @as(u6, @intCast(current_order));
+                const buddy_index: usize = current_index ^ current_size;
 
+                var previous_block: ?*Block = null;
+                var buddy_block: ?*Block = self.free_blocks[current_order];
+                var buddy_found: bool = false;
+
+                while (buddy_block) |block| {
+                    if (block.start_index == buddy_index) {
+                        if (previous_block) |previous| {
+                            previous.next = block.next;
+                        } else {
+                            self.free_blocks[current_order] = block.next;
+                        }
+
+                        buddy_found = true;
+                        break;
+                    }
+
+                    previous_block = block;
+                    buddy_block = block.next;
+                }
+
+                if (!buddy_found)
+                    break;
+
+                current_index = @min(current_index, buddy_index);
+                current_order += 1;
             }
+
+            self.blocks[current_index] = .{
+                .start_index = current_index,
+                .next = self.free_blocks[current_order],
+            };
+            self.free_blocks[current_order] = &self.blocks[current_index];
         }
     };
 }

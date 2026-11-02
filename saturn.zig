@@ -18,7 +18,7 @@ pub const codes: type = @import("codes.zig");
 pub const rtests: type = @import("rtests.zig");
 pub const srtr: type = @import("kernel/srtr/srtr.zig");
 
-pub const core: type = struct {
+pub const core: type = opaque {
     pub const module: type = @import("kernel/core/module/module.zig");
     pub const vfs: type = @import("kernel/core/vfs/vfs.zig");
     pub const devices: type = @import("kernel/core/devices/devices.zig");
@@ -26,13 +26,13 @@ pub const core: type = struct {
     pub const events: type = @import("kernel/core/events/events.zig");
 };
 
-pub const modsys: type = struct {
+pub const modsys: type = opaque {
     pub const core: type = @import("kernel/modsys/modsys.zig");
     pub const modules: type = @import("kernel/modsys/modules.zig");
     pub const smll: type = @import("kernel/modsys/smll.zig");
 };
 
-pub const interfaces: type = struct {
+pub const interfaces: type = opaque {
     pub const fusium: type = @import("kernel/fusium/fusium.zig");
     pub const devices: type = @import("lib/interfaces/devices.zig");
     pub const fs: type = @import("lib/interfaces/fs.zig");
@@ -43,8 +43,8 @@ pub const interfaces: type = struct {
     pub const tests: type = @import("lib/interfaces/tests.zig");
 };
 
-pub const lib: type = struct {
-    pub const kernel: type = struct {
+pub const lib: type = opaque {
+    pub const kernel: type = opaque {
         pub const alloc: type = @import("lib/kernel/alloc.zig");
         pub const fmt: type = @import("lib/kernel/fmt.zig");
         pub const mem: type = @import("lib/kernel/mem.zig");
@@ -56,15 +56,31 @@ pub const lib: type = struct {
         pub const writer: type = @import("lib/kernel/writer.zig");
         pub const sync: type = @import("lib//kernel/sync.zig");
     };
+
+    pub const interfaces: type = opaque {
+        pub const fusium: type = @import("kernel/fusium/fusium.zig");
+        pub const devices: type = @import("lib/interfaces/devices.zig");
+        pub const fs: type = @import("lib/interfaces/fs.zig");
+        pub const module: type = @import("lib/interfaces/module.zig");
+        pub const arch: type = @import("lib/interfaces/arch.zig");
+        pub const vfs: type = @import("lib/interfaces/vfs.zig");
+        pub const events: type = @import("lib/interfaces/events.zig");
+        pub const tests: type = @import("lib/interfaces/tests.zig");
+    };
+
+    pub const userspace: type = opaque {
+
+    };
 };
 
-pub const config: type = struct {
+pub const config: type = opaque {
     pub const boot: type = @import("config/boot/config.zig");
     pub const modules: type = @import("config/modules/config.zig");
     pub const arch: type = @import("config/arch/config.zig");
     pub const compile: type = @import("config/compile/config.zig");
     pub const fusium: type = @import("config/fusium/config.zig");
-    pub const kernel: type = struct {
+
+    pub const kernel: type = opaque {
         pub const options: type = @import("config/kernel/options.zig");
         pub const mem: type = @import("config/kernel/segments.zig");
         pub const kparam: type = @import("config/kernel/kparam.zig");

@@ -9,7 +9,7 @@ pub const __SaturnArchImpl__ = ar.arch_impl;
 
 pub const core: type = saturn.core;
 pub const ar: type = saturn.ar;
-pub const interfaces: type = saturn.interfaces;
+pub const interfaces: type = saturn.lib.interfaces;
 pub const supervisor: type = saturn.supervisor;
 pub const lib: type = saturn.lib;
 pub const config: type = saturn.config;
@@ -19,10 +19,12 @@ pub const fusioners: type = saturn.fusioners;
 pub const codes: type = saturn.codes;
 pub const rtests: type = saturn.rtests;
 pub const srtr: type = saturn.srtr;
+
 pub const kparam: type = opaque {
     pub const paramsSearch = saturn.kparam.paramsSearch;
     const paramsLoader = saturn.kparam.paramsLoader;
 };
+
 pub const modsys: type = opaque {
     pub const modules: type = saturn.modsys.modules;
     pub const smll: type = saturn.modsys.smll;

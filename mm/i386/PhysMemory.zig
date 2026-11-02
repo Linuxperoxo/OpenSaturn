@@ -44,7 +44,9 @@ phys_pages: [total_of_phys_pages]PhysPage,
 phys_buddy: PhysPageBuddy,
 
 pub inline fn init() PhysMemory {
-    var phys_pages: [total_of_phys_pages]PhysPage = [_]PhysPage{.{}} ** total_of_phys_pages;
+    var phys_pages: [total_of_phys_pages]PhysPage = [_]PhysPage{
+        .{}
+    } ** total_of_phys_pages;
 
     for (&phys_pages, 0..) |*phys_page, id| {
         phys_page.id = @intCast(id);
@@ -61,13 +63,13 @@ pub fn allocAnyPage(self: *PhysMemory, order: OrderUint) ?[]u8 {
 
     if (self.phys_buddy.alloc(requested_order)) |buddy_block| {
         const pages: usize = @as(usize, 1) << @intCast(buddy_block.order);
-        const first_page: usize = buddy_block.first_index;
+        const first_page: usize = buddy_block.initial;
 
         const page_id: usize = @intCast(self.phys_pages[first_page].id);
         const address: usize = @intFromPtr(phys_opensaturn_kernel_zone_start) + (page_id * phys_page_size);
         const memory: [*]u8 = @ptrFromInt(address);
 
-        return memory[0 .. pages * phys_page_size];
+        return memory[0..(pages * phys_page_size)];
     }
 
     return null;
