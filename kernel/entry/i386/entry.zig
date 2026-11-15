@@ -23,39 +23,59 @@ const section_data_persist = arch.sections.section_data_persist;
 // em qualquer arquivo, já que o símbolo está vísivel em todo o assembly.
 
 comptime {
-    // AtlasB Headers
-    //
-    // Esse Headers deve ser colocado no inicio do binario, em
-    // seus primeiros 17 bytes.
-    //
-    // * AtlasMagic: Numero magico que fala para o Atlas que e uma imagem valida
-    // * AtlasLoadDest: Endereço de memoria fisico onde o binario vai ser carregado
-    // * Offset dentro do arquivo onde fica o entry do codigo, o atlas vai dar jump nesse offset
-    // * AtlasImgSize: Tamanho total do binario em bytes
-    // * AtlasVMode: Modo de video que deve ser colocado
-    // * AtlasFlags: Flags gerais para o Atlas, consulte a documentaçao no fonte do atlas
-    //    NOTE: https://github.com/Linuxperoxo/AtlasB/blob/master/src/atlas.s
     asm(
-        &fmt.format(".set AtlasLoadDest, {d}\n", .{ atlas.atlas_load_dest }) ++
-        &fmt.format(".set AtlasVMode, {d}\n", .{ atlas.atlas_vmode }) ++
-        &fmt.format(".set AtlasFlags, {d}\n", .{ atlas.atlas_flags }) ++
-        \\  .set AtlasMagic, 0xAB00
-        \\  .weak AtlasImgSize
-        \\  .section .opensaturn.data.atlas.header,"a",@progbits
-        \\  .type AtlasHeaders,@object
-        \\ AtlasHeaders:
-        \\   .word AtlasMagic
-        \\   .long AtlasLoadDest
-        \\   .long .i386.entry - AtlasLoadDest
-        \\   .long AtlasImgSize
-        \\   .word AtlasVMode
-        \\   .byte AtlasFlags
+        if(!config.boot.options.use_atlas_bootloader)
+            \\.section .opensaturn.bootloader.header,"a",@progbits
+            \\.align 4
+            \\.long 0x1BADB002
+            \\.long 0
+            \\.long 0xE4524FFE
+        else
+            // AtlasB Headers
+            //
+            // Esse Headers deve ser colocado no inicio do binario, em
+            // seus primeiros 17 bytes.
+            //
+            // * AtlasMagic: Numero magico que fala para o Atlas que e uma imagem valida
+            // * AtlasLoadDest: Endereço de memoria fisico onde o binario vai ser carregado
+            // * Offset dentro do arquivo onde fica o entry do codigo, o atlas vai dar jump nesse offset
+            // * AtlasImgSize: Tamanho total do binario em bytes
+            // * AtlasVMode: Modo de video que deve ser colocado
+            // * AtlasFlags: Flags gerais para o Atlas, consulte a documentaçao no fonte do atlas
+            //    NOTE: https://github.com/Linuxperoxo/AtlasB/blob/master/src/atlas.s
+            &fmt.format(".set AtlasLoadDest, {d}\n", .{ atlas.atlas_load_dest }) ++
+            &fmt.format(".set AtlasVMode, {d}\n", .{ atlas.atlas_vmode }) ++
+            &fmt.format(".set AtlasFlags, {d}\n", .{ atlas.atlas_flags }) ++
+            \\  .set AtlasMagic, 0xAB00
+            \\  .weak AtlasImgSize
+            \\  .section .opensaturn.bootloader.header,"a",@progbits
+            \\  .type AtlasHeaders,@object
+            \\ AtlasHeaders:
+            \\   .word AtlasMagic
+            \\   .long AtlasLoadDest
+            \\   .long .i386.entry - AtlasLoadDest
+            \\   .long AtlasImgSize
+            \\   .word AtlasVMode
+            \\   .byte AtlasFlags
     );
+}
+
+const some: extern struct { f0: u32, f1: u32 } = .{
+    .f0 = 40,
+    .f1 = 30,
+};
+
+comptime {
+    @export(&some, .{
+        .section = ".opensaturn.data",
+        .name = "some",
+    });
 }
 
 pub fn entry() linksection(section_text_loader) callconv(.naked) noreturn {
     asm volatile(
         \\ cli
+        \\ jmp .
         \\ movl %[phys_stack], %esp
         \\ calll .i386.init
         \\ calll .i386.mm
@@ -66,10 +86,13 @@ pub fn entry() linksection(section_text_loader) callconv(.naked) noreturn {
         \\ jmp saturn.main
         :
         :[phys_stack] "i" (
-            comptime (config.kernel.mem.phys.kernel_stack_base + config.kernel.options.kernel_stack_size)
+            comptime (config.kernel.mem.phys.kernel_stack + config.kernel.options.kernel_stack_size)
         ),
          [_] "{edi}" (
-            arch.linker.phys_address_opensaturn_data_start
-        )
+            arch.symbols.phys_opensaturn_data_start
+        ),
+        [_] "{esi}" (
+            &some
+        ),
     );
 }
