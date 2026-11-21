@@ -17,12 +17,14 @@ pub const modules: type = saturn.modules;
 pub const decls: type = saturn.decls;
 pub const fusioners: type = saturn.fusioners;
 pub const codes: type = saturn.codes;
-pub const rtests: type = saturn.rtests;
-pub const srtr: type = saturn.srtr;
+pub const tests: type = saturn.tests;
+pub const testing: type = saturn.testing;
+
 pub const kparam: type = opaque {
     pub const paramsSearch = saturn.kparam.paramsSearch;
     const paramsLoader = saturn.kparam.paramsLoader;
 };
+
 pub const modsys: type = opaque {
     pub const modules: type = saturn.modsys.modules;
     pub const smll: type = saturn.modsys.smll;
@@ -73,6 +75,7 @@ fn saturnMain(kparams: *const packed struct { ptr: [*]const u8, len: usize }) ca
             }
         );
     }
+
     // Aqui existe um pequeno detalhe, bem interessante por sinal.
     // Quando passamos um ponteiro para uma funcao conhecida em tempo
     // de compilacao para o @call, o compilador precisa considerar que
@@ -89,14 +92,17 @@ fn saturnMain(kparams: *const packed struct { ptr: [*]const u8, len: usize }) ca
     // ou usando somente loader.SaturnArch, isso evita de criar um possivel .never_inline
     // implicito
     @call(.always_inline, fusium.saturnFusiumLoader, .{ .before });
+
     // Depois da arquitetura resolver todos os seus detalhes, podemos iniciar
     // os modulos linkados ao kernel
     @call(.always_inline, modsys.core.saturnModulesLoader, .{});
     @call(.always_inline, fusium.saturnFusiumLoader, .{ .after });
 
-    // Executa testes na inicializacao do kernel
-    if(comptime config.kernel.test_suite.test_suite_enable)
-        @call(.always_inline, srtr.saturnTestRunner, .{});
+    // Executa funcoes de teste durante a compilacao
+    @call(.compile_time, testing.@"comptime".execComptimeTests, .{});
+
+    // Executa funcoes de teste durante a inicializacao do kernel
+    @call(.always_inline, testing.runtime.execRuntimeTests, .{});
 
     @call(.always_inline, opaque { pub fn trap() noreturn { while(true) {} } }.trap, .{}); // noreturn fn
 }
