@@ -8,15 +8,11 @@ const meta: type = @import("root").lib.kernel.meta;
 pub const Err: type = error{
     WithoutMemory,
     InternalError,
-    ResizeImpossible,
     NoInitilized,
-    InitFailed,
     InvalidOperation,
 };
 
 pub const VTable: type = struct {
-    init: *const fn (*anyopaque) Err!void,
-    deinit: *const fn (*anyopaque) void,
     alloc: *const fn (*anyopaque, usize) Err![]u8,
     free: *const fn (*anyopaque, []u8) void,
     resize: ?*const fn (*anyopaque, []u8, usize) Err![]u8 = null,
@@ -26,16 +22,6 @@ private: *anyopaque,
 vtable: *const VTable,
 
 const Self: type = @This();
-
-/// * init Self
-pub noinline fn init(self: *const Self) Err!void {
-    return self.vtable.init(self.private);
-}
-
-/// * deinit Self
-pub noinline fn deinit(self: *const Self) void {
-    return self.vtable.deinit(self.private);
-}
 
 /// * alloc a slice of type []T containing "n" elements
 pub noinline fn alloc(self: *const Self, comptime T: type, n: usize) Err![]T {

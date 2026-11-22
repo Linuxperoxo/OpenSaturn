@@ -42,8 +42,8 @@ pub fn Bitmap(comptime len: usize) type {
 
             const mask: IntBitmap = ~(~(@as(IntBitmap, 0x01) << @intCast(continuos)) + 1) << @intCast(index);
             switch(op) {
-                .set => self.bitmap = self.bitmap | @as(BitmapVector, @bitCast(mask)),
-                .unset => self.bitmap = self.bitmap & @as(BitmapVector, @bitCast(~mask)),
+                .SET => self.bitmap = self.bitmap | @as(BitmapVector, @bitCast(mask)),
+                .UNSET => self.bitmap = self.bitmap & @as(BitmapVector, @bitCast(~mask)),
             }
         }
 
