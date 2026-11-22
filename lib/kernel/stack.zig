@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-const Allocator: type = @import("Allocator.zig");
+const Allocator: type = @import("alloc/Allocator.zig");
 const SinglyLinkedList: type = @import("SinglyLinkedList.zig");
 
 pub fn Stack(comptime T: type) type {
@@ -16,22 +16,19 @@ pub fn Stack(comptime T: type) type {
         };
 
         list: SinglyLinkedList,
-        allocator: Allocator,
 
-        pub fn init(allocator: Allocator) Self {
+        pub fn init() Self {
             return Self {
-                .list = .{},
-                .allocator = allocator,
+                .list = SinglyLinkedList.init(),
             };
         }
 
         pub fn deinit(self: *Self) void {
-            self.allocator.deinit();
             self.list.first = null;
         }
 
-        pub fn push(self: *Self, data: T) Allocator.Err!void {
-            const stack_node: *StackNode = try self.allocator.create(StackNode);
+        pub fn push(self: *Self, data: T, allocator: Allocator) Allocator.Err!void {
+            const stack_node: *StackNode = try allocator.create(StackNode);
             stack_node.data = data;
             self.list.prepend(&stack_node.node);
         }

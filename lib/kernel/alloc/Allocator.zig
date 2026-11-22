@@ -25,7 +25,7 @@ const Self: type = @This();
 
 /// * alloc a slice of type []T containing "n" elements
 pub noinline fn alloc(self: *const Self, comptime T: type, n: usize) Err![]T {
-    return @ptrCast(@alignCast(try @call(.always_inline, self.vtable.alloc, .{ self.private, @sizeOf(T) * n })));
+    return @ptrCast(@alignCast(try @call(.auto, self.vtable.alloc, .{ self.private, @sizeOf(T) * n })));
 }
 
 /// * free a slice
@@ -33,12 +33,12 @@ pub noinline fn free(self: *const Self, ptr: anytype) void {
     if (!comptime meta.isSlice(@TypeOf(ptr)))
         @compileError("\"fn free()\" expect a slice!");
 
-    @call(.always_inline, self.vtable.free, .{ self.private, @as([]u8, @ptrCast(@alignCast(ptr))) });
+    @call(.auto, self.vtable.free, .{ self.private, @as([]u8, @ptrCast(@alignCast(ptr))) });
 }
 
 /// * alloc a single element pointer
-pub noinline fn create(self: *const Self, comptime t: type) Err!*t {
-    return @ptrCast(@alignCast(try @call(.always_inline, self.vtable.alloc, .{ self.private, @sizeOf(t) })));
+pub noinline fn create(self: *const Self, comptime T: type) Err!*T {
+    return @ptrCast(@alignCast(try @call(.auto, self.vtable.alloc, .{ self.private, @sizeOf(T) })));
 }
 
 /// * free a single element pointer
@@ -46,7 +46,7 @@ pub noinline fn destroy(self: *const Self, ptr: anytype) void {
     if (!comptime meta.isSinglePointer(@TypeOf(ptr)))
         @compileError("\"fn destroy()\" expect a one element pointer!");
 
-    @call(.always_inline, self.vtable.free, .{ self.private, @as([]u8, @ptrCast(ptr)) });
+    @call(.auto, self.vtable.free, .{ self.private, @as([]u8, @ptrCast(ptr)) });
 }
 
 /// * readjusts the size of a slice
@@ -55,5 +55,5 @@ pub noinline fn resize(self: *const Self, ptr: anytype, new_size: usize) Err![]m
     if (!comptime meta.isSlice(@TypeOf(ptr)))
         @compileError("\"fn resize()\" expect a slice!");
 
-    return if (self.vtable.resize == null) Err.InvalidOperation else @ptrCast(@alignCast(@call(.always_inline, self.vtable.resize.?, .{ self.private, ptr, new_size })));
+    return if (self.vtable.resize == null) Err.InvalidOperation else @ptrCast(@alignCast(@call(.auto, self.vtable.resize.?, .{ self.private, ptr, new_size })));
 }

@@ -40,7 +40,6 @@ pub fn CompileAllocator(comptime size: comptime_int) type {
                 .pool = undefined,
                 .bitmap = Bitmap.init(),
                 .initialized = true,
-                .allocated = 0,
             };
         }
 
