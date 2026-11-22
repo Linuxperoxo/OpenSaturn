@@ -58,7 +58,10 @@ pub const lib: type = opaque {
         pub const binary_tree: type = @import("lib/kernel/binary_tree.zig");
         pub const hash_table: type = @import("lib/kernel/hash_table.zig");
         pub const writer: type = @import("lib/kernel/writer.zig");
-        pub const sync: type = @import("lib//kernel/sync.zig");
+        pub const sync: type = @import("lib/kernel/sync.zig");
+
+        pub const Allocator: type = @import("lib/kernel/Allocator.zig");
+        pub const SinglyLinkedList: type = @import("lib/kernel/SinglyLinkedList.zig");
     };
 };
 
