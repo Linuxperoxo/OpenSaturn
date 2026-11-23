@@ -49,19 +49,19 @@ pub const interfaces: type = opaque {
 
 pub const lib: type = opaque {
     pub const kernel: type = opaque {
-        pub const alloc: type = @import("lib/kernel/alloc.zig");
+        pub const allocation: type = @import("lib/kernel/allocation/allocation.zig");
         pub const fmt: type = @import("lib/kernel/fmt.zig");
         pub const mem: type = @import("lib/kernel/mem.zig");
         pub const meta: type = @import("lib/kernel/meta.zig");
-        pub const c: type = @import("lib/kernel/c.zig");
-        pub const linked_list: type = @import("lib/kernel/linked_list.zig");
-        pub const binary_tree: type = @import("lib/kernel/binary_tree.zig");
+        pub const linked_list: type = @import("lib/kernel/linked_list.zig"); // obsolete
+        pub const binary_tree: type = @import("lib/kernel/binary_tree.zig"); // obsolete
         pub const hash_table: type = @import("lib/kernel/hash_table.zig");
         pub const writer: type = @import("lib/kernel/writer.zig");
         pub const sync: type = @import("lib/kernel/sync.zig");
+        pub const stack: type = @import("lib/kernel/stack.zig");
 
-        pub const Allocator: type = @import("lib/kernel/Allocator.zig");
         pub const SinglyLinkedList: type = @import("lib/kernel/SinglyLinkedList.zig");
+        pub const DependencyGraph: type = @import("lib/kernel/DependencyGraph.zig");
     };
 };
 

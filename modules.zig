@@ -3,6 +3,8 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
+const ModuleDescription: type = @import("lib/interfaces/module.zig").ModuleDescription;
+
 // Esse arquivo serve para o kernel detectar os modulos
 // que devem ser linkados a ele. Como o kernel nao depende
 // de nenhum modulo, se nao tiver um intermediario como esse,
@@ -18,9 +20,9 @@
 //  usando o @import()
 
 // --- SATURN MODULES ---
-pub const __SaturnAllMods__ = [_]type {
+pub const __SaturnAllMods__ = [_]ModuleDescription {
     // Module Location!
-    @import("fs/rootfs/rootfs.zig"),
-    @import("fs/devfs/devfs.zig"),
-    @import("drivers/video/fb/vga/fb.zig"),
+    @import("fs/rootfs/rootfs.zig").__SaturnModuleDescription__,
+    @import("fs/devfs/devfs.zig").__SaturnModuleDescription__,
+    @import("drivers/video/fb/vga/fb.zig").__SaturnModuleDescription__,
 };

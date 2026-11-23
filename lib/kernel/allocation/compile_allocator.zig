@@ -51,17 +51,17 @@ pub fn CompileAllocator(comptime size: comptime_int) type {
             self.allocated = 0;
         }
 
-        pub fn alloc(self: *Self, n: usize) Allocator.Err![]u8 {
+        pub fn alloc(self: *Self, n: usize) Allocator.Error![]u8 {
             runningInComptimeCheck();
 
-            if(!self.initialized) return Allocator.Err.NoInitilized;
+            if(!self.initialized) return Allocator.Error.NoInitilized;
 
             if(self.bitmap.findFirstIndexOfConsecutiveSetBits(.UNSET, n)) |initial| {
                 self.bitmap.modifyBitRange(.SET, n, initial);
                 return self.pool[initial..(initial + n)];
             }
 
-            return Allocator.Err.WithoutMemory;
+            return Allocator.Error.WithoutMemory;
         }
 
         // free without double free

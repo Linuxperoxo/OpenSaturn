@@ -4,17 +4,19 @@
 // └──────────────────────────────────────────────────────┘
 
 const SinglyLinkedList: type = @import("SinglyLinkedList.zig");
-const Allocator: type = @import("alloc/Allocator.zig");
+const Allocator: type = @import("allocation/Allocator.zig");
 const Stack: type = @import("stack.zig").Stack(*GraphVertex);
 const DependencyGraph: type = @This();
-const GraphVertex: type = struct {
+
+pub const GraphVertex: type = struct {
     data: *anyopaque,
     open: bool,
     visiting: bool,
     node: SinglyLinkedList.Node = SinglyLinkedList.Node.init(),
     edges: SinglyLinkedList = SinglyLinkedList.init(),
 };
-const GraphEdge: type = struct {
+
+pub const GraphEdge: type = struct {
     target: *GraphVertex,
     node: SinglyLinkedList.Node = SinglyLinkedList.Node.init(),
 };
@@ -45,7 +47,7 @@ pub fn init() DependencyGraph {
     };
 }
 
-pub fn addVertex(self: *DependencyGraph, data: *anyopaque, allocator: Allocator) Allocator.Err!void {
+pub fn addVertex(self: *DependencyGraph, data: *anyopaque, allocator: Allocator) Allocator.Error!void {
     if(self.findVertexByData(data)) |_|
         return;
 
@@ -60,7 +62,7 @@ pub fn addVertex(self: *DependencyGraph, data: *anyopaque, allocator: Allocator)
     self.vertexList.prepend(&vertex.node);
 }
 
-pub fn addDependency(self: *DependencyGraph, dependentData: *anyopaque, dependencyData: *anyopaque, allocator: Allocator) (DependencyGraphError || Allocator.Err)!void {
+pub fn addDependency(self: *DependencyGraph, dependentData: *anyopaque, dependencyData: *anyopaque, allocator: Allocator) (DependencyGraphError || Allocator.Error)!void {
     const dependentVertex: *GraphVertex = self.findVertexByData(dependentData) orelse return DependencyGraphError.DependentNotFound;
     const dependencyVertex: *GraphVertex = self.findVertexByData(dependencyData) orelse return DependencyGraphError.DependencyNotFound;
 
@@ -72,7 +74,7 @@ pub fn addDependency(self: *DependencyGraph, dependentData: *anyopaque, dependen
     dependentVertex.edges.prepend(&edge.node);
 }
 
-pub fn sliceInDependencyOrder(self: *DependencyGraph, allocator: Allocator) (DependencyGraphError || Allocator.Err)![]*anyopaque {
+pub fn sliceInDependencyOrder(self: *DependencyGraph, allocator: Allocator) (DependencyGraphError || Allocator.Error)![]*anyopaque {
     const sequenceSlice: []*anyopaque = try allocator.alloc(*anyopaque, self.vertexList.elems);
     var sequenceSliceIndex: usize = 0;
 
