@@ -21,7 +21,7 @@ pub const ModuleDescriptionLoad: type = enum {
     unlinkable
 };
 
-pub const Mod: type = struct {
+pub const Module: type = struct {
     name: []const u8,
     desc: []const u8,
     version: []const u8,
@@ -46,11 +46,11 @@ pub const ModControlFlags: type = packed struct {
 };
 
 pub const ModInfo: type = struct {
-    module: *const Mod,
+    module: *const Module,
     running: bool,
     flags: ModControlFlags,
 
-    pub inline fn builder(module: *const Mod, running: bool, flags: ModControlFlags) @This() {
+    pub inline fn builder(module: *const Module, running: bool, flags: ModControlFlags) @This() {
         return @This() {
             .module = module,
             .running = running,
@@ -58,7 +58,7 @@ pub const ModInfo: type = struct {
         };
     }
 
-    pub inline fn create(module: *const Mod, running: bool, flags: ModControlFlags) ModErr!*@This() {
+    pub inline fn create(module: *const Module, running: bool, flags: ModControlFlags) ModErr!*@This() {
         const ptr: *@This() = @ptrCast(allocator.sba.allocator.alloc(@This(), 1) catch return ModErr.ModuleAllocatorError);
         ptr.* = @This().builder(module, running, flags);
         return ptr;
@@ -71,7 +71,7 @@ pub const ModInfo: type = struct {
 };
 
 pub const ModuleDescription: type = struct {
-    mod: *const Mod,
+    mod: *const Module,
     load: ModuleDescriptionLoad,
     insf: ModControlFlags,
     arch: []const ModuleDescriptionTarget, // arch suportadas

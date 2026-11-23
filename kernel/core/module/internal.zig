@@ -6,7 +6,7 @@
 const types: type = @import("types.zig");
 const allocator: type = @import("allocator.zig");
 
-const Mod: type = types.Mod;
+const Mod: type = types.Module;
 const Mods: type = types.Mods;
 const ModType: type = types.ModType;
 const ModErr: type = types.ModErr;

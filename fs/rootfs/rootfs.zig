@@ -9,7 +9,7 @@ const fs: type = @import("root").interfaces.fs;
 const vfs: type = @import("root").interfaces.vfs;
 const rfs: type = @import("fs.zig");
 
-const Mod: type = module.Mod;
+const Mod: type = module.Module;
 const ModControlFlags: type = module.ModControlFlags;
 const ModErr: type = module.ModErr;
 const ModType: type = module.ModType;

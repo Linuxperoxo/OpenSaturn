@@ -14,6 +14,7 @@ pub const supervisor: type = saturn.supervisor;
 pub const lib: type = saturn.lib;
 pub const config: type = saturn.config;
 pub const modules: type = saturn.modules;
+pub const menuconfig: type = saturn.menuconfig;
 pub const decls: type = saturn.decls;
 pub const fusioners: type = saturn.fusioners;
 pub const codes: type = saturn.codes;

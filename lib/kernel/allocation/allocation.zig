@@ -6,6 +6,6 @@
 pub const sba: type = @import("sba/sba.zig");
 pub const soa: type = @import("soa/soa.zig");
 pub const bitmap: type = @import("bitmap.zig");
-pub const compile_allocator: type = @import("compile_allocator.zig");
 
+pub const BitmapAllocator: type = @import("bitmap_allocator.zig").BitmapAllocator;
 pub const Allocator: type = @import("Allocator.zig");

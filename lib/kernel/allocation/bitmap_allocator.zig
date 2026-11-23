@@ -6,14 +6,8 @@
 const Allocator: type = @import("Allocator.zig");
 const std: type = @import("std");
 
-pub fn CompileAllocator(comptime size: comptime_int) type {
+pub fn BitmapAllocator(comptime size: comptime_int) type {
     const Bitmap: type = @import("bitmap.zig").Bitmap(size);
-
-    comptime {
-        if (size <= 0) @compileError(
-            "CompileAllocator: pool size must be greater than zero"
-        );
-    }
 
     return struct {
         const Self: type = @This();
@@ -27,15 +21,7 @@ pub fn CompileAllocator(comptime size: comptime_int) type {
             .free = @ptrCast(free),
         };
 
-        fn runningInComptimeCheck() void {
-            if(!@inComptime()) @compileError(
-                "CompileAllocator: this allocator should only be used in comptime operations"
-            );
-        }
-
         pub fn init() Self {
-            runningInComptimeCheck();
-
             return Self {
                 .pool = undefined,
                 .bitmap = Bitmap.init(),
@@ -44,16 +30,12 @@ pub fn CompileAllocator(comptime size: comptime_int) type {
         }
 
         pub fn deinit(self: *Self) void {
-            runningInComptimeCheck();
-
             if(!self.initialized) return;
             self.initialized = false;
             self.allocated = 0;
         }
 
         pub fn alloc(self: *Self, n: usize) Allocator.Error![]u8 {
-            runningInComptimeCheck();
-
             if(!self.initialized) return Allocator.Error.NoInitilized;
 
             if(self.bitmap.findFirstIndexOfConsecutiveSetBits(.UNSET, n)) |initial| {
@@ -66,8 +48,6 @@ pub fn CompileAllocator(comptime size: comptime_int) type {
 
         // free without double free
         pub fn free(self: *Self, memory: []u8) void {
-            runningInComptimeCheck();
-
             if (!self.initialized or memory.len == 0) return;
 
             const poolStart: usize = @intFromPtr(self.pool[0..].ptr);
@@ -81,8 +61,6 @@ pub fn CompileAllocator(comptime size: comptime_int) type {
         }
 
         pub fn allocator(self: *Self) Allocator {
-            runningInComptimeCheck();
-
             return Allocator {
                 .private = self,
                 .vtable = &vtable,

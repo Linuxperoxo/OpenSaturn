@@ -4,7 +4,8 @@
 // └──────────────────────────────────────────────┘
 
 const interfaces: type = @import("root").interfaces;
-const deps: type = @import("deps.zig");
+
+const Modsys: type = @import("Modsys.zig");
 
 pub fn saturnModulesLoader() void {
     inline for(comptime deps.resolveDependencies()) |module| {

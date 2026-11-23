@@ -7,6 +7,7 @@
 // kernel em um unico arquivo
 
 pub const modules: type = @import("modules.zig");
+pub const menuconfig: type = @import("menuconfig.zig");
 pub const fusioners: type = @import("fusioners.zig");
 pub const fusium: type = @import("kernel/fusium/core.zig");
 pub const decls: type = @import("kernel/decls.zig");
