@@ -38,7 +38,7 @@ pub const __SaturnModuleDescription__: module.ModuleDescription = .{
     },
 };
 
-const vga_fb: module.Mod = .{
+const vga_fb: module.Module = .{
     .name = "ke_m_fb",
     .desc = "Core Kernel VGA Framebuffer",
     .author = "Linuxperoxo",

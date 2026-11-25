@@ -10,7 +10,7 @@ const vfs: type = @import("root").interfaces.vfs;
 const dfs: type = @import("fs.zig");
 const libs: type = @import("libs.zig");
 
-const Mod: type = module.Mod;
+const Mod: type = module.Module;
 const ModType: type = module.ModType;
 const ModControlFlags: type = module.ModControlFlags;
 const ModErr: type = module.ModErr;

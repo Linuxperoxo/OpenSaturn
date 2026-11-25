@@ -1,7 +1,10 @@
 // ┌──────────────────────────────────────────────┐
+
 // │  (c) 2025 Linuxperoxo  •  FILE: modules.zig  │
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
+
+const Module: type = @import("lib/interfaces/module.zig").Module;
 
 // Esse arquivo serve para o kernel detectar os modulos
 // que devem ser linkados a ele. Como o kernel nao depende
@@ -18,9 +21,8 @@
 //  usando o @import()
 
 // --- SATURN MODULES ---
-pub const __SaturnAllMods__ = [_]type {
+pub const __SaturnAllMods__ = [_]Module {
     // Module Location!
-    @import("fs/rootfs/rootfs.zig"),
-    @import("fs/devfs/devfs.zig"),
-    @import("drivers/video/fb/vga/fb.zig"),
+    @import("fs/rootfs/rootfs.zig").rootfs,
+    @import("fs/devfs/devfs.zig").devfs,
 };

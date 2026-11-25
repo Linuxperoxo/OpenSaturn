@@ -5,11 +5,17 @@
 
 const SinglyLinkedList: type = @This();
 
-first: ?*Node = null,
-elems: usize = 0,
+first: ?*Node,
+elems: usize,
 
 pub const Node: type = struct {
-    next: ?*Node = null,
+    next: ?*Node,
+
+    pub fn init() Node {
+        return Node {
+            .next = null,
+        };
+    }
 
     pub fn insertAfter(self: *Node, new_node: *Node) void {
         new_node.next = self.next;
@@ -34,6 +40,13 @@ pub const Node: type = struct {
        return @fieldParentPtr("node", self);
    }
 };
+
+pub fn init() SinglyLinkedList {
+    return SinglyLinkedList {
+        .first = null,
+        .elems = 0,
+    };
+}
 
 pub fn accessIndex(self: *const SinglyLinkedList, index: usize) ?*Node {
     if(index >= self.elems) return null;

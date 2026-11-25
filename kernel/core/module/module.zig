@@ -3,7 +3,7 @@
 // │            Author: Linuxperoxo               │
 // └──────────────────────────────────────────────┘
 
-pub const Mod: type = @import("types.zig").Mod;
+pub const Mod: type = @import("types.zig").Module;
 pub const ModControlFlags: type = @import("types.zig").ModControlFlags;
 pub const ModType: type = @import("types.zig").ModType;
 pub const ModErr: type = @import("types.zig").ModErr;

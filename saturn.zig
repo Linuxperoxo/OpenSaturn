@@ -7,7 +7,9 @@
 // kernel em um unico arquivo
 
 pub const modules: type = @import("modules.zig");
+pub const menuconfig: type = @import("menuconfig.zig");
 pub const fusioners: type = @import("fusioners.zig");
+pub const modsys: type = @import("kernel/modsys/modsys.zig");
 pub const fusium: type = @import("kernel/fusium/core.zig");
 pub const decls: type = @import("kernel/decls.zig");
 pub const ar: type = @import("kernel/ar/ar.zig");
@@ -30,12 +32,6 @@ pub const core: type = opaque {
     pub const events: type = @import("kernel/core/events/events.zig");
 };
 
-pub const modsys: type = opaque {
-    pub const core: type = @import("kernel/modsys/modsys.zig");
-    pub const modules: type = @import("kernel/modsys/modules.zig");
-    pub const smll: type = @import("kernel/modsys/smll.zig");
-};
-
 pub const interfaces: type = opaque {
     pub const fusium: type = @import("kernel/fusium/fusium.zig");
     pub const devices: type = @import("lib/interfaces/devices.zig");
@@ -49,16 +45,19 @@ pub const interfaces: type = opaque {
 
 pub const lib: type = opaque {
     pub const kernel: type = opaque {
-        pub const alloc: type = @import("lib/kernel/alloc.zig");
+        pub const allocation: type = @import("lib/kernel/allocation/allocation.zig");
         pub const fmt: type = @import("lib/kernel/fmt.zig");
         pub const mem: type = @import("lib/kernel/mem.zig");
         pub const meta: type = @import("lib/kernel/meta.zig");
-        pub const c: type = @import("lib/kernel/c.zig");
-        pub const linked_list: type = @import("lib/kernel/linked_list.zig");
-        pub const binary_tree: type = @import("lib/kernel/binary_tree.zig");
+        pub const linked_list: type = @import("lib/kernel/linked_list.zig"); // obsolete
+        pub const binary_tree: type = @import("lib/kernel/binary_tree.zig"); // obsolete
         pub const hash_table: type = @import("lib/kernel/hash_table.zig");
         pub const writer: type = @import("lib/kernel/writer.zig");
-        pub const sync: type = @import("lib//kernel/sync.zig");
+        pub const sync: type = @import("lib/kernel/sync.zig");
+        pub const stack: type = @import("lib/kernel/stack.zig");
+
+        pub const SinglyLinkedList: type = @import("lib/kernel/SinglyLinkedList.zig");
+        pub const DependencyGraph: type = @import("lib/kernel/DependencyGraph.zig");
     };
 };
 

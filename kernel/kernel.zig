@@ -10,10 +10,9 @@ pub const __SaturnArchImpl__ = ar.arch_impl;
 pub const core: type = saturn.core;
 pub const ar: type = saturn.ar;
 pub const interfaces: type = saturn.interfaces;
-pub const supervisor: type = saturn.supervisor;
+// pub const supervisor: type = saturn.supervisor;
 pub const lib: type = saturn.lib;
 pub const config: type = saturn.config;
-pub const modules: type = saturn.modules;
 pub const decls: type = saturn.decls;
 pub const fusioners: type = saturn.fusioners;
 pub const codes: type = saturn.codes;
@@ -25,15 +24,12 @@ pub const kparam: type = opaque {
     const paramsLoader = saturn.kparam.paramsLoader;
 };
 
-pub const modsys: type = opaque {
-    pub const modules: type = saturn.modsys.modules;
-    pub const smll: type = saturn.modsys.smll;
-    const core: type = saturn.modsys.core;
-};
-
 const fusium: type = saturn.fusium;
 const asl: type = saturn.asl;
 const csl: type = saturn.csl;
+const modules: type = saturn.modules;
+const menuconfig: type = saturn.menuconfig;
+const modsys: type = saturn.modsys;
 
 // Para obter mais detalhes de como funciona a inicializacao do
 // kernel voce pode olhar o arquivo kernel/loader.zig, nele vai ter toda
@@ -95,7 +91,8 @@ fn saturnMain(kparams: *const packed struct { ptr: [*]const u8, len: usize }) ca
 
     // Depois da arquitetura resolver todos os seus detalhes, podemos iniciar
     // os modulos linkados ao kernel
-    @call(.always_inline, modsys.core.saturnModulesLoader, .{});
+    modsys.Modsys.init(modules.__SaturnAllMods__).run();
+
     @call(.always_inline, fusium.saturnFusiumLoader, .{ .after });
 
     // Executa funcoes de teste durante a compilacao
