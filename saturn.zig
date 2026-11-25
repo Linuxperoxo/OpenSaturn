@@ -9,6 +9,7 @@
 pub const modules: type = @import("modules.zig");
 pub const menuconfig: type = @import("menuconfig.zig");
 pub const fusioners: type = @import("fusioners.zig");
+pub const modsys: type = @import("kernel/modsys/modsys.zig");
 pub const fusium: type = @import("kernel/fusium/core.zig");
 pub const decls: type = @import("kernel/decls.zig");
 pub const ar: type = @import("kernel/ar/ar.zig");
@@ -29,12 +30,6 @@ pub const core: type = opaque {
     pub const devices: type = @import("kernel/core/devices/devices.zig");
     pub const fs: type = @import("kernel/core/fs/fs.zig");
     pub const events: type = @import("kernel/core/events/events.zig");
-};
-
-pub const modsys: type = opaque {
-    pub const core: type = @import("kernel/modsys/modsys.zig");
-    pub const modules: type = @import("kernel/modsys/modules.zig");
-    pub const smll: type = @import("kernel/modsys/smll.zig");
 };
 
 pub const interfaces: type = opaque {

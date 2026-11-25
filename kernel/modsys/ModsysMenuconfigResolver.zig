@@ -3,9 +3,9 @@
 // │                     Author: Linuxperoxo                       │
 // └───────────────────────────────────────────────────────────────┘
 
-const architecture: type = @import("root").__SaturnArchImpl__.arch;
-const kernelConfig: type = @import("root").config;
-const modulesMenuconfig: type = @import("root").menuconfig;
+const arch: type = @import("root").__SaturnArchImpl__.arch;
+const config: type = @import("root").config;
+const menuconfig: type = @import("root").menuconfig;
 const lib: type = @import("root").lib;
 const interfaces: type = @import("root").interfaces;
 const builtin: type = @import("std").builtin;
@@ -14,34 +14,31 @@ const ModsysMenuconfigResolver: type = @This();
 const Allocator: type = lib.kernel.allocation.Allocator;
 const Module: type = interfaces.module.Module;
 const SinglyLinkedList: type = lib.kernel.SinglyLinkedList;
-const MenuconfigStruct: type = createMenuconfigStructType(modulesMenuconfig.__SaturnModulesMenuconfig__);
+const MenuconfigStruct: type = createMenuconfigStructType(menuconfig.__SaturnModulesMenuconfig__);
+const ApprovedModuleNode: type = @import("ApprovedModuleNode.zig");
 
-pub const AprovedModule: type = struct {
-    module: *const Module,
-    node: SinglyLinkedList.Node,
-};
+modules: []Module,
 
-modules: []*const Module,
-
-pub inline fn init(availableModules: []*const Module) ModsysMenuconfigResolver {
+pub inline fn init(availableModules: []Module) ModsysMenuconfigResolver {
     return ModsysMenuconfigResolver {
         .modules = availableModules,
     };
 }
 
-pub inline fn resolver(resolverInstance: *const ModsysMenuconfigResolver, allocator: Allocator) Allocator.Error![]*const Module {
+pub inline fn resolver(self: *const ModsysMenuconfigResolver, allocator: Allocator) Allocator.Error![]*const Module {
     const resolvedMenuconfig: MenuconfigStruct = resolveMenuconfigWithArchOverrider();
-    const availableModules: []*const Module = resolverInstance.modules;
+    const availableModules: []Module = self.modules;
     return obtainModulesWithMenuconfigValue(
         availableModules,
         resolvedMenuconfig,
+        'y',
         allocator
     );
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-inline fn createMenuconfigStructType(modulesMenuconfigEntries: @TypeOf(modulesMenuconfig.__SaturnModulesMenuconfig__)) type {
+inline fn createMenuconfigStructType(modulesMenuconfigEntries: @TypeOf(menuconfig.__SaturnModulesMenuconfig__)) type {
     if(modulesMenuconfigEntries.len == 0) return void;
 
     var menuconfigStructTypeFields: [modulesMenuconfigEntries.len]builtin.Type.StructField = undefined;
@@ -67,28 +64,28 @@ inline fn createMenuconfigStructType(modulesMenuconfigEntries: @TypeOf(modulesMe
 
 inline fn resolveMenuconfigWithArchOverrider() MenuconfigStruct {
     var resolvedMenuconfig: MenuconfigStruct = .{};
-    if(kernelConfig.modules.options.force_module_arch_overrider and architecture.__SaturnArchDescription__.overrider.modules != null) {
-        for(architecture.__SaturnArchDescription__.overrider.modules) |architectureModuleOverrider| {
+    if(config.modules.options.force_module_arch_overrider and arch.__SaturnArchDescription__.overrider.modules != null) {
+        for(arch.__SaturnArchDescription__.overrider.modules) |architectureModuleOverrider| {
             if(@hasField(@TypeOf(resolvedMenuconfig), architectureModuleOverrider.module))
                 @field(resolvedMenuconfig, architectureModuleOverrider.module) = architectureModuleOverrider.value;
         }
     }
 }
 
-inline fn obtainModulesWithMenuconfigValue(availableModules: []*const Module, resolvedMenuconfig: MenuconfigStruct, expectedMenuconfigValue: u8, allocator: Allocator) Allocator.Error![]*const Module {
-    var approvedModulesLinkedList: SinglyLinkedList = SinglyLinkedList.init();
-    for(availableModules) |availableModule| {
+inline fn obtainModulesWithMenuconfigValue(availableModules: []Module, resolvedMenuconfig: MenuconfigStruct, expectedMenuconfigValue: u8, allocator: Allocator) Allocator.Error![]*const Module {
+    var approvedModulesByMenuconfigList: SinglyLinkedList = SinglyLinkedList.init();
+    for(availableModules) |*availableModule| {
         if(@hasField(@TypeOf(resolvedMenuconfig), availableModule.name)) {
             const moduleMenuconfigValue: u8 = @field(resolvedMenuconfig, availableModule.name);
             switch(moduleMenuconfigValue) {
                 'y', 'n' => {
                     if(moduleMenuconfigValue == expectedMenuconfigValue) {
-                        const approvedModuleEntry: *AprovedModule = try allocator.create(AprovedModule);
-                        approvedModuleEntry = .{
+                        const approvedModule: *ApprovedModuleNode = try allocator.create(ApprovedModuleNode);
+                        approvedModule = .{
                             .module = availableModule,
                             .node = SinglyLinkedList.Node.init(),
                         };
-                        approvedModulesLinkedList.append(&approvedModuleEntry.node);
+                        approvedModulesByMenuconfigList.append(&approvedModule.node);
                     }
                 },
                 else => @compileError("[error] ModsysMenuconfigResolver: invalid menuconfig value for \"" ++ availableModule.name ++ "\""),
@@ -96,12 +93,12 @@ inline fn obtainModulesWithMenuconfigValue(availableModules: []*const Module, re
         }
     }
 
-    const resolvedModules: []*const Module = try allocator.alloc(*const Module, approvedModulesLinkedList.elems);
+    const resolvedModules: []*const Module = try allocator.alloc(*const Module, approvedModulesByMenuconfigList.elems);
 
-    var it = approvedModulesLinkedList.first;
+    var it = approvedModulesByMenuconfigList.first;
     var currentIndex: usize = 0;
     while(it) |node| : ({ it = node.next; currentIndex += 1; })
-        resolvedModules[currentIndex] = node.containerOf(AprovedModule).module;
+        resolvedModules[currentIndex] = node.containerOf(ApprovedModuleNode).module;
 
     return resolvedModules;
 }

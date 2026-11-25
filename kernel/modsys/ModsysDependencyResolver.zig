@@ -3,12 +3,12 @@
 // │                     Author: Linuxperoxo                       │
 // └───────────────────────────────────────────────────────────────┘
 
-const architecture: type = @import("root").__SaturnArchImpl__.arch;
+const arch: type = @import("root").__SaturnArchImpl__.arch;
 const interfaces: type = @import("root").interfaces;
 const lib: type = @import("root").lib;
-const memory: type = lib.kernel.mem;
+const mem: type = lib.kernel.mem;
 
-const ModsysDepResolver: type = @This();
+const ModsysDependencyResolver: type = @This();
 const DependencyGraph: type = lib.kernel.DependencyGraph;
 const Allocator: type = lib.kernel.allocation.Allocator;
 const Module: type = interfaces.module.Module;
@@ -16,21 +16,21 @@ const Module: type = interfaces.module.Module;
 modulesToResolve: []*const Module,
 dependencyGraph: DependencyGraph,
 
-pub inline fn init(modulesToResolve: []*const Module) ModsysDepResolver {
-    return ModsysDepResolver {
+pub inline fn init(modulesToResolve: []*const Module) ModsysDependencyResolver {
+    return ModsysDependencyResolver {
         .modulesToResolve = modulesToResolve,
         .dependencyGraph = DependencyGraph.init(),
     };
 }
 
-pub inline fn resolver(dependencyResolver: *ModsysDepResolver, allocator: Allocator) (Allocator.Error || DependencyGraph.DependencyGraphError)![]*const Module {
+pub inline fn resolver(dependencyResolver: *ModsysDependencyResolver, allocator: Allocator) (Allocator.Error || DependencyGraph.DependencyGraphError)![]*const Module {
     try dependencyResolver.buildModuleDependencyGraph(allocator);
     return dependencyResolver.modulesInDependencyOrder(allocator);
 }
 
 // -----------------------------------------------------------------------------------
 
-noinline fn buildModuleDependencyGraph(dependencyResolver: *ModsysDepResolver, allocator: Allocator) (Allocator.Error || DependencyGraph.DependencyGraphError)!void {
+inline fn buildModuleDependencyGraph(dependencyResolver: *ModsysDependencyResolver, allocator: Allocator) (Allocator.Error || DependencyGraph.DependencyGraphError)!void {
     for(dependencyResolver.modulesToResolve) |moduleToAddToDependencyGraph| {
         try dependencyResolver.dependencyGraph.addVertex(moduleToAddToDependencyGraph, allocator);
     }
@@ -41,7 +41,7 @@ noinline fn buildModuleDependencyGraph(dependencyResolver: *ModsysDepResolver, a
                 var graphVertexIterator = dependencyResolver.dependencyGraph.vertexList.first;
                 while(graphVertexIterator) |graphVertexNode| : (graphVertexIterator = graphVertexNode.next) {
                     const dependencyModule: *Module = graphVertexNode.containerOf(DependencyGraph.GraphVertex).data;
-                    if(memory.eql(dependencyName, dependencyModule.mod.name, .{})) {
+                    if(mem.eql(dependencyName, dependencyModule.mod.name, .{})) {
                         try dependencyResolver.dependencyGraph.addDependency(
                             moduleWithDependencies,
                             graphVertexNode.containerOf(DependencyGraph.GraphVertex).data,
@@ -55,6 +55,6 @@ noinline fn buildModuleDependencyGraph(dependencyResolver: *ModsysDepResolver, a
     }
 }
 
-inline fn modulesInDependencyOrder(dependencyResolver: *const ModsysDepResolver, allocator: Allocator) Allocator.Error![]*const Module {
+inline fn modulesInDependencyOrder(dependencyResolver: *const ModsysDependencyResolver, allocator: Allocator) Allocator.Error![]*const Module {
     return @alignCast(@ptrCast(try dependencyResolver.dependencyGraph.sliceInDependencyOrder(allocator)));
 }
